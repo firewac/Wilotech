@@ -1,68 +1,203 @@
-/* Estilos personalizados para el Comparador de Repuestos */
+/* ==========================================================================
+   WILOTECH — LABORATORIO TÉCNICO
+   Sistema de Diseño Cyber-Lab & Comparador Inteligente de Repuestos
+   ========================================================================== */
+
 :root {
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
+    --wilo-cyan: #00f0ff;
+    --wilo-cyan-hover: #33f3ff;
+    --wilo-cyan-dim: rgba(0, 240, 255, 0.15);
+    --wilo-cyan-glow: rgba(0, 240, 255, 0.35);
+
+    --wilo-green: #00ff87;
+    --wilo-green-hover: #33ff9f;
+    --wilo-green-dim: rgba(0, 255, 135, 0.15);
+    --wilo-green-glow: rgba(0, 255, 135, 0.35);
+
+    --wilo-bg: #07090e;
+    --wilo-bg-alt: #0b0f19;
+    --wilo-surface: rgba(13, 19, 32, 0.75);
+    --wilo-surface-hover: rgba(20, 29, 48, 0.85);
+    --wilo-border: rgba(30, 45, 68, 0.75);
+    --wilo-border-bright: rgba(0, 240, 255, 0.3);
+
+    --font-tech: 'Rajdhani', 'Orbitron', -apple-system, sans-serif;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
 }
 
+/* Tipografía y base */
 body {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: #0f172a;
-    color: #f8fafc;
+    font-family: var(--font-sans);
+    background-color: var(--wilo-bg);
+    color: #f1f5f9;
     min-height: 100vh;
+    background-image: 
+        radial-gradient(circle at 15% 10%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 10%, rgba(0, 255, 135, 0.07) 0%, transparent 40%),
+        radial-gradient(circle at 50% 60%, rgba(0, 240, 255, 0.03) 0%, transparent 60%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+    background-attachment: fixed;
 }
 
-/* Scrollbar estilizada */
+/* Estilo Tech para títulos */
+.font-tech {
+    font-family: var(--font-tech);
+    letter-spacing: 0.04em;
+}
+
+/* Scrollbar estilizada Wilotech */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: #1e293b;
+    background: #080c14;
 }
 ::-webkit-scrollbar-thumb {
-    background: #334155;
+    background: #1b263b;
     border-radius: 4px;
+    border: 1px solid rgba(0, 240, 255, 0.1);
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #475569;
+    background: #273852;
+    border-color: rgba(0, 255, 135, 0.3);
 }
 
-/* Transiciones suaves */
+/* Logo oficial con resplandor neón */
+.wilo-logo-img {
+    filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.35)) drop-shadow(0 0 30px rgba(0, 255, 135, 0.2));
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+}
+.wilo-logo-img:hover {
+    transform: scale(1.04) rotate(-1deg);
+    filter: drop-shadow(0 0 22px rgba(0, 240, 255, 0.55)) drop-shadow(0 0 40px rgba(0, 255, 135, 0.4));
+}
+
+/* Gradiente oficial Wilotech (Cyan to Mint Green) */
+.wilo-gradient-text {
+    background: linear-gradient(135deg, #ffffff 0%, var(--wilo-cyan) 45%, var(--wilo-green) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.wilo-gradient-brand {
+    background: linear-gradient(135deg, var(--wilo-cyan) 0%, var(--wilo-green) 100%);
+}
+
+.wilo-gradient-border {
+    position: relative;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+}
+.wilo-gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.4), rgba(0, 255, 135, 0.4));
+    z-index: -1;
+    opacity: 0.6;
+    transition: opacity 0.25s ease;
+}
+.wilo-gradient-border:hover::before {
+    opacity: 1;
+}
+
+/* Botón principal Wilotech */
+.wilo-btn-primary {
+    background: linear-gradient(135deg, #00f0ff 0%, #00ff87 100%);
+    color: #06090e;
+    font-weight: 700;
+    box-shadow: 0 4px 18px -2px rgba(0, 255, 135, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wilo-btn-primary:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 24px -2px rgba(0, 240, 255, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    filter: brightness(1.06);
+}
+.wilo-btn-primary:active {
+    transform: translateY(0);
+}
+
+/* Transiciones suaves para tarjetas de repuestos */
 .transition-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+    backdrop-filter: blur(14px);
 }
 .transition-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 16px 32px -10px rgba(0, 0, 0, 0.6), 0 0 20px -5px rgba(0, 240, 255, 0.15);
+    border-color: rgba(0, 240, 255, 0.35) !important;
 }
 
-/* Efecto de resplandor para la mejor oferta */
+/* Efecto de resplandor para la MEJOR OFERTA */
 .best-deal-glow {
     position: relative;
-    border: 2px solid #10b981 !important;
-    background: linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%);
-    box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+    border: 1px solid rgba(0, 255, 135, 0.65) !important;
+    background: linear-gradient(135deg, rgba(0, 255, 135, 0.08) 0%, rgba(0, 240, 255, 0.04) 40%, rgba(11, 15, 25, 0.95) 100%) !important;
+    box-shadow: 0 0 28px -5px rgba(0, 255, 135, 0.3), inset 0 0 20px -10px rgba(0, 240, 255, 0.15) !important;
+}
+.best-deal-glow::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--wilo-cyan) 0%, var(--wilo-green) 100%);
+    border-radius: 4px 0 0 4px;
 }
 
 .best-deal-badge {
-    animation: pulse-badge 2s infinite ease-in-out;
+    animation: pulse-badge 2.4s infinite ease-in-out;
+    box-shadow: 0 0 14px rgba(0, 255, 135, 0.35);
 }
 
 @keyframes pulse-badge {
     0%, 100% {
         transform: scale(1);
+        box-shadow: 0 0 10px rgba(0, 255, 135, 0.25);
     }
     50% {
-        transform: scale(1.05);
+        transform: scale(1.04);
+        box-shadow: 0 0 18px rgba(0, 240, 255, 0.45);
     }
+}
+
+/* Chip de sugerencia rápido */
+.suggestion-chip {
+    transition: all 0.18s ease;
+}
+.suggestion-chip:hover {
+    border-color: rgba(0, 240, 255, 0.4);
+    background-color: rgba(0, 240, 255, 0.08);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(0, 240, 255, 0.2);
+}
+
+/* Pills de distribuidoras activas */
+.distributor-pill-active-web {
+    background: rgba(0, 240, 255, 0.08) !important;
+    border-color: rgba(0, 240, 255, 0.45) !important;
+    color: #e0faff !important;
+    box-shadow: 0 0 12px -2px rgba(0, 240, 255, 0.2) !important;
+}
+
+.distributor-pill-active-excel {
+    background: rgba(0, 255, 135, 0.08) !important;
+    border-color: rgba(0, 255, 135, 0.45) !important;
+    color: #e6fff3 !important;
+    box-shadow: 0 0 12px -2px rgba(0, 255, 135, 0.2) !important;
 }
 
 /* Animación de carga para scrapers en paralelo */
 .shimmer {
-    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background: linear-gradient(90deg, #0f1728 25%, #1c273e 50%, #0f1728 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 }
@@ -70,4 +205,19 @@ body {
 @keyframes shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+}
+
+/* Línea decorativa del logo */
+.circuit-line {
+    background: linear-gradient(90deg, transparent 0%, var(--wilo-cyan) 30%, var(--wilo-green) 70%, transparent 100%);
+    height: 1.5px;
+    opacity: 0.65;
+}
+
+/* Glow para badges de estado */
+.neon-glow-green {
+    box-shadow: 0 0 8px #00ff87;
+}
+.neon-glow-cyan {
+    box-shadow: 0 0 8px #00f0ff;
 }

@@ -152,23 +152,23 @@ function renderDistributorPills() {
 
         const pill = document.createElement("label");
         const activeClass = isExcel 
-            ? "bg-emerald-950/50 border-emerald-500 text-emerald-200"
-            : "bg-blue-900/40 border-blue-600 text-blue-200";
+            ? "distributor-pill-active-excel"
+            : "distributor-pill-active-web";
         const inactiveClass = isExcel
-            ? "bg-slate-800/40 border-emerald-900/40 text-slate-400 hover:border-emerald-700"
-            : "bg-slate-800/40 border-slate-700 text-slate-400 hover:border-slate-600";
+            ? "bg-[#0b101c]/70 border-emerald-900/30 text-slate-400 hover:border-emerald-700/50"
+            : "bg-[#0b101c]/70 border-slate-800 text-slate-400 hover:border-cyan-700/50";
 
-        pill.className = `flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+        pill.className = `flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
             isChecked ? activeClass : inactiveClass
         }`;
         
         const badgeDot = isExcel
-            ? `<span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">Excel</span>`
-            : `<span class="w-2 h-2 rounded-full ${d.last_login_status === 'OK' ? 'bg-emerald-500' : 'bg-amber-500'}" title="Estado: ${d.last_login_status}"></span>`;
+            ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-[#00ff87] text-[10px] font-bold border border-emerald-500/30 font-mono">Excel</span>`
+            : `<span class="w-2 h-2 rounded-full ${d.last_login_status === 'OK' ? 'bg-[#00ff87] neon-glow-green' : 'bg-amber-400'}" title="Estado: ${d.last_login_status}"></span>`;
 
         pill.innerHTML = `
-            <input type="checkbox" value="${d.id}" ${isChecked ? "checked" : ""} class="rounded border-slate-700 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-slate-900">
-            <span>${d.name}</span>
+            <input type="checkbox" value="${d.id}" ${isChecked ? "checked" : ""} class="rounded border-slate-700 text-cyan-400 focus:ring-0 focus:ring-offset-0 bg-[#070b14]">
+            <span class="font-medium">${d.name}</span>
             ${badgeDot}
         `;
 
@@ -176,10 +176,10 @@ function renderDistributorPills() {
         checkbox.addEventListener("change", (e) => {
             if (e.target.checked) {
                 state.selectedDistributorIds.add(d.id);
-                pill.className = `flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${activeClass}`;
+                pill.className = `flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium cursor-pointer transition-all ${activeClass}`;
             } else {
                 state.selectedDistributorIds.delete(d.id);
-                pill.className = `flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${inactiveClass}`;
+                pill.className = `flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium cursor-pointer transition-all ${inactiveClass}`;
             }
         });
 
@@ -235,16 +235,16 @@ function showLoadingSkeleton() {
 
     resultsContainer.innerHTML = `
         <div class="col-span-full space-y-4 py-8">
-            <div class="flex items-center justify-center gap-3 text-blue-400">
-                <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <div class="flex items-center justify-center gap-3 text-cyan-400">
+                <svg class="animate-spin h-6 w-6 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span class="text-sm font-medium">Consultando en paralelo las distribuidoras conectadas...</span>
+                <span class="text-sm font-semibold font-tech tracking-wide text-cyan-300">Consultando en paralelo las distribuidoras conectadas...</span>
             </div>
-            <div class="h-20 w-full rounded-xl shimmer"></div>
-            <div class="h-20 w-full rounded-xl shimmer"></div>
-            <div class="h-20 w-full rounded-xl shimmer"></div>
+            <div class="h-20 w-full rounded-xl shimmer border border-cyan-500/10"></div>
+            <div class="h-20 w-full rounded-xl shimmer border border-cyan-500/10"></div>
+            <div class="h-20 w-full rounded-xl shimmer border border-cyan-500/10"></div>
         </div>
     `;
 }
@@ -346,31 +346,31 @@ function applyClientFiltersAndRender() {
         const diffPercent = bestPrice > 0 ? Math.round((priceDiff / bestPrice) * 100) : 0;
 
         const card = document.createElement("div");
-        card.className = `p-5 rounded-xl border transition-card flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
+        card.className = `p-5 rounded-2xl border transition-card flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
             isBest 
-            ? "best-deal-glow border-emerald-500 bg-slate-900/90" 
-            : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
+            ? "best-deal-glow bg-[#0a101d]/90" 
+            : "border-slate-800/80 bg-[#0c1220]/75 hover:border-cyan-500/30"
         }`;
 
         let diffBadgeHtml = "";
         if (isBest) {
             diffBadgeHtml = `
-                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 best-deal-badge">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                    MEJOR PRECIO
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-[#00ff87] border border-emerald-400/50 best-deal-badge font-tech tracking-wider">
+                    <svg class="w-3.5 h-3.5 text-[#00ff87]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                    MEJOR PRECIO LAB
                 </span>
             `;
         } else if (priceDiff > 0) {
             diffBadgeHtml = `
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">
                     +${formatCurrency(priceDiff)} (+${diffPercent}%)
                 </span>
             `;
         }
 
         const stockBadge = item.has_stock
-            ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ${item.stock}
+            ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#00ff87] neon-glow-green"></span> ${item.stock}
                </span>`
             : `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
                 <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> ${item.stock}
@@ -379,46 +379,46 @@ function applyClientFiltersAndRender() {
         card.innerHTML = `
             <div class="flex-1 space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-slate-800 text-blue-400 border border-slate-700">
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-[#070b14] text-cyan-300 border border-cyan-500/30 font-tech">
                         ${item.distributor_name}
                     </span>
                     ${diffBadgeHtml}
                     ${stockBadge}
                     <span class="text-xs text-slate-400 flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         ${item.delivery_time || "Consultar plazo"}
                     </span>
                 </div>
 
                 <div class="flex items-baseline gap-2">
-                    <h3 class="text-lg font-bold text-white tracking-tight">${item.description}</h3>
+                    <h3 class="text-base sm:text-lg font-bold text-white tracking-tight">${item.description}</h3>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400">
-                    <div><span class="text-slate-500">Código / SKU:</span> <strong class="text-slate-200 font-mono">${item.sku}</strong></div>
-                    <div><span class="text-slate-500">Marca:</span> <strong class="text-slate-200">${item.brand || "Estándar"}</strong></div>
+                    <div><span class="text-slate-500">Código / SKU:</span> <strong class="text-cyan-200 font-mono">${item.sku}</strong></div>
+                    <div><span class="text-slate-500">Marca:</span> <strong class="text-slate-200 font-medium">${item.brand || "Estándar"}</strong></div>
                     <div><span class="text-slate-500">Actualizado:</span> ${item.scraped_at}</div>
                 </div>
             </div>
 
-            <div class="flex md:flex-col items-end justify-between w-full md:w-auto gap-3 border-t md:border-t-0 border-slate-800 pt-3 md:pt-0">
+            <div class="flex md:flex-col items-end justify-between w-full md:w-auto gap-3 border-t md:border-t-0 border-slate-800/80 pt-3 md:pt-0">
                 <div class="text-right">
-                    <div class="text-2xl font-black ${isBest ? 'text-emerald-400' : 'text-white'}">
+                    <div class="text-2xl font-black font-mono ${isBest ? 'text-[#00ff87]' : 'text-white'}">
                         ${formatCurrency(item.price)}
                     </div>
                     ${item.original_price ? `
-                        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] font-semibold mt-0.5" title="Precio original en dólares convertido a pesos con Dólar Blue">
+                        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] font-semibold mt-0.5 font-mono" title="Precio original en dólares convertido a pesos con Dólar Blue">
                             <span>💵 U$D ${item.original_price.toFixed(2)}</span>
                             <span class="text-[10px] text-slate-400 font-normal">(@ $${item.exchange_rate_used.toLocaleString('es-AR')})</span>
                         </div>
                     ` : `<div class="text-[11px] text-slate-400">IVA e impuestos incluidos</div>`}
                 </div>
 
-                <a href="${item.product_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold ${
+                <a href="${item.product_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold ${
                     isBest 
-                    ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30" 
-                    : "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
-                } transition-colors">
+                    ? "wilo-btn-primary shadow-lg shadow-cyan-950/40" 
+                    : "bg-[#0e1626] hover:bg-[#142036] text-cyan-200 border border-cyan-500/30 hover:border-cyan-400"
+                } transition-all cursor-pointer">
                     <span>Ver en distribuidora</span>
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                 </a>
@@ -447,7 +447,7 @@ async function loadHistory() {
 
         history.forEach(item => {
             const btn = document.createElement("button");
-            btn.className = "text-xs px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors flex items-center gap-1.5";
+            btn.className = "text-xs px-2.5 py-1 rounded-lg bg-[#0e1626] hover:bg-[#15223a] text-slate-300 border border-slate-700/80 hover:border-cyan-500/40 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm";
             btn.innerHTML = `
                 <span>${item.query}</span>
                 <span class="text-[10px] text-slate-500">(${item.total_results})</span>

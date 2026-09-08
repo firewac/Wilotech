@@ -47,7 +47,11 @@ app.add_middleware(
 
 # Rutas estáticas
 STATIC_DIR = BASE_DIR / "frontend" / "static"
-STATIC_DIR.mkdir(parents=True, exist_ok=True)
+if not STATIC_DIR.exists():
+    try:
+        STATIC_DIR.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/")
