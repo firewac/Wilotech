@@ -20,7 +20,7 @@ def open_browser():
 
 if __name__ == "__main__":
     print("=" * 65)
-    print("  AutoPrice Pro - Comparador de Repuestos Multidistribuidora")
+    print("  Wilotech — Comparador Inteligente de Repuestos")
     print("=" * 65)
     print("[*] Iniciando servidor web local en http://127.0.0.1:8000 ...")
     print("[*] Presiona Ctrl+C para detener el servicio.\n")
@@ -28,5 +28,5 @@ if __name__ == "__main__":
     # Abrir navegador automáticamente en segundo plano
     threading.Thread(target=open_browser, daemon=True).start()
 
-    # Ejecutar servidor FastAPI
-    uvicorn.run("backend.app:app", host="127.0.0.1", port=8000, reload=False)
+    # Ejecutar servidor FastAPI con recarga automática
+    uvicorn.run("backend.app:app", host="127.0.0.1", port=8000, reload=True)
