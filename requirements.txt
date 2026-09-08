@@ -1,0 +1,11 @@
+# CellPrice Pro — Dependencias del Sistema
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+httpx>=0.27.0
+pydantic>=2.0.0
+cryptography>=42.0.0
+beautifulsoup4>=4.12.0
+playwright>=1.42.0
+pandas>=2.1.0
+openpyxl>=3.1.0
+python-multipart>=0.0.9

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoPrice Pro — Comparador de Precios de Repuestos</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
+
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-black text-xl">
+                    ⚡
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                        CellPrice Pro
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">Repuestos de Celulares</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Comparador en tiempo real de módulos, baterías, pantallas, flex y pines de carga</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button id="dolar-blue-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/60 border border-emerald-700/60 text-emerald-300 text-xs font-semibold hover:border-emerald-500 hover:bg-emerald-900/60 transition-all shadow-sm" title="Cotización del Dólar Blue del día. Clic para ver o cambiar.">
+                    <span>💵</span>
+                    <span>Blue:</span>
+                    <span id="dolar-blue-val" class="font-bold text-white">$...</span>
+                </button>
+
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="active-distributors-count">Cargando distribuidoras...</span>
+                </div>
+
+                <button id="open-excel-modal-btn" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/60 text-emerald-300 text-xs font-semibold shadow-sm transition-all">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span>📁 Listas Excel</span>
+                </button>
+
+                <button id="open-distributors-btn" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold transition-all">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>Cuentas Web</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+        <!-- CAJA DE BÚSQUEDA CENTRAL -->
+        <section class="p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-900/60 border border-slate-800 shadow-xl space-y-4">
+            <form id="search-form" class="relative flex items-center">
+                <div class="absolute left-4 pointer-events-none text-slate-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="Buscar repuesto (ej: Modulo Samsung A14, Bateria iPhone 11, Pin de carga Moto G8, Pantalla Xiaomi...)"
+                    class="w-full pl-12 pr-32 py-3.5 rounded-xl bg-slate-950/80 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm md:text-base font-medium transition-all"
+                    autofocus
+                    autocomplete="off"
+                >
+                <button type="button" id="clear-btn" class="hidden absolute right-28 text-slate-400 hover:text-white p-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <button 
+                    type="submit" 
+                    class="absolute right-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs md:text-sm font-semibold shadow-md shadow-blue-600/30 transition-all flex items-center gap-1.5"
+                >
+                    <span>Comparar</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </form>
+
+            <!-- CHIPS DE CONSULTA RÁPIDA -->
+            <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                <span class="text-slate-400 font-medium">Sugerencias rápidas:</span>
+                <button type="button" class="suggestion-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 transition-colors" data-query="Bateria iPhone 11">Batería iPhone 11</button>
+                <button type="button" class="suggestion-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 transition-colors" data-query="Modulo Samsung A14">Módulo Samsung A14</button>
+                <button type="button" class="suggestion-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 transition-colors" data-query="Pin de carga Moto G8">Pin de Carga Moto G8</button>
+                <button type="button" class="suggestion-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 transition-colors" data-query="Pantalla Motorola G22">Pantalla Motorola G22</button>
+                <button type="button" class="suggestion-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 transition-colors" data-query="Modulo Xiaomi Redmi Note">Módulo Xiaomi Redmi</button>
+                <button type="button" class="suggestion-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 transition-colors" data-query="Flex de carga">Flex de Carga</button>
+            </div>
+
+            <!-- FILTRO DE DISTRIBUIDORAS PARTICIPANTES -->
+            <div class="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400 font-medium">Comparar en:</span>
+                    <div id="distributor-filters" class="flex flex-wrap gap-2">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- HISTORIAL RECIENTE -->
+                <div class="hidden lg:flex items-center gap-2 text-xs">
+                    <span class="text-slate-500">Historial:</span>
+                    <div id="search-history-container" class="flex items-center gap-1.5">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BANNER DE ERROR -->
+        <div id="error-banner" class="hidden p-4 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 text-sm flex items-center gap-3">
+            <svg class="w-5 h-5 text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <span id="error-banner-text">Error al consultar</span>
+        </div>
+
+        <!-- BANNER RESUMEN DE PRECIOS Y ESTADÍSTICAS -->
+        <section id="summary-banner" class="hidden space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800">
+                <div>
+                    <h2 class="text-lg font-bold text-white tracking-tight">Comparativa de Cotizaciones</h2>
+                    <p id="search-meta" class="text-xs text-slate-400">Resultados en tiempo real</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="export-excel-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-800/50 text-xs font-semibold transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span>Exportar Excel (.xlsx)</span>
+                    </button>
+                    <button id="export-csv-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>CSV</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TARJETAS DE MÉTRICAS -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- Tarjeta Mejor Precio -->
+                <div class="p-4 rounded-xl border border-emerald-500/40 bg-gradient-to-br from-emerald-950/40 to-slate-900 relative overflow-hidden">
+                    <div class="text-[11px] uppercase font-bold tracking-wider text-emerald-400 flex items-center justify-between">
+                        <span>Mejor Opción</span>
+                        <span>🏆</span>
+                    </div>
+                    <div id="stat-best-price" class="text-xl md:text-2xl font-black text-emerald-300 mt-1">--</div>
+                    <div id="stat-best-distributor" class="text-[11px] text-emerald-500/90 font-medium truncate mt-0.5">--</div>
+                </div>
+
+                <!-- Tarjeta Precio Promedio -->
+                <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/60">
+                    <div class="text-[11px] uppercase font-bold tracking-wider text-slate-400">Promedio de Mercado</div>
+                    <div id="stat-avg-price" class="text-xl md:text-2xl font-black text-slate-100 mt-1">--</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Promedio de ofertas con stock</div>
+                </div>
+
+                <!-- Tarjeta Rango -->
+                <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/60">
+                    <div class="text-[11px] uppercase font-bold tracking-wider text-slate-400">Rango de Precios</div>
+                    <div id="stat-range-price" class="text-lg md:text-xl font-black text-slate-200 mt-1">--</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Mínimo - Máximo cotizado</div>
+                </div>
+
+                <!-- Tarjeta Total Opciones -->
+                <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/60">
+                    <div class="text-[11px] uppercase font-bold tracking-wider text-slate-400">Disponibilidad</div>
+                    <div id="stat-total-results" class="text-xl md:text-2xl font-black text-blue-400 mt-1">--</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">En distribuidoras conectadas</div>
+                </div>
+            </div>
+
+            <!-- BARRA DE FILTRADO Y REFINAMIENTO INTERACTIVO -->
+            <div id="results-filter-bar" class="p-3.5 rounded-xl border border-slate-800 bg-slate-900/50 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-slate-400 font-semibold flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                        Afinar:
+                    </span>
+                    <input 
+                        type="text" 
+                        id="filter-refine-input" 
+                        placeholder="Filtrar (ej: OLED, Incell, Pro Max, JK...)" 
+                        class="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-xs w-48 sm:w-60"
+                    >
+                    <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-700/60 hover:bg-slate-800 transition-colors">
+                        <input type="checkbox" id="filter-stock-only" class="rounded border-slate-700 text-emerald-500 focus:ring-0">
+                        <span>Solo con stock</span>
+                    </label>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span class="text-slate-400">Ordenar por:</span>
+                    <select id="sort-results-select" class="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-blue-500 text-xs">
+                        <option value="price_asc" selected>Menor Precio (Mejor Oferta)</option>
+                        <option value="price_desc">Mayor Precio</option>
+                        <option value="distributor">Distribuidora</option>
+                    </select>
+                    <span id="filtered-count-badge" class="text-slate-500 text-[11px] ml-1"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- LISTADO DE RESULTADOS -->
+        <section id="results-container" class="space-y-3">
+            <!-- Renderizado dinámico desde app.js -->
+        </section>
+
+        <!-- ESTADO VACÍO / INICIAL -->
+        <section id="empty-state" class="py-16 text-center space-y-4 max-w-md mx-auto">
+            <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-3xl text-slate-500 shadow-inner">
+                🔍
+            </div>
+            <div>
+                <h3 id="empty-state-title" class="text-base font-bold text-white">Comienza a comparar precios</h3>
+                <p id="empty-state-desc" class="text-xs text-slate-400 mt-1 leading-relaxed">
+                    Escribe cualquier código de repuesto o parte automotriz arriba para consultar simultáneamente los precios y stock en todas las distribuidoras habilitadas.
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL DE ADMINISTRACIÓN DE DISTRIBUIDORAS Y CREDENCIALES -->
+    <div id="distributors-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <!-- Cabecera del Modal -->
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold">
+                        ⚙️
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Configuración de Distribuidoras</h3>
+                        <p class="text-xs text-slate-400">Administra cuentas, contraseñas cifradas y prueba de conexión</p>
+                    </div>
+                </div>
+                <button type="button" id="close-distributors-modal" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Aviso de Seguridad Local -->
+            <div class="px-5 py-3 bg-blue-950/40 border-b border-blue-900/40 text-xs text-blue-300 flex items-center gap-2">
+                <svg class="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                <span><strong>Privacidad garantizada:</strong> Tus contraseñas se almacenan cifradas localmente con Fernet (AES-128) en tu propia máquina. Nunca se transmiten a servidores de terceros.</span>
+            </div>
+
+            <!-- Cuerpo del Modal con dos columnas: Formulario y Lista -->
+            <div class="flex-1 overflow-y-auto p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- COLUMNA 1: FORMULARIO -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h4 id="form-title" class="text-sm font-bold text-white">Agregar Nueva Distribuidora</h4>
+                        <button type="button" id="new-distributor-btn" class="text-xs text-blue-400 hover:text-blue-300 font-medium">+ Limpiar</button>
+                    </div>
+
+                    <form id="distributor-form" class="space-y-3 text-xs">
+                        <input type="hidden" id="dist-id">
+
+                        <div>
+                            <label class="block text-slate-300 font-medium mb-1">Nombre de la Distribuidora *</label>
+                            <input type="text" id="dist-name" required placeholder="Ej: Autopartes Rodríguez B2B" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-medium mb-1">URL Base del Portal Web *</label>
+                            <input type="url" id="dist-base-url" required placeholder="https://portal.distribuidor.com" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-blue-500 font-mono">
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-medium mb-1">URL de Login</label>
+                            <input type="url" id="dist-login-url" placeholder="https://portal.distribuidor.com/login" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-blue-500 font-mono">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-slate-300 font-medium mb-1">Usuario / Email</label>
+                                <input type="text" id="dist-username" placeholder="usuario_mayorista" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 font-medium mb-1">Contraseña</label>
+                                <input type="password" id="dist-password" placeholder="••••••••" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-slate-300 font-medium mb-1">Tipo de Scraper</label>
+                                <select id="dist-type" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-blue-500">
+                                    <option value="mock">Simulado (Demostración)</option>
+                                    <option value="generic_http">HTTP Web / API Directo</option>
+                                    <option value="playwright">Navegador Automático</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center pt-5">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="dist-active" checked class="rounded border-slate-700 text-blue-600 focus:ring-0">
+                                    <span class="text-slate-300">Activa para búsquedas</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-2">
+                            <button type="submit" class="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors">
+                                Guardar Distribuidora
+                            </button>
+                            <button type="button" id="cancel-edit-btn" onclick="resetDistributorForm()" class="hidden px-3 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- COLUMNA 2: LISTA DE DISTRIBUIDORAS CONFIGURADAS -->
+                <div class="space-y-3">
+                    <h4 class="text-sm font-bold text-white flex items-center justify-between">
+                        <span>Distribuidoras Registradas</span>
+                    </h4>
+                    <div id="modal-distributors-list" class="space-y-3 overflow-y-auto max-h-[420px] pr-1">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE LISTAS DE PRECIOS EXCEL / CSV -->
+    <div id="excel-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <!-- Cabecera del Modal -->
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center font-bold">
+                        📊
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Listas de Precios en Excel</h3>
+                        <p class="text-xs text-slate-400">Importa planillas de proveedores e inclúyelas en la comparativa en tiempo real</p>
+                    </div>
+                </div>
+                <button type="button" id="close-excel-modal" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Banner Explicativo -->
+            <div class="px-5 py-3 bg-emerald-950/30 border-b border-emerald-900/40 text-xs text-emerald-300 flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span><strong>Detección inteligente:</strong> Acepta archivos <code>.xlsx</code>, <code>.xls</code> o <code>.csv</code>. El sistema detecta automáticamente las columnas de descripción, precio (gremio/efectivo), código y stock.</span>
+            </div>
+
+            <!-- Cuerpo del Modal -->
+            <div class="flex-1 overflow-y-auto p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- COLUMNA 1: SUBIR PLANILLA -->
+                <div class="space-y-4">
+                    <h4 class="text-sm font-bold text-white">Cargar Nueva Lista / Actualizar</h4>
+
+                    <form id="excel-upload-form" class="space-y-3 text-xs">
+                        <div>
+                            <label class="block text-slate-300 font-medium mb-1">Nombre del Proveedor / Mayorista *</label>
+                            <input type="text" id="excel-supplier-name" required placeholder="Ej: Mayorista Once Cell" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-medium mb-1">Moneda de la Lista</label>
+                            <select id="excel-currency" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+                                <option value="ARS" selected>ARS ($ Pesos Argentinos)</option>
+                                <option value="USD">USD ($ Dólares)</option>
+                            </select>
+                        </div>
+
+                        <!-- Dropzone para Archivo -->
+                        <div>
+                            <label class="block text-slate-300 font-medium mb-1">Archivo Excel o CSV *</label>
+                            <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500/80 rounded-xl p-5 text-center cursor-pointer bg-slate-950/60 transition-colors">
+                                <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" class="hidden">
+                                <div class="space-y-1">
+                                    <div class="text-2xl">📄</div>
+                                    <p id="dropzone-text" class="text-slate-300 font-medium text-xs">Haz clic o arrastra tu archivo aquí</p>
+                                    <p class="text-[10px] text-slate-500">Formatos admitidos: .xlsx, .xls, .csv</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="upload-status" class="hidden p-3 rounded-lg text-xs"></div>
+
+                        <button type="submit" id="upload-excel-btn" class="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors flex items-center justify-center gap-2">
+                            <span>Importar y Procesar Planilla</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- COLUMNA 2: LISTAS IMPORTADAS ACTIVAS -->
+                <div class="space-y-3">
+                    <h4 class="text-sm font-bold text-white flex items-center justify-between">
+                        <span>Listas Cargadas en el Sistema</span>
+                    </h4>
+                    <div id="modal-excel-list" class="space-y-3 overflow-y-auto max-h-[420px] pr-1">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE COTIZACIÓN DÓLAR BLUE -->
+    <div id="dolar-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center font-bold">
+                        💵
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Dólar Blue del Día</h3>
+                        <p class="text-xs text-slate-400">Conversor automático para repuestos cotizados en USD</p>
+                    </div>
+                </div>
+                <button type="button" id="close-dolar-modal" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-4 text-xs">
+                <!-- Info en Vivo -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-950/30 text-center">
+                        <div class="text-[10px] text-emerald-400 uppercase font-bold tracking-wider">Venta (Conversión)</div>
+                        <div id="modal-dolar-venta" class="text-xl font-black text-emerald-300 mt-1">$...</div>
+                    </div>
+                    <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 text-center">
+                        <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Compra</div>
+                        <div id="modal-dolar-compra" class="text-xl font-black text-slate-200 mt-1">$...</div>
+                    </div>
+                </div>
+
+                <div class="text-slate-400 text-[11px] leading-relaxed">
+                    <span id="modal-dolar-fuente">Fuente: Consultando en vivo...</span><br>
+                    <span class="text-slate-500">Los repuestos de catálogos o mayoristas en dólares se multiplican automáticamente por este valor para ordenarlos junto a los precios en pesos.</span>
+                </div>
+
+                <!-- Modificar cotización manual -->
+                <form id="dolar-custom-form" class="space-y-2 pt-2 border-t border-slate-800">
+                    <label class="block text-slate-300 font-medium">¿Deseas fijar un valor manual específico?</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="dolar-custom-input" step="1" min="100" max="10000" placeholder="Ej: 1540" class="flex-1 px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+                        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors">
+                            Fijar
+                        </button>
+                    </div>
+                    <button type="button" id="reset-dolar-btn" class="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors">
+                        Restablecer a cotización automática del día
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
