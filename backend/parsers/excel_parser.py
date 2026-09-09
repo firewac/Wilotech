@@ -136,7 +136,8 @@ def parse_price_list_file(file_content: bytes, filename: str, default_currency: 
         except Exception:
             df = pd.read_excel(io.BytesIO(file_content), engine="openpyxl", dtype=str)
 
-    if len(df) > 0 and (df.columns.str.contains("Unnamed").sum() > len(df.columns) / 2):
+    unnamed_count = sum(1 for c in df.columns if "unnamed" in str(c).lower())
+    if len(df) > 0 and (unnamed_count > len(df.columns) / 2):
         for i in range(min(5, len(df))):
             row_vals = df.iloc[i].dropna().astype(str).tolist()
             if len(row_vals) >= 2 and any(clean_header(v) in ["descripcion", "producto", "precio", "codigo"] for v in row_vals):
