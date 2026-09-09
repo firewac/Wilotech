@@ -169,7 +169,32 @@ async def upload_excel_catalog_endpoint(
         "message": f"Lista '{clean_name}' procesada e importada con éxito ({len(items)} repuestos).",
         "catalog": catalog_data,
         "metadata": metadata,
+        "items": items,
         "preview": items[:5]
+    }
+
+@app.post("/api/catalogs/excel/restore")
+async def restore_excel_catalog_endpoint(payload: Dict[str, Any]):
+    catalog_id = payload.get("catalog_id")
+    name = payload.get("name")
+    filename = payload.get("filename", "catalog.xlsx")
+    currency = payload.get("currency", "ARS")
+    items = payload.get("items", [])
+
+    if not catalog_id or not name or not items:
+        raise HTTPException(status_code=400, detail="Datos incompletos para restaurar catálogo.")
+
+    catalog_data = create_or_update_excel_catalog(
+        catalog_id=catalog_id,
+        name=name,
+        filename=filename,
+        currency=currency,
+        items=items
+    )
+    return {
+        "status": "ok",
+        "message": f"Catálogo '{name}' restaurado con éxito.",
+        "catalog": catalog_data
     }
 
 @app.delete("/api/catalogs/excel/{catalog_id}")

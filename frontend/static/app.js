@@ -742,6 +742,44 @@ function handleSelectedFile(file) {
     }
 }
 
+// Persistent Local Storage Helpers for Excel Catalogs across Serverless Sessions
+function getSavedLocalExcelCatalogs() {
+    try {
+        const raw = localStorage.getItem("cellprice_excel_catalogs");
+        return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveLocalExcelCatalog(catalogId, catalogData, items) {
+    try {
+        const localCatalogs = getSavedLocalExcelCatalogs();
+        localCatalogs[catalogId] = {
+            catalog_id: catalogId,
+            name: catalogData.name,
+            filename: catalogData.filename,
+            currency: catalogData.currency,
+            uploaded_at: catalogData.uploaded_at,
+            total_items: items ? items.length : catalogData.total_items,
+            items: items || []
+        };
+        localStorage.setItem("cellprice_excel_catalogs", JSON.stringify(localCatalogs));
+    } catch (e) {
+        console.warn("No se pudo guardar copia en localStorage:", e);
+    }
+}
+
+function removeLocalExcelCatalog(catalogId) {
+    try {
+        const localCatalogs = getSavedLocalExcelCatalogs();
+        delete localCatalogs[catalogId];
+        localStorage.setItem("cellprice_excel_catalogs", JSON.stringify(localCatalogs));
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 async function loadExcelCatalogs() {
     const container = document.getElementById("modal-excel-list");
     if (!container) return;
@@ -749,7 +787,39 @@ async function loadExcelCatalogs() {
     try {
         const res = await fetch("/api/catalogs/excel");
         if (!res.ok) throw new Error("Error al obtener catálogos");
-        const catalogs = await res.json();
+        let catalogs = await res.json();
+
+        // Auto-restaurar catálogos guardados localmente si se perdió la memoria del servidor (ej: Serverless cold-start)
+        const localCatalogs = getSavedLocalExcelCatalogs();
+        const serverIds = new Set(catalogs.map(c => c.id));
+        let reSynced = false;
+
+        for (const [catId, catObj] of Object.entries(localCatalogs)) {
+            if (!serverIds.has(catId) && catObj.items && catObj.items.length > 0) {
+                try {
+                    await fetch("/api/catalogs/excel/restore", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            catalog_id: catObj.catalog_id,
+                            name: catObj.name,
+                            filename: catObj.filename,
+                            currency: catObj.currency,
+                            items: catObj.items
+                        })
+                    });
+                    reSynced = true;
+                } catch (errSync) {
+                    console.error("Error al auto-restaurar catálogo:", errSync);
+                }
+            }
+        }
+
+        if (reSynced) {
+            const reRes = await fetch("/api/catalogs/excel");
+            if (reRes.ok) catalogs = await reRes.json();
+            await loadDistributors();
+        }
 
         if (catalogs.length === 0) {
             container.innerHTML = `
@@ -828,6 +898,11 @@ async function handleUploadExcel(e) {
             throw new Error(data.detail || "Error al procesar el archivo");
         }
 
+        // Guardar copia persistente en localStorage del cliente
+        if (data.items && data.items.length > 0) {
+            saveLocalExcelCatalog(data.catalog.catalog_id, data.catalog, data.items);
+        }
+
         statusBox.className = "p-3 rounded-lg text-xs bg-emerald-950/40 border border-emerald-800 text-emerald-300";
         statusBox.innerHTML = `
             <strong>¡Lista importada con éxito!</strong><br>
@@ -859,6 +934,7 @@ async function handleDeleteExcelCatalog(catalogId) {
         const res = await fetch(`/api/catalogs/excel/${catalogId}`, { method: "DELETE" });
         if (!res.ok) throw new Error("No se pudo eliminar el catálogo");
 
+        removeLocalExcelCatalog(catalogId);
         await loadExcelCatalogs();
         await loadDistributors();
     } catch (err) {
