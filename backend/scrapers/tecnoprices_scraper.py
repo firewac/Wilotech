@@ -1,4 +1,6 @@
 import re
+import json
+import asyncio
 import urllib.parse
 from datetime import datetime
 from typing import List, Tuple, Dict, Any
@@ -46,6 +48,29 @@ class TecnopricesScraper(BaseDistributorScraper):
         except Exception as e:
             return False, f"Error al conectar con Tecnoprices: {str(e)}"
 
+    async def fetch_item_price_from_detail(self, client: httpx.AsyncClient, item: PartResult):
+        """Obtiene el precio público oficial desde los metadatos JSON-LD de la página del producto."""
+        if item.price > 0 or not item.product_url:
+            return
+        try:
+            resp = await client.get(item.product_url, timeout=6.0)
+            if resp.status_code == 200:
+                matches = re.findall(r'<script type="application/ld\+json">(.*?)</script>', resp.text, re.DOTALL)
+                for m in matches:
+                    if '"@type":"Product"' in m or '"@type": "Product"' in m:
+                        try:
+                            data = json.loads(m.strip())
+                            offers = data.get("offers", {})
+                            if isinstance(offers, dict):
+                                price_val = float(offers.get("price", 0))
+                                if price_val > 0:
+                                    item.price = price_val
+                                    return
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+
     async def search(self, query: str) -> List[PartResult]:
         clean_query = query.strip()
         if not clean_query:
@@ -61,7 +86,7 @@ class TecnopricesScraper(BaseDistributorScraper):
             encoded = urllib.parse.quote_plus(clean_query)
             search_url = f"{self.base_url}/buscar.php?q={encoded}"
 
-            async with httpx.AsyncClient(headers=self.headers, cookies=cookies, timeout=15.0, follow_redirects=True) as client:
+            async with httpx.AsyncClient(headers=self.headers, cookies=cookies, timeout=12.0, follow_redirects=True) as client:
                 resp = await client.get(search_url)
                 if resp.status_code != 200:
                     return []
@@ -145,6 +170,12 @@ class TecnopricesScraper(BaseDistributorScraper):
                         product_url=prod_url,
                         scraped_at=now_str
                     ))
+
+                # Para los primeros 15 resultados cuyo precio sea 0, consultar los metadatos JSON-LD en paralelo
+                items_needing_price = [item for item in results[:15] if item.price <= 0]
+                if items_needing_price:
+                    tasks = [self.fetch_item_price_from_detail(client, item) for item in items_needing_price]
+                    await asyncio.gather(*tasks, return_exceptions=True)
 
         except Exception as e:
             pass
