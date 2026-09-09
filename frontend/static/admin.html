@@ -135,50 +135,50 @@
     </div>
 
     <!-- 2. NAVEGACIÓN POR PESTAÑAS DEL DASHBOARD -->
-    <div class="flex border-b border-slate-800 bg-[#0a101c]/80 rounded-t-2xl px-4 font-brand text-xs sm:text-sm font-bold overflow-x-auto">
+    <div class="grid grid-cols-5 border-b border-slate-800 bg-[#0a101c]/80 rounded-t-2xl px-1 sm:px-3 font-brand text-[11px] sm:text-xs md:text-sm font-bold w-full">
       <button 
         id="tab-btn-repairs"
         onclick="switchAdminTab('repairs')" 
-        class="admin-nav-tab py-4 px-5 border-b-2 border-[#00f5a0] text-[#00f5a0] flex items-center gap-2 whitespace-nowrap transition-colors"
+        class="admin-nav-tab py-3.5 px-1 sm:px-3 border-b-2 border-[#00f5a0] text-[#00f5a0] flex items-center justify-center gap-1.5 sm:gap-2 text-center transition-colors w-full min-w-0 font-bold"
       >
-        <i data-lucide="wrench" class="w-4 h-4"></i>
-        <span>1. CONTROL DE REPARACIONES (TICKETS)</span>
+        <i data-lucide="wrench" class="w-4 h-4 flex-shrink-0"></i>
+        <span class="truncate">1. REPARACIONES</span>
       </button>
 
       <button 
         id="tab-btn-new-order"
         onclick="switchAdminTab('new-order')" 
-        class="admin-nav-tab py-4 px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors"
+        class="admin-nav-tab py-3.5 px-1 sm:px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 sm:gap-2 text-center transition-colors w-full min-w-0 font-bold"
       >
-        <i data-lucide="plus-circle" class="w-4 h-4"></i>
-        <span>2. REGISTRAR NUEVO EQUIPO</span>
+        <i data-lucide="plus-circle" class="w-4 h-4 flex-shrink-0"></i>
+        <span class="truncate">2. NUEVO EQUIPO</span>
       </button>
 
       <button 
         id="tab-btn-pricing"
         onclick="switchAdminTab('pricing')" 
-        class="admin-nav-tab py-4 px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors"
+        class="admin-nav-tab py-3.5 px-1 sm:px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 sm:gap-2 text-center transition-colors w-full min-w-0 font-bold"
       >
-        <i data-lucide="tag" class="w-4 h-4"></i>
-        <span>3. GESTOR DE PRECIOS & MODELOS</span>
+        <i data-lucide="tag" class="w-4 h-4 flex-shrink-0"></i>
+        <span class="truncate">3. PRECIOS & MODELOS</span>
       </button>
 
       <button 
         id="tab-btn-stock"
         onclick="switchAdminTab('stock')" 
-        class="admin-nav-tab py-4 px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors"
+        class="admin-nav-tab py-3.5 px-1 sm:px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 sm:gap-2 text-center transition-colors w-full min-w-0 font-bold"
       >
-        <i data-lucide="package" class="w-4 h-4"></i>
-        <span>4. INVENTARIO DE REPUESTOS</span>
+        <i data-lucide="package" class="w-4 h-4 flex-shrink-0"></i>
+        <span class="truncate">4. INVENTARIO</span>
       </button>
 
       <button 
         id="tab-btn-customers"
         onclick="switchAdminTab('customers')" 
-        class="admin-nav-tab py-4 px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors"
+        class="admin-nav-tab py-3.5 px-1 sm:px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 sm:gap-2 text-center transition-colors w-full min-w-0 font-bold"
       >
-        <i data-lucide="users" class="w-4 h-4"></i>
-        <span>5. BASE DE DATOS DE CLIENTES</span>
+        <i data-lucide="users" class="w-4 h-4 flex-shrink-0"></i>
+        <span class="truncate">5. CLIENTES</span>
       </button>
     </div>
 
