@@ -42,7 +42,7 @@ body {
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Colores de marca exactos */
+/* Colores de marca en modo oscuro */
 .text-cyan-neon {
   color: #00CFE8;
 }
@@ -79,8 +79,8 @@ body {
 }
 
 /* Botón CTA Principal */
-.btn-cyber {
-  background: linear-gradient(135deg, #00CFE8 0%, #00E5B0 100%);
+.btn-cyber, .wilo-btn-primary, #calc-whatsapp-btn, .bg-gradient-to-r {
+  background: linear-gradient(135deg, #00CFE8 0%, #00E5B0 100%) !important;
   color: #06101F !important;
   font-family: 'Orbitron', sans-serif;
   font-weight: 700;
@@ -88,10 +88,15 @@ body {
   box-shadow: 0 4px 18px rgba(0, 207, 232, 0.25);
 }
 
-.btn-cyber:hover {
+.btn-cyber:hover, .wilo-btn-primary:hover, #calc-whatsapp-btn:hover, .bg-gradient-to-r:hover {
   background: #00B8D4 !important;
+  color: #06101F !important;
   transform: translateY(-2px);
   box-shadow: 0 6px 25px rgba(0, 207, 232, 0.35), 0 0 15px rgba(0, 229, 176, 0.2);
+}
+
+.btn-cyber *, .wilo-btn-primary *, #calc-whatsapp-btn *, .bg-gradient-to-r * {
+  color: #06101F !important;
 }
 
 /* Botón Secundario Oficial */
@@ -149,6 +154,12 @@ body {
   box-shadow: 0 12px 30px -10px rgba(0, 207, 232, 0.2), 0 0 15px rgba(0, 229, 176, 0.12);
 }
 
+/* Select option contrast */
+select option {
+  background-color: #0B1228 !important;
+  color: #FFFFFF !important;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -196,7 +207,8 @@ body {
 }
 
 /* ==========================================================================
-   PALETA OFICIAL MODO CLARO WILOTECH: #0B1228 + #00CFE8 + #00E5B0 + #F8FAFC
+   PALETA OFICIAL MODO CLARO WILOTECH CON CONTRASTE 100% GARANTIZADO
+   #0B1228 (Navy) + #00CFE8 (Cian) + #00E5B0 (Turquesa) + #F8FAFC (Fondo)
    ========================================================================== */
 
 html.light,
@@ -335,32 +347,58 @@ html[data-theme="light"] .text-white,
 html.light .text-slate-100,
 html[data-theme="light"] .text-slate-100,
 html.light .text-slate-200,
-html[data-theme="light"] .text-slate-200,
-html.light .text-slate-300,
-html[data-theme="light"] .text-slate-300 {
+html[data-theme="light"] .text-slate-200 {
   color: #0B1228 !important;
 }
 
-html.light .text-slate-400,
-html[data-theme="light"] .text-slate-400,
-html.light .text-slate-500,
-html[data-theme="light"] .text-slate-500 {
+/* Textos Secundarios Nítidos en Modo Claro */
+html.light .text-slate-300, html[data-theme="light"] .text-slate-300,
+html.light .text-slate-400, html[data-theme="light"] .text-slate-400,
+html.light .text-slate-500, html[data-theme="light"] .text-slate-500 {
   color: #4A5568 !important;
 }
 
-/* Resaltados de Marca en Modo Claro (#00CFE8 & #00E5B0) */
-html.light .text-[#00f5a0],
-html[data-theme="light"] .text-[#00f5a0],
-html.light .text-[#00ff87],
-html[data-theme="light"] .text-[#00ff87] {
-  color: #00E5B0 !important;
+/* Resaltados de Marca Nítidos en Modo Claro */
+html.light .text-cyan-200, html[data-theme="light"] .text-cyan-200,
+html.light .text-cyan-300, html[data-theme="light"] .text-cyan-300,
+html.light .text-cyan-400, html[data-theme="light"] .text-cyan-400,
+html.light .text-[#00d2ff], html[data-theme="light"] .text-[#00d2ff],
+html.light .text-[#00f0ff], html[data-theme="light"] .text-[#00f0ff],
+html.light .text-[#00CFE8], html[data-theme="light"] .text-[#00CFE8] {
+  color: #0099B8 !important; /* Deep Rich Cyan for high contrast on light backgrounds */
 }
 
-html.light .text-[#00d2ff],
-html[data-theme="light"] .text-[#00d2ff],
-html.light .text-[#00f0ff],
-html[data-theme="light"] .text-[#00f0ff] {
-  color: #00CFE8 !important;
+html.light .text-emerald-300, html[data-theme="light"] .text-emerald-300,
+html.light .text-emerald-400, html[data-theme="light"] .text-emerald-400,
+html.light .text-[#00f5a0], html[data-theme="light"] .text-[#00f5a0],
+html.light .text-[#00ff87], html[data-theme="light"] .text-[#00ff87],
+html.light .text-[#00E5B0], html[data-theme="light"] .text-[#00E5B0] {
+  color: #00B386 !important; /* Deep Rich Emerald for high contrast on light backgrounds */
+}
+
+html.light .text-amber-300, html[data-theme="light"] .text-amber-300,
+html.light .text-amber-400, html[data-theme="light"] .text-amber-400 {
+  color: #D97706 !important;
+}
+
+html.light .text-rose-300, html[data-theme="light"] .text-rose-300,
+html.light .text-rose-400, html[data-theme="light"] .text-rose-400 {
+  color: #DC2626 !important;
+}
+
+/* Badges y Pills en Modo Claro */
+html.light .bg-cyan-500\/10, html[data-theme="light"] .bg-cyan-500\/10,
+html.light .bg-cyan-500\/20, html[data-theme="light"] .bg-cyan-500\/20 {
+  background-color: rgba(0, 207, 232, 0.12) !important;
+  border-color: rgba(0, 207, 232, 0.3) !important;
+  color: #0099B8 !important;
+}
+
+html.light .bg-emerald-500\/10, html[data-theme="light"] .bg-emerald-500\/10,
+html.light .bg-emerald-500\/20, html[data-theme="light"] .bg-emerald-500\/20 {
+  background-color: rgba(0, 229, 176, 0.12) !important;
+  border-color: rgba(0, 229, 176, 0.3) !important;
+  color: #00B386 !important;
 }
 
 /* Bordes en Modo Claro */
@@ -380,6 +418,12 @@ html[data-theme="light"] input, html[data-theme="light"] select, html[data-theme
   color: #0B1228 !important;
   border: 1px solid #E4F0F5 !important;
   box-shadow: 0 1px 3px rgba(11, 18, 40, 0.03) !important;
+}
+
+html.light select option,
+html[data-theme="light"] select option {
+  background-color: #FFFFFF !important;
+  color: #0B1228 !important;
 }
 
 html.light input:focus, html.light select:focus, html.light textarea:focus,
@@ -403,48 +447,10 @@ html[data-theme="light"] .calc-cat-btn {
 
 html.light .calc-cat-btn.border-\[\#00f5a0\],
 html[data-theme="light"] .calc-cat-btn.border-\[\#00f5a0\] {
-  background-color: rgba(0, 229, 176, 0.1) !important;
+  background-color: rgba(0, 229, 176, 0.12) !important;
   border-color: #00E5B0 !important;
   color: #0B1228 !important;
   box-shadow: 0 4px 12px rgba(0, 229, 176, 0.15) !important;
-}
-
-/* CTA Principal: #00CFE8 -> #00E5B0 | Texto: #06101F | Hover: #00B8D4 */
-html.light .bg-gradient-to-r,
-html[data-theme="light"] .bg-gradient-to-r,
-html.light .btn-cyber,
-html[data-theme="light"] .btn-cyber,
-html.light .wilo-btn-primary,
-html[data-theme="light"] .wilo-btn-primary,
-html.light #calc-whatsapp-btn,
-html[data-theme="light"] #calc-whatsapp-btn {
-  background: linear-gradient(135deg, #00CFE8 0%, #00E5B0 100%) !important;
-  color: #06101F !important;
-  box-shadow: 0 4px 18px rgba(0, 207, 232, 0.25) !important;
-}
-
-html.light .bg-gradient-to-r:hover,
-html[data-theme="light"] .bg-gradient-to-r:hover,
-html.light .btn-cyber:hover,
-html[data-theme="light"] .btn-cyber:hover,
-html.light .wilo-btn-primary:hover,
-html[data-theme="light"] .wilo-btn-primary:hover,
-html.light #calc-whatsapp-btn:hover,
-html[data-theme="light"] #calc-whatsapp-btn:hover {
-  background: #00B8D4 !important;
-  color: #06101F !important;
-  box-shadow: 0 6px 24px rgba(0, 207, 232, 0.35), 0 0 15px rgba(0, 229, 176, 0.2) !important;
-}
-
-html.light .bg-gradient-to-r *,
-html[data-theme="light"] .bg-gradient-to-r *,
-html.light .btn-cyber *,
-html[data-theme="light"] .btn-cyber *,
-html.light .wilo-btn-primary *,
-html[data-theme="light"] .wilo-btn-primary *,
-html.light #calc-whatsapp-btn *,
-html[data-theme="light"] #calc-whatsapp-btn * {
-  color: #06101F !important;
 }
 
 /* Botón Secundario Especificado: Fondo #0B1228 | Texto #FFFFFF | Hover #17213A */
@@ -455,7 +461,9 @@ html[data-theme="light"] .wilo-btn-secondary,
 html.light header a[href="admin.html"],
 html[data-theme="light"] header a[href="admin.html"],
 html.light header a[href="/admin.html"],
-html[data-theme="light"] header a[href="/admin.html"] {
+html[data-theme="light"] header a[href="/admin.html"],
+html.light .toast,
+html[data-theme="light"] .toast {
   background-color: #0B1228 !important;
   color: #FFFFFF !important;
   border: 1px solid rgba(0, 207, 232, 0.3) !important;
@@ -479,7 +487,9 @@ html.light .btn-secondary *,
 html[data-theme="light"] .btn-secondary *,
 html.light header a[href="admin.html"] *,
 html[data-theme="light"] header a[href="admin.html"] *,
-html.light header a[href="/admin.html"] * {
+html.light header a[href="/admin.html"] *,
+html[data-theme="light"] header a[href="/admin.html"] *,
+html.light .toast * {
   color: #FFFFFF !important;
 }
 
