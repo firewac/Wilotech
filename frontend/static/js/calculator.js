@@ -78,12 +78,12 @@ const TechCalculator = (function () {
       }
     });
 
-    // Selector directo de Tipo de Dispositivo
+    // Selector directo de Tipo de Dispositivo (actualiza marcas de la categoría)
     if (elements.deviceTypeSelect) {
       elements.deviceTypeSelect.addEventListener("change", (e) => {
-        const val = e.target.value;
-        if (val && elements.customDeviceInput) {
-          elements.customDeviceInput.value = val;
+        const catId = e.target.value;
+        if (catId) {
+          selectCategory(catId);
         }
       });
     }
@@ -121,13 +121,17 @@ const TechCalculator = (function () {
 
   function selectCategory(categoryId) {
     selectedCategory = getActiveCatalog().categories.find(c => c.id === categoryId);
+    if (!selectedCategory) {
+      selectedCategory = getActiveCatalog().categories[0];
+    }
+
     selectedBrand = null;
     selectedModel = null;
     selectedFault = null;
 
     // Actualizar estilos activos de tabs
     document.querySelectorAll(".calc-cat-btn").forEach(btn => {
-      if (btn.dataset.category === categoryId) {
+      if (btn.dataset.category === selectedCategory.id) {
         btn.classList.add("border-[#00f5a0]", "bg-[#00f5a0]/15", "text-[#00f5a0]", "shadow-sm", "shadow-[#00f5a0]/25");
         btn.classList.remove("border-slate-700", "bg-[#0a101c]", "text-slate-300");
       } else {
@@ -136,17 +140,18 @@ const TechCalculator = (function () {
       }
     });
 
-    // Actualizar selector de tipo si corresponde
-    if (elements.deviceTypeSelect && selectedCategory) {
-      const typeOption = Array.from(elements.deviceTypeSelect.options).find(opt => 
-        opt.value.toLowerCase().includes(selectedCategory.id.toLowerCase()) || 
-        selectedCategory.name.toLowerCase().includes(opt.value.split('/')[0].trim().toLowerCase())
-      );
-      if (typeOption) elements.deviceTypeSelect.value = typeOption.value;
+    // Actualizar el selector de tipo de dispositivo
+    if (elements.deviceTypeSelect) {
+      elements.deviceTypeSelect.value = selectedCategory.id;
     }
 
-    // Cargar selector de marcas
-    elements.brandSelect.innerHTML = `<option value="">-- Selecciona una marca o línea --</option>` +
+    // Actualizar la casilla de texto con la categoría por defecto
+    if (elements.customDeviceInput) {
+      elements.customDeviceInput.value = selectedCategory.name;
+    }
+
+    // Cargar selector de marcas de la categoría seleccionada
+    elements.brandSelect.innerHTML = `<option value="">-- Marca de ${selectedCategory.name} --</option>` +
       selectedCategory.brands.map(b => `<option value="${b.id}">${b.name}</option>`).join("");
 
     elements.modelSelect.innerHTML = `<option value="">-- Primero selecciona una marca --</option>`;
