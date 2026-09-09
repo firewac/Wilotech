@@ -16,16 +16,10 @@
         extend: {
           colors: {
             cyber: {
-              cyan: '#00CFE8',
-              green: '#00E5B0',
-              dark: '#0B1228',
-              card: '#FFFFFF'
-            },
-            wilo: {
-              navy: '#0B1228',
-              cyan: '#00CFE8',
-              turquoise: '#00E5B0',
-              bg: '#F8FAFC'
+              cyan: '#00d2ff',
+              green: '#00f5a0',
+              dark: '#05070d',
+              card: 'rgba(10, 16, 28, 0.8)'
             }
           },
           fontFamily: {
@@ -35,20 +29,6 @@
         }
       }
     }
-  </script>
-
-  <!-- Script Antiparpadeo de Tema (Anti-FOUT) -->
-  <script>
-    (function() {
-      var stored = localStorage.getItem('theme');
-      if (stored === 'light') {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
-      } else {
-        document.documentElement.classList.remove('light');
-        document.documentElement.classList.add('dark');
-      }
-    })();
   </script>
 
   <!-- Lucide Icons -->
@@ -104,20 +84,6 @@
 
       <!-- Acciones de Contacto / Taller a la derecha -->
       <div class="flex items-center gap-3">
-        <!-- Botón Toggle Modo Claro / Oscuro -->
-        <button 
-          id="theme-toggle-btn" 
-          onclick="toggleTheme()"
-          type="button"
-          class="theme-toggle-btn p-2 sm:p-2.5 rounded-xl border border-[#00f5a0]/30 bg-[#0a101c] hover:border-[#00d2ff] hover:bg-[#10192a] text-slate-300 transition-all flex items-center justify-center cursor-pointer shadow-sm"
-          title="Cambiar a Modo Claro / Oscuro"
-          aria-label="Cambiar tema"
-        >
-          <span class="theme-toggle-icon flex items-center justify-center">
-            <i data-lucide="sun" class="w-5 h-5 text-amber-400"></i>
-          </span>
-        </button>
-
         <!-- Enlace Panel Taller (Técnicos) -->
         <a 
           href="admin.html"
@@ -948,7 +914,6 @@
   </div>
 
   <!-- Scripts de la Aplicación -->
-  <script src="js/theme.js"></script>
   <script src="js/data.js"></script>
   <script src="js/admin.js"></script>
   <script src="js/calculator.js"></script>

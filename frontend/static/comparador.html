@@ -17,20 +17,6 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- Script Antiparpadeo de Tema (Anti-FOUT) -->
-    <script>
-      (function() {
-        var stored = localStorage.getItem('theme');
-        if (stored === 'light') {
-          document.documentElement.classList.remove('dark');
-          document.documentElement.classList.add('light');
-        } else {
-          document.documentElement.classList.remove('light');
-          document.documentElement.classList.add('dark');
-        }
-      })();
-    </script>
-    
     <!-- Wilotech Custom Styles -->
     <link rel="stylesheet" href="css/styles.css">
     
@@ -41,15 +27,12 @@
                 extend: {
                     colors: {
                         wilo: {
-                            cyan: '#00CFE8',
-                            green: '#00E5B0',
-                            turquoise: '#00E5B0',
-                            navy: '#0B1228',
-                            dark: '#0B1228',
-                            bg: '#F8FAFC',
-                            surface: '#FFFFFF',
-                            card: '#FFFFFF',
-                            border: '#E4F0F5'
+                            cyan: '#00f0ff',
+                            green: '#00ff87',
+                            dark: '#07090e',
+                            surface: '#0d1320',
+                            card: '#101726',
+                            border: '#1e2d42'
                         }
                     },
                     fontFamily: {
@@ -88,20 +71,6 @@
             <!-- Acciones y Herramientas -->
             <div class="flex items-center gap-2.5 sm:gap-3">
                 
-                <!-- Botón Toggle Modo Claro / Oscuro -->
-                <button 
-                  id="theme-toggle-btn" 
-                  onclick="toggleTheme()"
-                  type="button"
-                  class="theme-toggle-btn p-2 rounded-xl bg-[#0d1526] hover:bg-[#131f38] border border-cyan-500/30 text-slate-300 transition-all flex items-center justify-center cursor-pointer shadow-sm"
-                  title="Cambiar a Modo Claro / Oscuro"
-                  aria-label="Cambiar tema"
-                >
-                  <span class="theme-toggle-icon flex items-center justify-center">
-                    <i data-lucide="sun" class="w-5 h-5 text-amber-400"></i>
-                  </span>
-                </button>
-
                 <!-- Botón Volver al Panel de Taller -->
                 <a href="/admin.html" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0d1526] hover:bg-[#131f38] border border-[#00ff87]/40 text-[#00ff87] text-xs font-semibold transition-all hover:border-[#00ff87] shadow-sm cursor-pointer font-tech">
                     <svg class="w-4 h-4 text-[#00ff87]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"></path></svg>
@@ -581,7 +550,6 @@
     </div>
 
     <!-- Scripts de la Aplicación -->
-    <script src="js/theme.js"></script>
     <script src="/static/app.js"></script>
 </body>
 </html>
