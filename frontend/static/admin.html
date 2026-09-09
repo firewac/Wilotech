@@ -31,6 +31,20 @@
     }
   </script>
 
+  <!-- Script Antiparpadeo de Tema (Anti-FOUT) -->
+  <script>
+    (function() {
+      var stored = localStorage.getItem('theme');
+      if (stored === 'light') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+      } else {
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -62,6 +76,20 @@
       </div>
 
       <div class="flex items-center gap-3 flex-wrap">
+        <!-- BOTÓN TOGGLE MODO CLARO / OSCURO -->
+        <button 
+          id="theme-toggle-btn" 
+          onclick="toggleTheme()"
+          type="button"
+          class="theme-toggle-btn p-2 rounded-xl border border-[#00f5a0]/30 bg-[#0a101c] hover:border-[#00d2ff] hover:bg-[#10192a] text-slate-300 transition-all flex items-center justify-center cursor-pointer shadow-sm"
+          title="Cambiar a Modo Claro / Oscuro"
+          aria-label="Cambiar tema"
+        >
+          <span class="theme-toggle-icon flex items-center justify-center">
+            <i data-lucide="sun" class="w-5 h-5 text-amber-400"></i>
+          </span>
+        </button>
+
         <!-- BOTÓN DESTACADO AL COMPARADOR DE REPUESTOS -->
         <a 
           href="comparador.html" 
@@ -72,7 +100,7 @@
         </a>
 
         <a 
-          href="index.html" 
+          href="/" 
           class="inline-flex items-center gap-2 py-2 px-4 rounded-xl border border-slate-700 bg-[#0a101c] hover:border-[#00f5a0] hover:text-[#00f5a0] text-xs font-brand font-bold transition-all text-slate-300"
         >
           <i data-lucide="external-link" class="w-4 h-4 text-[#00d2ff]"></i>
@@ -1345,5 +1373,6 @@
     });
   </script>
 
+  <script src="js/theme.js"></script>
 </body>
 </html>

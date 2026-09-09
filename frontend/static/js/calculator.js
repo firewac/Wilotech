@@ -232,8 +232,10 @@ const TechCalculator = (function () {
     if (!selectedFault) {
       elements.estimatedPrice.textContent = "$0 USD";
       elements.estimatedTime.textContent = "--";
-      elements.whatsappBtn.disabled = true;
-      elements.whatsappBtn.classList.add("opacity-50", "cursor-not-allowed");
+      if (elements.whatsappBtn) {
+        elements.whatsappBtn.disabled = false;
+        elements.whatsappBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      }
       return;
     }
 
@@ -248,28 +250,43 @@ const TechCalculator = (function () {
     elements.estimatedPrice.textContent = `$${finalPrice} USD`;
     elements.estimatedTime.textContent = timeText;
 
-    elements.whatsappBtn.disabled = false;
-    elements.whatsappBtn.classList.remove("opacity-50", "cursor-not-allowed");
+    if (elements.whatsappBtn) {
+      elements.whatsappBtn.disabled = false;
+      elements.whatsappBtn.classList.remove("opacity-50", "cursor-not-allowed");
+    }
   }
 
   function sendQuoteViaWhatsApp() {
-    if (!selectedFault) return;
+    let message = "";
+    
+    if (selectedFault) {
+      const catName = selectedCategory ? selectedCategory.name : "Equipo";
+      const brandName = selectedBrand ? selectedBrand.name : "";
+      const modelName = selectedModel || "Modelo no especificado";
+      const faultName = selectedFault.name;
+      const priceText = elements.estimatedPrice.textContent;
+      const timeText = elements.estimatedTime.textContent;
+      const expressNote = isExpress ? "⚡ Requiere Servicio Express Prioritario" : "Servicio de Taller Estándar";
 
-    const catName = selectedCategory ? selectedCategory.name : "Equipo";
-    const brandName = selectedBrand ? selectedBrand.name : "";
-    const modelName = selectedModel || "Modelo no especificado";
-    const faultName = selectedFault.name;
-    const priceText = elements.estimatedPrice.textContent;
-    const timeText = elements.estimatedTime.textContent;
-    const expressNote = isExpress ? "⚡ Requiere Servicio Express Prioritario" : "Servicio de Taller Estándar";
+      message = `Hola WILOTECH! Estuve cotizando en su web y deseo coordinar la reparación de mi equipo:\n\n` +
+        `📌 *Categoría:* ${catName}\n` +
+        `🏷️ *Dispositivo:* ${brandName} - ${modelName}\n` +
+        `🔧 *Falla / Servicio:* ${faultName}\n` +
+        `⏱️ *Tiempo estimado:* ${timeText}\n` +
+        `💵 *Presupuesto aprox.:* ${priceText} (${expressNote})\n\n` +
+        `¿Tienen disponibilidad en el laboratorio para recibir el equipo? ¡Muchas gracias!`;
+    } else {
+      const catName = selectedCategory ? selectedCategory.name : "";
+      const brandName = selectedBrand ? selectedBrand.name : "";
+      const modelName = selectedModel || "";
 
-    const message = `Hola WILOTECH! Estuve cotizando en su web y deseo coordinar la reparación de mi equipo:\n\n` +
-      `📌 *Categoría:* ${catName}\n` +
-      `🏷️ *Dispositivo:* ${brandName} - ${modelName}\n` +
-      `🔧 *Falla / Servicio:* ${faultName}\n` +
-      `⏱️ *Tiempo estimado:* ${timeText}\n` +
-      `💵 *Presupuesto aprox.:* ${priceText} (${expressNote})\n\n` +
-      `¿Tienen disponibilidad en el laboratorio para recibir el equipo? ¡Muchas gracias!`;
+      let deviceDetail = "";
+      if (catName || brandName || modelName) {
+        deviceDetail = ` para mi ${catName} ${brandName} ${modelName}`.replace(/\s+/g, ' ').trim();
+      }
+
+      message = `Hola WILOTECH! Quisiera solicitar una cotización y consulta técnica${deviceDetail ? ' ' + deviceDetail : ''} en su laboratorio. ¿Podrían asesorarme? ¡Muchas gracias!`;
+    }
 
     const encodedMessage = encodeURIComponent(message);
     const phoneNumber = "542235914163"; // Número comercial del laboratorio (Mar del Plata)

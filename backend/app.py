@@ -74,6 +74,8 @@ for sub in ["js", "css", "assets"]:
         app.mount(f"/{sub}", StaticFiles(directory=str(sub_dir)), name=sub)
 
 @app.get("/")
+@app.get("/index.html")
+@app.get("/index")
 async def root():
     index_file = STATIC_DIR / "index.html"
     if index_file.exists():

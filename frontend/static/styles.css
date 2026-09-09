@@ -40,6 +40,27 @@ body {
         linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
     background-size: 100% 100%, 100% 100%, 100% 100%, 36px 36px, 36px 36px;
     background-attachment: fixed;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Modo Claro Ultra Luminoso (Fondo Blanco) */
+html.light, html[data-theme="light"] {
+    --wilo-bg: #ffffff;
+    --wilo-bg-alt: #f8fafc;
+    --wilo-surface: #ffffff;
+    --wilo-surface-hover: #f1f5f9;
+    --wilo-border: #cbd5e1;
+    --wilo-border-bright: rgba(0, 180, 216, 0.4);
+}
+
+html.light body, html[data-theme="light"] body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    background-image: 
+        radial-gradient(circle at 15% 10%, rgba(0, 180, 216, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 85% 10%, rgba(0, 200, 130, 0.05) 0%, transparent 40%),
+        linear-gradient(to right, rgba(226, 232, 240, 0.7) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(226, 232, 240, 0.7) 1px, transparent 1px) !important;
 }
 
 /* Estilo Tech para títulos */
@@ -78,7 +99,7 @@ body {
 
 /* Gradiente oficial Wilotech (Cyan to Mint Green) */
 .wilo-gradient-text {
-    background: linear-gradient(135deg, #ffffff 0%, var(--wilo-cyan) 45%, var(--wilo-green) 100%);
+    background: linear-gradient(135deg, #00d2ff 0%, #00f5a0 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -109,7 +130,7 @@ body {
 /* Botón principal Wilotech */
 .wilo-btn-primary {
     background: linear-gradient(135deg, #00f0ff 0%, #00ff87 100%);
-    color: #06090e;
+    color: #06090e !important;
     font-weight: 700;
     box-shadow: 0 4px 18px -2px rgba(0, 255, 135, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -130,7 +151,7 @@ body {
 }
 .transition-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 16px 32px -10px rgba(0, 0, 0, 0.6), 0 0 20px -5px rgba(0, 240, 255, 0.15);
+    box-shadow: 0 16px 32px -10px rgba(0, 0, 0, 0.15), 0 0 20px -5px rgba(0, 240, 255, 0.15);
     border-color: rgba(0, 240, 255, 0.35) !important;
 }
 
@@ -138,7 +159,7 @@ body {
 .best-deal-glow {
     position: relative;
     border: 1px solid rgba(0, 255, 135, 0.65) !important;
-    background: linear-gradient(135deg, rgba(0, 255, 135, 0.08) 0%, rgba(0, 240, 255, 0.04) 40%, rgba(11, 15, 25, 0.95) 100%) !important;
+    background: linear-gradient(135deg, rgba(0, 255, 135, 0.08) 0%, rgba(0, 240, 255, 0.04) 40%, var(--wilo-surface) 100%) !important;
     box-shadow: 0 0 28px -5px rgba(0, 255, 135, 0.3), inset 0 0 20px -10px rgba(0, 240, 255, 0.15) !important;
 }
 .best-deal-glow::before {
@@ -184,22 +205,35 @@ body {
 .distributor-pill-active-web {
     background: rgba(0, 240, 255, 0.08) !important;
     border-color: rgba(0, 240, 255, 0.45) !important;
-    color: #e0faff !important;
+    color: #0284c7 !important;
     box-shadow: 0 0 12px -2px rgba(0, 240, 255, 0.2) !important;
+}
+
+html.dark .distributor-pill-active-web, html[data-theme="dark"] .distributor-pill-active-web {
+    color: #e0faff !important;
 }
 
 .distributor-pill-active-excel {
     background: rgba(0, 255, 135, 0.08) !important;
     border-color: rgba(0, 255, 135, 0.45) !important;
-    color: #e6fff3 !important;
+    color: #059669 !important;
     box-shadow: 0 0 12px -2px rgba(0, 255, 135, 0.2) !important;
+}
+
+html.dark .distributor-pill-active-excel, html[data-theme="dark"] .distributor-pill-active-excel {
+    color: #e6fff3 !important;
 }
 
 /* Animación de carga para scrapers en paralelo */
 .shimmer {
-    background: linear-gradient(90deg, #0f1728 25%, #1c273e 50%, #0f1728 75%);
+    background: linear-gradient(90deg, #f8fafc 25%, #e2e8f0 50%, #f8fafc 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
+}
+
+html.dark .shimmer, html[data-theme="dark"] .shimmer {
+    background: linear-gradient(90deg, #0f1728 25%, #1c273e 50%, #0f1728 75%);
+    background-size: 200% 100%;
 }
 
 @keyframes shimmer {
