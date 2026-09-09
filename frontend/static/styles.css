@@ -1,25 +1,32 @@
 /* ==========================================================================
    WILOTECH — LABORATORIO TÉCNICO
    Sistema de Diseño Cyber-Lab & Comparador Inteligente de Repuestos
+   Paleta Oficial: Navy (#0B1228) + Cian (#00CFE8) + Turquesa (#00E5B0) + Light (#F8FAFC)
    ========================================================================== */
 
 :root {
-    --wilo-cyan: #00f0ff;
-    --wilo-cyan-hover: #33f3ff;
-    --wilo-cyan-dim: rgba(0, 240, 255, 0.15);
-    --wilo-cyan-glow: rgba(0, 240, 255, 0.35);
+    --wilo-navy: #0B1228;
+    --wilo-cian: #00CFE8;
+    --wilo-turquoise: #00E5B0;
+    --wilo-light-bg: #F8FAFC;
+    --wilo-gradient-official: linear-gradient(135deg, #00CFE8 0%, #00E5B0 100%);
 
-    --wilo-green: #00ff87;
-    --wilo-green-hover: #33ff9f;
-    --wilo-green-dim: rgba(0, 255, 135, 0.15);
-    --wilo-green-glow: rgba(0, 255, 135, 0.35);
+    --wilo-cyan: #00CFE8;
+    --wilo-cyan-hover: #00B8D4;
+    --wilo-cyan-dim: rgba(0, 207, 232, 0.15);
+    --wilo-cyan-glow: rgba(0, 207, 232, 0.25);
+
+    --wilo-green: #00E5B0;
+    --wilo-green-hover: #00D4A0;
+    --wilo-green-dim: rgba(0, 229, 176, 0.12);
+    --wilo-green-glow: rgba(0, 229, 176, 0.25);
 
     --wilo-bg: #07090e;
     --wilo-bg-alt: #0b0f19;
     --wilo-surface: rgba(13, 19, 32, 0.75);
     --wilo-surface-hover: rgba(20, 29, 48, 0.85);
     --wilo-border: rgba(30, 45, 68, 0.75);
-    --wilo-border-bright: rgba(0, 240, 255, 0.3);
+    --wilo-border-bright: rgba(0, 207, 232, 0.3);
 
     --font-tech: 'Rajdhani', 'Orbitron', -apple-system, sans-serif;
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -33,9 +40,9 @@ body {
     color: #f1f5f9;
     min-height: 100vh;
     background-image: 
-        radial-gradient(circle at 15% 10%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 85% 10%, rgba(0, 255, 135, 0.07) 0%, transparent 40%),
-        radial-gradient(circle at 50% 60%, rgba(0, 240, 255, 0.03) 0%, transparent 60%),
+        radial-gradient(circle at 15% 10%, rgba(0, 207, 232, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 10%, rgba(0, 229, 176, 0.07) 0%, transparent 40%),
+        radial-gradient(circle at 50% 60%, rgba(0, 207, 232, 0.03) 0%, transparent 60%),
         linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
     background-size: 100% 100%, 100% 100%, 100% 100%, 36px 36px, 36px 36px;
@@ -43,24 +50,25 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Modo Claro Armonioso */
+/* Modo Claro Oficial WILOTECH */
 html.light, html[data-theme="light"] {
-    --wilo-bg: #f8fafc;
-    --wilo-bg-alt: #ffffff;
-    --wilo-surface: #ffffff;
-    --wilo-surface-hover: #f1f5f9;
-    --wilo-border: #cbd5e1;
-    --wilo-border-bright: rgba(0, 180, 216, 0.4);
+    --wilo-bg: #F8FAFC;
+    --wilo-bg-alt: #FFFFFF;
+    --wilo-surface: #FFFFFF;
+    --wilo-surface-hover: #EDF4F7;
+    --wilo-border: #E4F0F5;
+    --wilo-border-bright: rgba(0, 207, 232, 0.4);
 }
 
 html.light body, html[data-theme="light"] body {
-    background-color: #f8fafc !important;
-    color: #0f172a !important;
+    background-color: #F8FAFC !important;
+    color: #0B1228 !important;
     background-image: 
-        radial-gradient(circle at 15% 10%, rgba(0, 160, 230, 0.06) 0%, transparent 40%),
-        radial-gradient(circle at 85% 10%, rgba(0, 200, 120, 0.05) 0%, transparent 40%),
-        linear-gradient(to right, rgba(203, 213, 225, 0.4) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(203, 213, 225, 0.4) 1px, transparent 1px) !important;
+        radial-gradient(circle at 15% 15%, rgba(0, 207, 232, 0.07) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(0, 229, 176, 0.07) 0%, transparent 45%),
+        linear-gradient(to right, rgba(228, 240, 245, 0.65) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(237, 244, 247, 0.65) 1px, transparent 1px) !important;
+    background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px !important;
 }
 
 /* Estilo Tech para títulos */
@@ -80,32 +88,32 @@ html.light body, html[data-theme="light"] body {
 ::-webkit-scrollbar-thumb {
     background: #1b263b;
     border-radius: 4px;
-    border: 1px solid rgba(0, 240, 255, 0.1);
+    border: 1px solid rgba(0, 207, 232, 0.1);
 }
 ::-webkit-scrollbar-thumb:hover {
     background: #273852;
-    border-color: rgba(0, 255, 135, 0.3);
+    border-color: rgba(0, 229, 176, 0.3);
 }
 
 /* Logo oficial con resplandor neón */
 .wilo-logo-img {
-    filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.35)) drop-shadow(0 0 30px rgba(0, 255, 135, 0.2));
+    filter: drop-shadow(0 0 16px rgba(0, 207, 232, 0.35)) drop-shadow(0 0 30px rgba(0, 229, 176, 0.2));
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
 }
 .wilo-logo-img:hover {
     transform: scale(1.04) rotate(-1deg);
-    filter: drop-shadow(0 0 22px rgba(0, 240, 255, 0.55)) drop-shadow(0 0 40px rgba(0, 255, 135, 0.4));
+    filter: drop-shadow(0 0 22px rgba(0, 207, 232, 0.55)) drop-shadow(0 0 40px rgba(0, 229, 176, 0.4));
 }
 
-/* Gradiente oficial Wilotech (Cyan to Mint Green) */
+/* Gradiente oficial Wilotech (#00CFE8 -> #00E5B0) */
 .wilo-gradient-text {
-    background: linear-gradient(135deg, #00d2ff 0%, #00f5a0 100%);
+    background: linear-gradient(135deg, #00CFE8 0%, #00E5B0 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 .wilo-gradient-brand {
-    background: linear-gradient(135deg, var(--wilo-cyan) 0%, var(--wilo-green) 100%);
+    background: linear-gradient(135deg, #00CFE8 0%, #00E5B0 100%);
 }
 
 .wilo-gradient-border {
@@ -118,7 +126,7 @@ html.light body, html[data-theme="light"] body {
     position: absolute;
     inset: -1px;
     border-radius: inherit;
-    background: linear-gradient(135deg, rgba(0, 240, 255, 0.4), rgba(0, 255, 135, 0.4));
+    background: linear-gradient(135deg, rgba(0, 207, 232, 0.4), rgba(0, 229, 176, 0.4));
     z-index: -1;
     opacity: 0.6;
     transition: opacity 0.25s ease;
@@ -127,17 +135,18 @@ html.light body, html[data-theme="light"] body {
     opacity: 1;
 }
 
-/* Botón principal Wilotech */
+/* Botón principal CTA Wilotech */
 .wilo-btn-primary {
-    background: linear-gradient(135deg, #00f0ff 0%, #00ff87 100%);
-    color: #06090e !important;
+    background: linear-gradient(135deg, #00CFE8 0%, #00E5B0 100%);
+    color: #06101F !important;
     font-weight: 700;
-    box-shadow: 0 4px 18px -2px rgba(0, 255, 135, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 18px -2px rgba(0, 207, 232, 0.35);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .wilo-btn-primary:hover {
+    background: #00B8D4 !important;
     transform: translateY(-1.5px);
-    box-shadow: 0 6px 24px -2px rgba(0, 240, 255, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    box-shadow: 0 6px 24px -2px rgba(0, 207, 232, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6);
     filter: brightness(1.06);
 }
 .wilo-btn-primary:active {
@@ -151,16 +160,16 @@ html.light body, html[data-theme="light"] body {
 }
 .transition-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 16px 32px -10px rgba(0, 0, 0, 0.15), 0 0 20px -5px rgba(0, 240, 255, 0.15);
-    border-color: rgba(0, 240, 255, 0.35) !important;
+    box-shadow: 0 16px 32px -10px rgba(11, 18, 40, 0.15), 0 0 15px rgba(0, 207, 232, 0.15);
+    border-color: rgba(0, 207, 232, 0.35) !important;
 }
 
 /* Efecto de resplandor para la MEJOR OFERTA */
 .best-deal-glow {
     position: relative;
-    border: 1px solid rgba(0, 255, 135, 0.65) !important;
-    background: linear-gradient(135deg, rgba(0, 255, 135, 0.08) 0%, rgba(0, 240, 255, 0.04) 40%, var(--wilo-surface) 100%) !important;
-    box-shadow: 0 0 28px -5px rgba(0, 255, 135, 0.3), inset 0 0 20px -10px rgba(0, 240, 255, 0.15) !important;
+    border: 1px solid rgba(0, 229, 176, 0.65) !important;
+    background: linear-gradient(135deg, rgba(0, 229, 176, 0.08) 0%, rgba(0, 207, 232, 0.04) 40%, var(--wilo-surface) 100%) !important;
+    box-shadow: 0 0 20px -5px rgba(0, 229, 176, 0.25), inset 0 0 15px -10px rgba(0, 207, 232, 0.12) !important;
 }
 .best-deal-glow::before {
     content: '';
@@ -169,23 +178,23 @@ html.light body, html[data-theme="light"] body {
     top: 0;
     bottom: 0;
     width: 4px;
-    background: linear-gradient(180deg, var(--wilo-cyan) 0%, var(--wilo-green) 100%);
+    background: linear-gradient(180deg, #00CFE8 0%, #00E5B0 100%);
     border-radius: 4px 0 0 4px;
 }
 
 .best-deal-badge {
     animation: pulse-badge 2.4s infinite ease-in-out;
-    box-shadow: 0 0 14px rgba(0, 255, 135, 0.35);
+    box-shadow: 0 0 14px rgba(0, 229, 176, 0.35);
 }
 
 @keyframes pulse-badge {
     0%, 100% {
         transform: scale(1);
-        box-shadow: 0 0 10px rgba(0, 255, 135, 0.25);
+        box-shadow: 0 0 10px rgba(0, 229, 176, 0.25);
     }
     50% {
         transform: scale(1.04);
-        box-shadow: 0 0 18px rgba(0, 240, 255, 0.45);
+        box-shadow: 0 0 18px rgba(0, 207, 232, 0.45);
     }
 }
 
@@ -194,39 +203,31 @@ html.light body, html[data-theme="light"] body {
     transition: all 0.18s ease;
 }
 .suggestion-chip:hover {
-    border-color: rgba(0, 240, 255, 0.4);
-    background-color: rgba(0, 240, 255, 0.08);
-    color: #ffffff;
+    border-color: rgba(0, 207, 232, 0.4);
+    background-color: rgba(0, 207, 232, 0.08);
+    color: #0B1228;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px -2px rgba(0, 240, 255, 0.2);
+    box-shadow: 0 4px 12px -2px rgba(0, 207, 232, 0.2);
 }
 
 /* Pills de distribuidoras activas */
 .distributor-pill-active-web {
-    background: rgba(0, 240, 255, 0.08) !important;
-    border-color: rgba(0, 240, 255, 0.45) !important;
-    color: #0284c7 !important;
-    box-shadow: 0 0 12px -2px rgba(0, 240, 255, 0.2) !important;
-}
-
-html.dark .distributor-pill-active-web, html[data-theme="dark"] .distributor-pill-active-web {
-    color: #e0faff !important;
+    background: rgba(0, 207, 232, 0.08) !important;
+    border-color: rgba(0, 207, 232, 0.45) !important;
+    color: #00CFE8 !important;
+    box-shadow: 0 0 12px -2px rgba(0, 207, 232, 0.15) !important;
 }
 
 .distributor-pill-active-excel {
-    background: rgba(0, 255, 135, 0.08) !important;
-    border-color: rgba(0, 255, 135, 0.45) !important;
-    color: #059669 !important;
-    box-shadow: 0 0 12px -2px rgba(0, 255, 135, 0.2) !important;
+    background: rgba(0, 229, 176, 0.08) !important;
+    border-color: rgba(0, 229, 176, 0.45) !important;
+    color: #00E5B0 !important;
+    box-shadow: 0 0 12px -2px rgba(0, 229, 176, 0.12) !important;
 }
 
-html.dark .distributor-pill-active-excel, html[data-theme="dark"] .distributor-pill-active-excel {
-    color: #e6fff3 !important;
-}
-
-/* Animación de carga para scrapers en paralelo */
+/* Animación de carga */
 .shimmer {
-    background: linear-gradient(90deg, #f8fafc 25%, #e2e8f0 50%, #f8fafc 75%);
+    background: linear-gradient(90deg, #F8FAFC 25%, #E4F0F5 50%, #F8FAFC 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 }
@@ -243,15 +244,15 @@ html.dark .shimmer, html[data-theme="dark"] .shimmer {
 
 /* Línea decorativa del logo */
 .circuit-line {
-    background: linear-gradient(90deg, transparent 0%, var(--wilo-cyan) 30%, var(--wilo-green) 70%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, #00CFE8 30%, #00E5B0 70%, transparent 100%);
     height: 1.5px;
     opacity: 0.65;
 }
 
 /* Glow para badges de estado */
 .neon-glow-green {
-    box-shadow: 0 0 8px #00ff87;
+    box-shadow: 0 0 8px #00E5B0;
 }
 .neon-glow-cyan {
-    box-shadow: 0 0 8px #00f0ff;
+    box-shadow: 0 0 8px #00CFE8;
 }
