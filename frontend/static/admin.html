@@ -36,6 +36,26 @@
 
   <!-- Custom Styles -->
   <link rel="stylesheet" href="css/styles.css">
+
+  <style>
+    /* Mobile Touch & Scrollbar Optimizations */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (max-width: 640px) {
+      input[type="text"], input[type="number"], select, textarea {
+        font-size: 16px !important; /* Prevents auto-zoom on iOS Safari */
+      }
+    }
+    .touch-action-manipulation {
+      touch-action: manipulation;
+    }
+  </style>
 </head>
 <body class="lab-grid-bg text-slate-200 min-h-screen flex flex-col font-tech selection:bg-[#00f5a0] selection:text-slate-950">
 
@@ -44,48 +64,59 @@
 
   <!-- HEADER ADMINISTRATIVO -->
   <header class="w-full glass-panel border-b border-[#00f5a0]/25 bg-[#05070d]/95 sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
       
-      <div class="flex items-center gap-3.5">
-        <div class="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-[#00f5a0]/50 shadow-lg shadow-[#00f5a0]/20">
-          <img src="assets/logo.png" alt="WILOTECH" class="w-full h-full object-cover">
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="font-brand text-2xl font-black text-white">WILO<span class="text-[#00f5a0]">TECH</span></span>
-            <span class="font-brand text-[9px] font-bold uppercase bg-[#00f5a0]/20 text-[#00f5a0] border border-[#00f5a0]/40 px-2 py-0.5 rounded">
-              ADMIN DASHBOARD
-            </span>
+      <div class="flex items-center gap-3.5 w-full md:w-auto justify-between md:justify-start">
+        <div class="flex items-center gap-3">
+          <div class="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden border-2 border-[#00f5a0]/50 shadow-lg shadow-[#00f5a0]/20 shrink-0">
+            <img src="assets/logo.png" alt="WILOTECH" class="w-full h-full object-cover">
           </div>
-          <p class="font-brand text-[8px] tracking-[0.2em] text-[#00d2ff] uppercase">SISTEMA DE GESTIÓN TÉCNICA & TARIFAS</p>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-brand text-xl sm:text-2xl font-black text-white">WILO<span class="text-[#00f5a0]">TECH</span></span>
+              <span class="font-brand text-[9px] font-bold uppercase bg-[#00f5a0]/20 text-[#00f5a0] border border-[#00f5a0]/40 px-2 py-0.5 rounded hidden xs:inline-block">
+                ADMIN DASHBOARD
+              </span>
+            </div>
+            <p class="font-brand text-[8px] tracking-[0.18em] text-[#00d2ff] uppercase">SISTEMA DE GESTIÓN TÉCNICA & TARIFAS</p>
+          </div>
         </div>
+
+        <button 
+          onclick="logoutAdmin()" 
+          class="md:hidden inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-rose-500/40 bg-rose-950/30 text-rose-300 text-xs font-brand font-bold"
+          title="Cerrar sesión"
+        >
+          <i data-lucide="log-out" class="w-3.5 h-3.5 text-rose-400"></i>
+          <span>SALIR</span>
+        </button>
       </div>
 
-      <div class="flex items-center gap-3 flex-wrap">
+      <div class="flex items-center gap-2 sm:gap-3 flex-wrap w-full md:w-auto">
         <!-- BOTÓN DESTACADO AL COMPARADOR DE REPUESTOS -->
         <a 
           href="comparador.html" 
-          class="inline-flex items-center gap-2 py-2 px-4 rounded-xl border border-[#00f5a0] bg-[#00f5a0]/15 hover:bg-[#00f5a0]/30 text-[#00f5a0] text-xs font-brand font-bold transition-all shadow-lg shadow-[#00f5a0]/20"
+          class="inline-flex items-center justify-center gap-2 py-2 px-3 sm:px-4 rounded-xl border border-[#00f5a0] bg-[#00f5a0]/15 hover:bg-[#00f5a0]/30 text-[#00f5a0] text-xs font-brand font-bold transition-all shadow-lg shadow-[#00f5a0]/20 w-full sm:w-auto text-center"
         >
-          <i data-lucide="search" class="w-4 h-4 text-[#00f5a0]"></i>
-          <span>🔍 COMPARADOR DE REPUESTOS MAYORISTAS</span>
+          <i data-lucide="search" class="w-4 h-4 text-[#00f5a0] shrink-0"></i>
+          <span>COMPARADOR DE REPUESTOS MAYORISTAS</span>
         </a>
 
         <a 
           href="/" 
-          class="inline-flex items-center gap-2 py-2 px-4 rounded-xl border border-slate-700 bg-[#0a101c] hover:border-[#00f5a0] hover:text-[#00f5a0] text-xs font-brand font-bold transition-all text-slate-300"
+          class="inline-flex items-center justify-center gap-2 py-2 px-3 sm:px-4 rounded-xl border border-slate-700 bg-[#0a101c] hover:border-[#00f5a0] hover:text-[#00f5a0] text-xs font-brand font-bold transition-all text-slate-300 flex-1 sm:flex-none text-center"
         >
-          <i data-lucide="external-link" class="w-4 h-4 text-[#00d2ff]"></i>
-          <span>VER WEB PÚBLICA</span>
+          <i data-lucide="external-link" class="w-4 h-4 text-[#00d2ff] shrink-0"></i>
+          <span>WEB PÚBLICA</span>
         </a>
 
         <button 
           onclick="logoutAdmin()" 
-          class="inline-flex items-center gap-2 py-2 px-3.5 rounded-xl border border-rose-500/40 bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 text-xs font-brand font-bold transition-all"
+          class="hidden md:inline-flex items-center gap-2 py-2 px-3.5 rounded-xl border border-rose-500/40 bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 text-xs font-brand font-bold transition-all"
           title="Cerrar sesión de taller"
         >
           <i data-lucide="log-out" class="w-4 h-4 text-rose-400"></i>
-          <span class="hidden sm:inline">SALIR</span>
+          <span>SALIR</span>
         </button>
       </div>
 
@@ -93,92 +124,92 @@
   </header>
 
   <!-- CONTENIDO PRINCIPAL DEL DASHBOARD -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-8">
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 flex-grow w-full space-y-6 sm:space-y-8">
     
     <!-- 1. BARRA DE MÉTRICAS KPI -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="p-4 sm:p-5 rounded-2xl glass-panel border border-[#00f5a0]/20">
-        <div class="flex items-center justify-between text-slate-400 text-xs uppercase font-brand">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div class="p-3.5 sm:p-5 rounded-2xl glass-panel border border-[#00f5a0]/20">
+        <div class="flex items-center justify-between text-slate-400 text-[11px] sm:text-xs uppercase font-brand">
           <span>Órdenes Totales</span>
-          <i data-lucide="clipboard-list" class="w-5 h-5 text-[#00d2ff]"></i>
+          <i data-lucide="clipboard-list" class="w-4 h-4 sm:w-5 sm:h-5 text-[#00d2ff]"></i>
         </div>
-        <div id="stat-total-orders" class="font-brand text-3xl font-black text-white mt-2">0</div>
-        <p class="text-[11px] text-slate-500 mt-1">Registradas en sistema</p>
+        <div id="stat-total-orders" class="font-brand text-2xl sm:text-3xl font-black text-white mt-1.5 sm:mt-2">0</div>
+        <p class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 sm:mt-1">Registradas en sistema</p>
       </div>
 
-      <div class="p-4 sm:p-5 rounded-2xl glass-panel border border-amber-500/20">
-        <div class="flex items-center justify-between text-slate-400 text-xs uppercase font-brand">
+      <div class="p-3.5 sm:p-5 rounded-2xl glass-panel border border-amber-500/20">
+        <div class="flex items-center justify-between text-slate-400 text-[11px] sm:text-xs uppercase font-brand">
           <span>En Banco / Pruebas</span>
-          <i data-lucide="cpu" class="w-5 h-5 text-amber-400"></i>
+          <i data-lucide="cpu" class="w-4 h-4 sm:w-5 sm:h-5 text-amber-400"></i>
         </div>
-        <div id="stat-in-repair" class="font-brand text-3xl font-black text-amber-400 mt-2">0</div>
-        <p class="text-[11px] text-slate-500 mt-1">En diagnóstico o soldadura</p>
+        <div id="stat-in-repair" class="font-brand text-2xl sm:text-3xl font-black text-amber-400 mt-1.5 sm:mt-2">0</div>
+        <p class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 sm:mt-1">En diagnóstico o soldadura</p>
       </div>
 
-      <div class="p-4 sm:p-5 rounded-2xl glass-panel border border-[#00f5a0]/30">
-        <div class="flex items-center justify-between text-slate-400 text-xs uppercase font-brand">
+      <div class="p-3.5 sm:p-5 rounded-2xl glass-panel border border-[#00f5a0]/30">
+        <div class="flex items-center justify-between text-slate-400 text-[11px] sm:text-xs uppercase font-brand">
           <span>Listos para Retiro</span>
-          <i data-lucide="check-circle" class="w-5 h-5 text-[#00f5a0]"></i>
+          <i data-lucide="check-circle" class="w-4 h-4 sm:w-5 sm:h-5 text-[#00f5a0]"></i>
         </div>
-        <div id="stat-ready-orders" class="font-brand text-3xl font-black text-[#00f5a0] mt-2">0</div>
-        <p class="text-[11px] text-slate-500 mt-1">Esperando al cliente</p>
+        <div id="stat-ready-orders" class="font-brand text-2xl sm:text-3xl font-black text-[#00f5a0] mt-1.5 sm:mt-2">0</div>
+        <p class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 sm:mt-1">Esperando al cliente</p>
       </div>
 
-      <div class="p-4 sm:p-5 rounded-2xl glass-panel border border-[#00d2ff]/20">
-        <div class="flex items-center justify-between text-slate-400 text-xs uppercase font-brand">
+      <div class="p-3.5 sm:p-5 rounded-2xl glass-panel border border-[#00d2ff]/20">
+        <div class="flex items-center justify-between text-slate-400 text-[11px] sm:text-xs uppercase font-brand">
           <span>Presupuesto Activo</span>
-          <i data-lucide="dollar-sign" class="w-5 h-5 text-[#00d2ff]"></i>
+          <i data-lucide="dollar-sign" class="w-4 h-4 sm:w-5 sm:h-5 text-[#00d2ff]"></i>
         </div>
-        <div id="stat-total-revenue" class="font-brand text-3xl font-black text-[#00d2ff] mt-2">$0 USD</div>
-        <p class="text-[11px] text-slate-500 mt-1">Volumen en taller</p>
+        <div id="stat-total-revenue" class="font-brand text-2xl sm:text-3xl font-black text-[#00d2ff] mt-1.5 sm:mt-2">$0 USD</div>
+        <p class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 sm:mt-1">Volumen en taller</p>
       </div>
     </div>
 
     <!-- 2. NAVEGACIÓN POR PESTAÑAS DEL DASHBOARD -->
-    <div class="grid grid-cols-5 border-b border-slate-800 bg-[#0a101c]/80 rounded-t-2xl px-1 sm:px-3 font-brand text-[11px] sm:text-xs md:text-sm font-bold w-full">
+    <div class="flex items-center overflow-x-auto no-scrollbar border-b border-slate-800 bg-[#0a101c]/90 rounded-t-2xl px-1 sm:px-3 font-brand text-xs sm:text-sm font-bold w-full whitespace-nowrap scroll-smooth">
       <button 
         id="tab-btn-repairs"
         onclick="switchAdminTab('repairs')" 
-        class="admin-nav-tab py-3.5 px-1 sm:px-3 border-b-2 border-[#00f5a0] text-[#00f5a0] flex items-center justify-center gap-1.5 sm:gap-2 text-center transition-colors w-full min-w-0 font-bold"
+        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-[#00f5a0] text-[#00f5a0] flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
       >
         <i data-lucide="wrench" class="w-4 h-4 flex-shrink-0"></i>
-        <span class="truncate">1. REPARACIONES</span>
+        <span>1. REPARACIONES</span>
       </button>
 
       <button 
         id="tab-btn-new-order"
         onclick="switchAdminTab('new-order')" 
-        class="admin-nav-tab py-3.5 px-1 sm:px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 sm:gap-2 text-center transition-colors w-full min-w-0 font-bold"
+        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
       >
         <i data-lucide="plus-circle" class="w-4 h-4 flex-shrink-0"></i>
-        <span class="truncate">2. NUEVO EQUIPO</span>
+        <span>2. NUEVO EQUIPO</span>
       </button>
 
       <button 
         id="tab-btn-pricing"
         onclick="switchAdminTab('pricing')" 
-        class="admin-nav-tab py-3.5 px-1 sm:px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 sm:gap-2 text-center transition-colors w-full min-w-0 font-bold"
+        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
       >
         <i data-lucide="tag" class="w-4 h-4 flex-shrink-0"></i>
-        <span class="truncate">3. PRECIOS & MODELOS</span>
+        <span>3. PRECIOS & MODELOS</span>
       </button>
 
       <button 
         id="tab-btn-stock"
         onclick="switchAdminTab('stock')" 
-        class="admin-nav-tab py-3.5 px-1 sm:px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 sm:gap-2 text-center transition-colors w-full min-w-0 font-bold"
+        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
       >
         <i data-lucide="package" class="w-4 h-4 flex-shrink-0"></i>
-        <span class="truncate">4. INVENTARIO</span>
+        <span>4. INVENTARIO</span>
       </button>
 
       <button 
         id="tab-btn-customers"
         onclick="switchAdminTab('customers')" 
-        class="admin-nav-tab py-3.5 px-1 sm:px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 sm:gap-2 text-center transition-colors w-full min-w-0 font-bold"
+        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
       >
         <i data-lucide="users" class="w-4 h-4 flex-shrink-0"></i>
-        <span class="truncate">5. CLIENTES</span>
+        <span>5. CLIENTES</span>
       </button>
     </div>
 
@@ -325,34 +356,56 @@
                   Esperando IMEI...
                 </span>
               </div>
-              <div class="relative flex items-center">
-                <i data-lucide="scan" class="w-5 h-5 text-slate-500 absolute left-3.5 pointer-events-none"></i>
-                <input 
-                  type="text" 
-                  id="input-repair-imei"
-                  name="serialOrImei" 
-                  placeholder="Ej: 352874119482015 (marca *#06# en el celular para ver el IMEI)" 
-                  class="w-full bg-[#05070d] border-2 border-slate-700 focus:border-[#00f5a0] rounded-xl px-4 py-3 text-sm text-white font-mono tracking-wider focus:outline-none transition-all pl-11 pr-32"
-                  autocomplete="off"
-                  maxlength="18"
-                >
-                <div class="absolute right-2 flex items-center gap-1.5">
+              <div class="space-y-2">
+                <div class="relative flex items-center">
+                  <i data-lucide="scan" class="w-5 h-5 text-slate-500 absolute left-3.5 pointer-events-none"></i>
+                  <input 
+                    type="text" 
+                    id="input-repair-imei"
+                    name="serialOrImei" 
+                    placeholder="Ej: 352874119482015 (*#06# para IMEI)" 
+                    class="w-full bg-[#05070d] border-2 border-slate-700 focus:border-[#00f5a0] rounded-xl px-4 py-3 text-sm text-white font-mono tracking-wider focus:outline-none transition-all pl-11 pr-4 sm:pr-36"
+                    autocomplete="off"
+                    maxlength="18"
+                  >
+                  <div class="hidden sm:flex absolute right-2 items-center gap-1.5">
+                    <button 
+                      type="button" 
+                      id="btn-paste-imei"
+                      onclick="handlePasteIMEI()"
+                      title="Pegar IMEI del portapapeles"
+                      class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-brand flex items-center gap-1 transition-colors border border-slate-700"
+                    >
+                      <i data-lucide="clipboard" class="w-3.5 h-3.5"></i>
+                      <span>Pegar</span>
+                    </button>
+                    <button 
+                      type="button" 
+                      id="btn-lookup-imei"
+                      onclick="handleManualIMEILookup()"
+                      title="Detectar equipo inmediatamente"
+                      class="px-3 py-1.5 rounded-lg bg-[#00f5a0]/20 hover:bg-[#00f5a0]/30 text-[#00f5a0] border border-[#00f5a0]/40 text-xs font-brand font-bold flex items-center gap-1 transition-colors"
+                    >
+                      <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                      <span>Detectar</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Botones táctiles visibles únicamente en móviles -->
+                <div class="flex sm:hidden items-center gap-2">
                   <button 
                     type="button" 
-                    id="btn-paste-imei"
                     onclick="handlePasteIMEI()"
-                    title="Pegar IMEI del portapapeles"
-                    class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-brand flex items-center gap-1 transition-colors border border-slate-700"
+                    class="flex-1 py-2 px-3 rounded-xl bg-slate-800 text-slate-300 text-xs font-brand font-bold flex items-center justify-center gap-1 border border-slate-700"
                   >
                     <i data-lucide="clipboard" class="w-3.5 h-3.5"></i>
-                    <span class="hidden sm:inline">Pegar</span>
+                    <span>Pegar IMEI</span>
                   </button>
                   <button 
                     type="button" 
-                    id="btn-lookup-imei"
                     onclick="handleManualIMEILookup()"
-                    title="Detectar equipo inmediatamente"
-                    class="px-3 py-1.5 rounded-lg bg-[#00f5a0]/20 hover:bg-[#00f5a0]/30 text-[#00f5a0] border border-[#00f5a0]/40 text-xs font-brand font-bold flex items-center gap-1 transition-colors"
+                    class="flex-1 py-2 px-3 rounded-xl bg-[#00f5a0]/20 text-[#00f5a0] text-xs font-brand font-bold flex items-center justify-center gap-1 border border-[#00f5a0]/40"
                   >
                     <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
                     <span>Detectar</span>
@@ -529,16 +582,16 @@
                   <!-- Matriz Interactiva de Patrón 3x3 (Puntos 1 a 9) -->
                   <div id="pattern-matrix-wrapper" class="hidden pt-2">
                     <div class="text-[10px] font-brand text-slate-400 mb-1.5">Toca los puntos en orden para marcar la secuencia:</div>
-                    <div class="inline-grid grid-cols-3 gap-2 p-3 bg-[#05070d] border border-slate-800 rounded-xl shadow-inner">
-                      <button type="button" onclick="clickPatternDot(1)" id="pdot-1" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">1</button>
-                      <button type="button" onclick="clickPatternDot(2)" id="pdot-2" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">2</button>
-                      <button type="button" onclick="clickPatternDot(3)" id="pdot-3" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">3</button>
-                      <button type="button" onclick="clickPatternDot(4)" id="pdot-4" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">4</button>
-                      <button type="button" onclick="clickPatternDot(5)" id="pdot-5" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">5</button>
-                      <button type="button" onclick="clickPatternDot(6)" id="pdot-6" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">6</button>
-                      <button type="button" onclick="clickPatternDot(7)" id="pdot-7" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">7</button>
-                      <button type="button" onclick="clickPatternDot(8)" id="pdot-8" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">8</button>
-                      <button type="button" onclick="clickPatternDot(9)" id="pdot-9" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">9</button>
+                    <div class="inline-grid grid-cols-3 gap-2.5 p-3.5 bg-[#05070d] border border-slate-800 rounded-xl shadow-inner">
+                      <button type="button" onclick="clickPatternDot(1)" id="pdot-1" class="pattern-dot w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all touch-action-manipulation">1</button>
+                      <button type="button" onclick="clickPatternDot(2)" id="pdot-2" class="pattern-dot w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all touch-action-manipulation">2</button>
+                      <button type="button" onclick="clickPatternDot(3)" id="pdot-3" class="pattern-dot w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all touch-action-manipulation">3</button>
+                      <button type="button" onclick="clickPatternDot(4)" id="pdot-4" class="pattern-dot w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all touch-action-manipulation">4</button>
+                      <button type="button" onclick="clickPatternDot(5)" id="pdot-5" class="pattern-dot w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all touch-action-manipulation">5</button>
+                      <button type="button" onclick="clickPatternDot(6)" id="pdot-6" class="pattern-dot w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all touch-action-manipulation">6</button>
+                      <button type="button" onclick="clickPatternDot(7)" id="pdot-7" class="pattern-dot w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all touch-action-manipulation">7</button>
+                      <button type="button" onclick="clickPatternDot(8)" id="pdot-8" class="pattern-dot w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all touch-action-manipulation">8</button>
+                      <button type="button" onclick="clickPatternDot(9)" id="pdot-9" class="pattern-dot w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all touch-action-manipulation">9</button>
                     </div>
                   </div>
                 </div>
