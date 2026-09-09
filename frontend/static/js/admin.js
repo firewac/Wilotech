@@ -7,7 +7,7 @@
 const TechAdmin = (function () {
   const STORAGE_KEYS = {
     TICKETS: "wilotech_tickets_v3",
-    CATALOG: "wilotech_catalog_v3",
+    CATALOG: "wilotech_catalog_v5",
     INVENTORY: "wilotech_inventory_v3"
   };
 
@@ -29,8 +29,13 @@ const TechAdmin = (function () {
     if (saved) {
       try {
         catalog = JSON.parse(saved);
+        if (!catalog || !catalog.categories || catalog.categories.length < TECH_CATALOG.categories.length) {
+          catalog = JSON.parse(JSON.stringify(TECH_CATALOG));
+          saveCatalog();
+        }
       } catch (e) {
         catalog = JSON.parse(JSON.stringify(TECH_CATALOG));
+        saveCatalog();
       }
     } else {
       catalog = JSON.parse(JSON.stringify(TECH_CATALOG));

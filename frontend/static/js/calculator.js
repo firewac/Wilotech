@@ -55,14 +55,17 @@ const TechCalculator = (function () {
   }
 
   function renderCategoryTabs() {
-    elements.categoryTabs.innerHTML = getActiveCatalog().categories.map(cat => `
+    const catalog = getActiveCatalog();
+    if (!catalog || !catalog.categories) return;
+
+    elements.categoryTabs.innerHTML = catalog.categories.map(cat => `
       <button 
         type="button" 
         data-category="${cat.id}"
-        class="calc-cat-btn flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-semibold transition-all duration-200 border-slate-700 bg-[#0a101c] text-slate-300 hover:border-[#00f5a0]/50 hover:text-white"
+        class="calc-cat-btn flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 border-slate-700 bg-[#0a101c] text-slate-300 hover:border-[#00f5a0]/50 hover:text-white"
       >
-        <i data-lucide="${cat.icon}" class="w-4 h-4 text-[#00d2ff]"></i>
-        <span>${cat.name}</span>
+        <i data-lucide="${cat.icon || 'smartphone'}" class="w-4 h-4 text-[#00d2ff]"></i>
+        <span class="truncate">${cat.name}</span>
       </button>
     `).join("");
 
@@ -120,10 +123,15 @@ const TechCalculator = (function () {
   }
 
   function selectCategory(categoryId) {
-    selectedCategory = getActiveCatalog().categories.find(c => c.id === categoryId);
-    if (!selectedCategory) {
-      selectedCategory = getActiveCatalog().categories[0];
-    }
+    const catalog = getActiveCatalog();
+    if (!catalog || !catalog.categories || catalog.categories.length === 0) return;
+
+    const lowerId = (categoryId || "").toLowerCase();
+    selectedCategory = catalog.categories.find(c => 
+      c.id.toLowerCase() === lowerId || 
+      c.name.toLowerCase().includes(lowerId) || 
+      lowerId.includes(c.id.toLowerCase())
+    ) || catalog.categories[0];
 
     selectedBrand = null;
     selectedModel = null;
@@ -151,8 +159,8 @@ const TechCalculator = (function () {
     }
 
     // Cargar selector de marcas de la categoría seleccionada
-    elements.brandSelect.innerHTML = `<option value="">-- Marca de ${selectedCategory.name} --</option>` +
-      selectedCategory.brands.map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+    const brandOptions = selectedCategory.brands ? selectedCategory.brands.map(b => `<option value="${b.id}">${b.name}</option>`).join("") : "";
+    elements.brandSelect.innerHTML = `<option value="">-- Selecciona marca de ${selectedCategory.name} --</option>` + brandOptions;
 
     elements.modelSelect.innerHTML = `<option value="">-- Primero selecciona una marca --</option>`;
     elements.modelSelect.disabled = true;
