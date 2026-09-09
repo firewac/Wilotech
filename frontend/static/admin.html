@@ -257,14 +257,15 @@
       <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-[#00f5a0]/30 max-w-4xl mx-auto space-y-6">
         
         <div>
-          <span class="font-brand text-[10px] font-bold uppercase tracking-widest text-[#00f5a0] bg-[#00f5a0]/10 border border-[#00f5a0]/30 px-3 py-1 rounded-full">
+          <span id="form-repair-badge" class="font-brand text-[10px] font-bold uppercase tracking-widest text-[#00f5a0] bg-[#00f5a0]/10 border border-[#00f5a0]/30 px-3 py-1 rounded-full">
             Recepción de Equipos
           </span>
-          <h2 class="font-brand text-2xl font-extrabold text-white mt-2">Registrar Nueva Orden de Servicio Técnico</h2>
-          <p class="text-xs text-slate-400 mt-1">Completa los datos de ingreso. Se generará un número de ticket único y podrás imprimir el comprobante con un clic.</p>
+          <h2 id="form-repair-title" class="font-brand text-2xl font-extrabold text-white mt-2">Registrar Nueva Orden de Servicio Técnico</h2>
+          <p id="form-repair-desc" class="text-xs text-slate-400 mt-1">Completa los datos de ingreso. Se generará un número de ticket único y podrás imprimir el comprobante con un clic.</p>
         </div>
 
         <form id="form-create-repair" onsubmit="handleCreateRepair(event)" class="space-y-4">
+          <input type="hidden" id="edit-ticket-id" name="editingTicketId" value="">
           <!-- Datos del Cliente -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
@@ -580,11 +581,19 @@
 
           <div class="pt-4 border-t border-slate-800 flex justify-end gap-3">
             <button 
+              type="button" 
+              id="btn-cancel-edit-ticket" 
+              onclick="cancelEditTicket()" 
+              class="hidden py-3.5 px-6 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-brand uppercase tracking-wider transition-colors border border-slate-700 cursor-pointer"
+            >
+              Cancelar Edición
+            </button>
+            <button 
               type="submit" 
-              class="btn-cyber py-3.5 px-8 rounded-xl text-xs uppercase tracking-wider flex items-center gap-2"
+              class="btn-cyber py-3.5 px-8 rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer"
             >
               <i data-lucide="check" class="w-4 h-4 text-slate-950"></i>
-              <span>CREAR ORDEN Y GUARDAR EN SISTEMA</span>
+              <span id="form-repair-submit-text">CREAR ORDEN Y GUARDAR EN SISTEMA</span>
             </button>
           </div>
         </form>
@@ -918,6 +927,14 @@
               </button>
 
               <button 
+                onclick="handleEditTicket('${t.id}')"
+                class="py-1.5 px-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500 hover:text-white transition-colors"
+                title="Editar orden"
+              >
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+              </button>
+
+              <button 
                 onclick="TechAdmin.printTicketReceipt('${t.id}')"
                 class="py-1.5 px-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
                 title="Imprimir Comprobante de Taller"
@@ -973,18 +990,20 @@
       }
     }
 
-    // 3. REGISTRAR NUEVO EQUIPO
+    // 3. REGISTRAR / EDITAR EQUIPO
     function handleCreateRepair(e) {
       e.preventDefault();
       const form = document.getElementById("form-create-repair");
       const formData = new FormData(form);
+
+      const editingId = (formData.get("editingTicketId") || document.getElementById("edit-ticket-id")?.value || "").trim();
 
       const brand = formData.get("deviceBrand") || "";
       const model = formData.get("deviceModel") || "";
       const color = formData.get("deviceColor") || "";
       const storage = formData.get("deviceStorage") || "";
 
-      const newOrder = TechAdmin.createNewTicket({
+      const ticketData = {
         clientName: formData.get("clientName"),
         clientType: formData.get("clientType") || "Público",
         clientDni: formData.get("clientDni"),
@@ -1003,23 +1022,138 @@
         technician: formData.get("technician"),
         finalCost: formData.get("finalCost"),
         technicianNotes: formData.get("technicianNotes")
-      });
+      };
 
-      form.reset();
+      if (editingId) {
+        const updated = TechAdmin.updateTicket(editingId, ticketData);
+        cancelEditTicket();
+        renderStats();
+        renderRepairsTable();
+        updateCustomerDatalists();
+        if (updated) {
+          showToast(`¡Orden #${editingId} actualizada exitosamente!`, "success");
+        } else {
+          showToast(`Error al actualizar la orden #${editingId}`, "error");
+        }
+        switchAdminTab("repairs");
+      } else {
+        const newOrder = TechAdmin.createNewTicket(ticketData);
+        form.reset();
+        resetPatternMatrix();
+        handleLockTypeChange();
+        clearCustomerAutoFill();
+        resetIMEIFeedback();
+        renderStats();
+        updateCustomerDatalists();
+        showToast(`¡Orden #${newOrder.id} registrada exitosamente!`, "success");
+
+        if (confirm(`¡Orden #${newOrder.id} creada! ¿Deseas imprimir el comprobante para el cliente ahora?`)) {
+          TechAdmin.printTicketReceipt(newOrder.id);
+        }
+
+        switchAdminTab("repairs");
+      }
+    }
+
+    function handleEditTicket(ticketId) {
+      const t = TechAdmin.getTicketById(ticketId);
+      if (!t) {
+        showToast("No se encontró la orden solicitada.", "warning");
+        return;
+      }
+
+      switchAdminTab("new-repair");
+
+      const form = document.getElementById("form-create-repair");
+      if (!form) return;
+
+      const editIdInput = document.getElementById("edit-ticket-id");
+      if (editIdInput) editIdInput.value = t.id;
+
+      if (form.elements["clientName"]) form.elements["clientName"].value = t.clientName || "";
+      if (form.elements["clientType"]) form.elements["clientType"].value = t.clientType || "Público";
+      if (form.elements["clientDni"]) form.elements["clientDni"].value = t.clientDni || "";
+      if (form.elements["clientPhone"]) form.elements["clientPhone"].value = t.clientPhone || "";
+      if (form.elements["clientAddress"]) form.elements["clientAddress"].value = t.clientAddress || "";
+
+      if (form.elements["serialOrImei"]) form.elements["serialOrImei"].value = t.serialOrImei || "";
+      if (form.elements["deviceType"]) form.elements["deviceType"].value = t.deviceType || "Celular";
+      if (form.elements["deviceBrand"]) form.elements["deviceBrand"].value = t.deviceBrand || "";
+      if (form.elements["deviceModel"]) form.elements["deviceModel"].value = t.deviceModel || "";
+      if (form.elements["deviceColor"]) form.elements["deviceColor"].value = t.deviceColor || "";
+      if (form.elements["deviceStorage"]) form.elements["deviceStorage"].value = t.deviceStorage || "";
+
+      if (form.elements["deviceLockType"]) form.elements["deviceLockType"].value = t.deviceLockType || "Sin Bloqueo";
+      if (form.elements["deviceLockCode"]) form.elements["deviceLockCode"].value = t.deviceLockCode || "";
+
+      if (form.elements["issueDescription"]) form.elements["issueDescription"].value = t.issueDescription || "";
+      if (form.elements["status"]) form.elements["status"].value = t.status || "received";
+      if (form.elements["technician"]) form.elements["technician"].value = t.technician || "Laboratorio WILOTECH";
+      if (form.elements["finalCost"]) form.elements["finalCost"].value = t.finalCost !== undefined ? t.finalCost : 65;
+      if (form.elements["technicianNotes"]) form.elements["technicianNotes"].value = t.technicianNotes || "";
+
+      handleLockTypeChange();
+
+      if (t.deviceLockType === "Patrón de Desbloqueo" && t.deviceLockCode) {
+        const parts = t.deviceLockCode.split("-").map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n));
+        if (parts.length > 0) {
+          patternSelectedDots = parts;
+          updatePatternUI();
+        }
+      }
+
+      const badge = document.getElementById("form-repair-badge");
+      if (badge) {
+        badge.textContent = "MODO EDICIÓN DE ORDEN";
+        badge.className = "text-[10px] font-brand font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40";
+      }
+      const title = document.getElementById("form-repair-title");
+      if (title) title.textContent = `Editar Orden #${t.id}`;
+
+      const desc = document.getElementById("form-repair-desc");
+      if (desc) desc.textContent = `Modificando la orden de servicio #${t.id}. Presiona guardar para aplicar los cambios.`;
+
+      const btnText = document.getElementById("form-repair-submit-text");
+      if (btnText) btnText.textContent = `GUARDAR CAMBIOS EN ORDEN #${t.id}`;
+
+      const cancelBtn = document.getElementById("btn-cancel-edit-ticket");
+      if (cancelBtn) cancelBtn.classList.remove("hidden");
+
+      if (window.lucide) lucide.createIcons();
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function cancelEditTicket() {
+      const form = document.getElementById("form-create-repair");
+      if (form) form.reset();
+
+      const editIdInput = document.getElementById("edit-ticket-id");
+      if (editIdInput) editIdInput.value = "";
+
       resetPatternMatrix();
       handleLockTypeChange();
       clearCustomerAutoFill();
       resetIMEIFeedback();
-      renderStats();
-      updateCustomerDatalists();
-      showToast(`¡Orden #${newOrder.id} registrada exitosamente!`, "success");
 
-      // Preguntar si desea imprimir comprobante
-      if (confirm(`¡Orden #${newOrder.id} creada! ¿Deseas imprimir el comprobante para el cliente ahora?`)) {
-        TechAdmin.printTicketReceipt(newOrder.id);
+      const badge = document.getElementById("form-repair-badge");
+      if (badge) {
+        badge.textContent = "RECEPCIÓN E INGRESO";
+        badge.className = "text-[10px] font-brand font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#00f5a0]/10 text-[#00f5a0] border border-[#00f5a0]/30";
       }
+      const title = document.getElementById("form-repair-title");
+      if (title) title.textContent = "Ingreso de Nuevo Equipo / Servicio Técnico";
 
-      switchAdminTab("repairs");
+      const desc = document.getElementById("form-repair-desc");
+      if (desc) desc.textContent = "Registra un nuevo servicio técnico con auto-detección por IMEI, validación de clave/patrón e impresión instantánea de comprobante para el cliente.";
+
+      const btnText = document.getElementById("form-repair-submit-text");
+      if (btnText) btnText.textContent = "CREAR ORDEN Y GUARDAR EN SISTEMA";
+
+      const cancelBtn = document.getElementById("btn-cancel-edit-ticket");
+      if (cancelBtn) cancelBtn.classList.add("hidden");
+
+      if (window.lucide) lucide.createIcons();
     }
 
     // --- AUTO-DETECCIÓN INTELIGENTE POR IMEI ---

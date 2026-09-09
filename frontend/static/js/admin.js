@@ -263,6 +263,55 @@ const TechAdmin = (function () {
     }
   }
 
+  function getTicketById(ticketId) {
+    if (!tickets || tickets.length === 0) loadTickets();
+    return tickets.find(t => t.id === ticketId) || null;
+  }
+
+  function updateTicket(ticketId, data) {
+    if (!tickets || tickets.length === 0) loadTickets();
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return null;
+
+    if (data.clientName !== undefined) ticket.clientName = data.clientName;
+    if (data.clientType !== undefined) ticket.clientType = data.clientType;
+    if (data.clientDni !== undefined) ticket.clientDni = data.clientDni;
+    if (data.clientPhone !== undefined) ticket.clientPhone = data.clientPhone;
+    if (data.clientAddress !== undefined) ticket.clientAddress = data.clientAddress;
+    if (data.deviceType !== undefined) ticket.deviceType = data.deviceType;
+    if (data.deviceBrand !== undefined) ticket.deviceBrand = data.deviceBrand;
+    if (data.deviceModel !== undefined) ticket.deviceModel = data.deviceModel;
+    if (data.deviceColor !== undefined) ticket.deviceColor = data.deviceColor;
+    if (data.deviceStorage !== undefined) ticket.deviceStorage = data.deviceStorage;
+    if (data.serialOrImei !== undefined) ticket.serialOrImei = data.serialOrImei;
+    if (data.deviceLockType !== undefined) ticket.deviceLockType = data.deviceLockType;
+    if (data.deviceLockCode !== undefined) ticket.deviceLockCode = data.deviceLockCode;
+    if (data.issueDescription !== undefined) ticket.issueDescription = data.issueDescription;
+    if (data.status !== undefined) {
+      ticket.status = data.status;
+      ticket.statusStep = getStepNumber(data.status);
+    }
+    if (data.technician !== undefined) ticket.technician = data.technician;
+    if (data.technicianNotes !== undefined) ticket.technicianNotes = data.technicianNotes;
+    if (data.partsUsed !== undefined) {
+      ticket.partsUsed = Array.isArray(data.partsUsed) ? data.partsUsed : data.partsUsed.split(",").map(s => s.trim());
+    }
+    if (data.finalCost !== undefined) ticket.finalCost = parseFloat(data.finalCost) || 0;
+    if (data.warranty !== undefined) ticket.warranty = data.warranty;
+
+    saveTickets();
+
+    upsertCustomer({
+      name: ticket.clientName,
+      type: ticket.clientType,
+      dni: ticket.clientDni,
+      phone: ticket.clientPhone,
+      address: ticket.clientAddress
+    });
+
+    return ticket;
+  }
+
   function updateTicketStatus(ticketId, newStatus, newNotes = null) {
     const ticket = tickets.find(t => t.id === ticketId);
     if (ticket) {
@@ -540,7 +589,9 @@ const TechAdmin = (function () {
     addNewModel: addNewModel,
     resetCatalog: resetCatalogToDefault,
     getAllTickets: getAllTickets,
+    getTicketById: getTicketById,
     createNewTicket: createNewTicket,
+    updateTicket: updateTicket,
     updateTicketStatus: updateTicketStatus,
     deleteTicket: deleteTicket,
     notifyClientWhatsApp: notifyClientWhatsApp,
