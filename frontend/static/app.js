@@ -122,12 +122,78 @@ function setupEventListeners() {
     setupExcelDropzone();
 }
 
+// Local Storage Persistence Helpers for Distributor Credentials across Serverless Sessions
+function getSavedLocalDistributors() {
+    try {
+        const raw = localStorage.getItem("cellprice_saved_distributors");
+        return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveLocalDistributor(payload) {
+    try {
+        const localDists = getSavedLocalDistributors();
+        const existing = localDists[payload.id] || {};
+        localDists[payload.id] = {
+            id: payload.id,
+            name: payload.name,
+            base_url: payload.base_url,
+            login_url: payload.login_url || "",
+            username: payload.username || "",
+            password: payload.password !== undefined ? payload.password : (existing.password || ""),
+            scraper_type: payload.scraper_type,
+            is_active: payload.is_active
+        };
+        localStorage.setItem("cellprice_saved_distributors", JSON.stringify(localDists));
+    } catch (e) {
+        console.warn("No se pudo guardar distribuidora en localStorage:", e);
+    }
+}
+
+function removeLocalDistributor(distId) {
+    try {
+        const localDists = getSavedLocalDistributors();
+        delete localDists[distId];
+        localStorage.setItem("cellprice_saved_distributors", JSON.stringify(localDists));
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 // Cargar lista de distribuidores desde el backend
 async function loadDistributors() {
     try {
         const res = await fetch("/api/distributors");
         if (!res.ok) throw new Error("Error al cargar distribuidoras");
         state.distributors = await res.json();
+
+        // Auto-sincronizar credenciales guardadas localmente si la BD serverless en Vercel se reinició
+        const localDists = getSavedLocalDistributors();
+        let needsReRes = false;
+
+        for (const [dId, dObj] of Object.entries(localDists)) {
+            const serverDist = state.distributors.find(d => d.id === dId);
+            if (!serverDist || (!serverDist.username && dObj.username)) {
+                try {
+                    await fetch("/api/distributors", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(dObj)
+                    });
+                    needsReRes = true;
+                } catch (errSync) {
+                    console.error("Error al re-sincronizar distribuidora:", errSync);
+                }
+            }
+        }
+
+        if (needsReRes) {
+            const reRes = await fetch("/api/distributors");
+            if (reRes.ok) state.distributors = await reRes.json();
+        }
+
         renderDistributorPills();
         renderDistributorModalList();
     } catch (err) {
@@ -196,6 +262,9 @@ async function executeSearch(query) {
     showLoadingSkeleton();
 
     try {
+        // Sincronizar credenciales y distribuidores guardados localmente antes de consultar
+        await loadDistributors();
+
         const targetIds = Array.from(state.selectedDistributorIds).join(",");
         const url = `/api/search?q=${encodeURIComponent(query)}${targetIds ? `&distributors=${targetIds}` : ""}`;
         
@@ -557,6 +626,16 @@ async function handleTestLogin(distId, containerElement) {
     btn.innerHTML = `<span class="animate-spin inline-block mr-1">⌛</span> Probando...`;
 
     try {
+        // Asegurar que las credenciales locales estén sincronizadas en el servidor antes de probar
+        const localDists = getSavedLocalDistributors();
+        if (localDists[distId] && localDists[distId].username) {
+            await fetch("/api/distributors", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(localDists[distId])
+            });
+        }
+
         const res = await fetch(`/api/distributors/${distId}/test-login`, { method: "POST" });
         const result = await res.json();
         
@@ -610,9 +689,12 @@ async function handleSaveDistributor(e) {
 
         if (!res.ok) throw new Error("No se pudo guardar la distribuidora");
 
+        // Guardar copia persistente localmente
+        saveLocalDistributor(payload);
+
         await loadDistributors();
         resetDistributorForm();
-        alert(`Distribuidora "${name}" guardada y credenciales cifradas localmente con éxito.`);
+        alert(`Distribuidora "${name}" guardada y credenciales sincronizadas con éxito.`);
     } catch (err) {
         alert("Error al guardar: " + err.message);
     }
@@ -620,12 +702,15 @@ async function handleSaveDistributor(e) {
 
 function populateDistributorForm(d) {
     const form = document.getElementById("distributor-form");
+    const localDists = getSavedLocalDistributors();
+    const localObj = localDists[d.id] || {};
+
     form["dist-id"].value = d.id;
     form["dist-name"].value = d.name;
     form["dist-base-url"].value = d.base_url;
     form["dist-login-url"].value = d.login_url || "";
-    form["dist-username"].value = d.username || "";
-    form["dist-password"].value = "";
+    form["dist-username"].value = d.username || localObj.username || "";
+    form["dist-password"].value = localObj.password || "";
     form["dist-password"].placeholder = "Dejar en blanco para conservar la actual";
     form["dist-type"].value = d.scraper_type;
     form["dist-active"].checked = d.is_active;
@@ -649,6 +734,8 @@ async function handleDeleteDistributor(distId) {
     try {
         const res = await fetch(`/api/distributors/${distId}`, { method: "DELETE" });
         if (!res.ok) throw new Error("No se pudo eliminar");
+
+        removeLocalDistributor(distId);
         await loadDistributors();
     } catch (err) {
         alert("Error al eliminar: " + err.message);
