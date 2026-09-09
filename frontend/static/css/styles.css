@@ -174,7 +174,7 @@ body {
 }
 
 /* ==========================================================================
-   MODO CLARO (ULTRA BRIGHT LIGHT MODE) - FONDO BLANCO LUMINOSO
+   MODO CLARO ARMONIOSO Y MODERNO (LUXURY LIGHT MODE)
    ========================================================================== */
 
 html.light,
@@ -184,55 +184,106 @@ html[data-theme="light"] {
 
 html.light body,
 html[data-theme="light"] body {
-  background-color: #ffffff !important;
+  background-color: #f8fafc !important;
   color: #0f172a !important;
 }
 
 html.light .lab-grid-bg,
 html[data-theme="light"] .lab-grid-bg {
-  background-color: #ffffff !important;
+  background-color: #f8fafc !important;
   background-image: 
-    radial-gradient(circle at 10% 20%, rgba(0, 180, 240, 0.05) 0%, transparent 45%),
-    radial-gradient(circle at 90% 80%, rgba(0, 210, 140, 0.05) 0%, transparent 45%),
-    linear-gradient(to right, rgba(226, 232, 240, 0.7) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(226, 232, 240, 0.7) 1px, transparent 1px) !important;
+    radial-gradient(circle at 12% 15%, rgba(0, 160, 230, 0.06) 0%, transparent 45%),
+    radial-gradient(circle at 88% 85%, rgba(0, 200, 120, 0.06) 0%, transparent 45%),
+    linear-gradient(to right, rgba(203, 213, 225, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(203, 213, 225, 0.4) 1px, transparent 1px) !important;
   background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px !important;
 }
 
-/* Headers y Navegación */
+/* Encabezados y Navegación Principal */
 html.light header,
 html[data-theme="light"] header {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(203, 213, 225, 0.8) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04) !important;
 }
 
 html.light header div.border-t,
 html[data-theme="light"] header div.border-t {
-  background-color: #f8fafc !important;
+  background-color: rgba(248, 250, 252, 0.9) !important;
   border-color: #e2e8f0 !important;
 }
 
-/* Cajas, Secciones, Modales y Tarjetas */
+html.light nav a,
+html[data-theme="light"] nav a {
+  color: #334155 !important;
+}
+
+html.light nav a:hover,
+html[data-theme="light"] nav a:hover {
+  color: #0284c7 !important;
+}
+
+/* Paneles Glassmorphism y Tarjetas */
 html.light .glass-panel,
-html[data-theme="light"] .glass-panel,
-html.light .glass-panel-glow,
-html[data-theme="light"] .glass-panel-glow,
-html.light .interactive-card,
-html[data-theme="light"] .interactive-card,
-html.light section,
-html[data-theme="light"] section {
+html[data-theme="light"] .glass-panel {
   background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(203, 213, 225, 0.8) !important;
+  box-shadow: 0 6px 20px -4px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.02) !important;
 }
 
-/* Forzar fondo blanco radiante en todos los contenedores oscuros de Tailwind */
-html.light [class*="bg-[#"],
-html[data-theme="light"] [class*="bg-[#"],
-html.light [class*="bg-slate-"],
-html[data-theme="light"] [class*="bg-slate-"] {
+html.light .glass-panel-glow,
+html[data-theme="light"] .glass-panel-glow {
   background-color: #ffffff !important;
+  border: 1px solid rgba(0, 180, 216, 0.25) !important;
+  box-shadow: 0 10px 30px -8px rgba(0, 180, 216, 0.1), inset 0 0 12px rgba(0, 200, 130, 0.03) !important;
+}
+
+html.light .interactive-card,
+html[data-theme="light"] .interactive-card {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
+}
+
+html.light .interactive-card:hover,
+html[data-theme="light"] .interactive-card:hover {
+  border-color: #00d2ff !important;
+  box-shadow: 0 12px 30px -6px rgba(0, 180, 216, 0.18) !important;
+}
+
+/* Reemplazo Elegante de Fondos Oscuros Específicos */
+html.light .bg-\[\#05070d\],
+html[data-theme="light"] .bg-\[\#05070d\],
+html.light .bg-\[\#07090e\],
+html[data-theme="light"] .bg-\[\#07090e\],
+html.light .bg-\[\#0a101c\],
+html[data-theme="light"] .bg-\[\#0a101c\],
+html.light .bg-\[\#0c1220\],
+html[data-theme="light"] .bg-\[\#0c1220\],
+html.light .bg-\[\#0d1320\],
+html[data-theme="light"] .bg-\[\#0d1320\],
+html.light .bg-\[\#0d1526\],
+html[data-theme="light"] .bg-\[\#0d1526\],
+html.light .bg-\[\#101726\],
+html[data-theme="light"] .bg-\[\#101726\],
+html.light .bg-\[\#080c14\],
+html[data-theme="light"] .bg-\[\#080c14\],
+html.light .bg-\[\#06090e\],
+html[data-theme="light"] .bg-\[\#06090e\],
+html.light .bg-[#0e1524],
+html[data-theme="light"] .bg-[#0e1524],
+html.light .bg-[#0c1a1a],
+html[data-theme="light"] .bg-[#0c1a1a] {
+  background-color: #ffffff !important;
+}
+
+html.light .bg-slate-900,
+html[data-theme="light"] .bg-slate-900,
+html.light .bg-slate-950,
+html[data-theme="light"] .bg-slate-950 {
+  background-color: #f1f5f9 !important;
 }
 
 /* Modales y Overlays traslúcidos */
@@ -241,6 +292,7 @@ html[data-theme="light"] div[class*="bg-black"],
 html.light div[class*="bg-[#05070d]/80"],
 html[data-theme="light"] div[class*="bg-[#05070d]/80"] {
   background-color: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(8px);
 }
 
 /* Textos e Iconos en Modo Claro */
@@ -272,9 +324,28 @@ html[data-theme="light"] .text-slate-500 {
   color: #64748b !important;
 }
 
+/* Resaltados de Marca en Modo Claro */
+html.light .text-[#00f5a0],
+html[data-theme="light"] .text-[#00f5a0],
+html.light .text-[#00ff87],
+html[data-theme="light"] .text-[#00ff87] {
+  color: #059669 !important;
+}
+
+html.light .text-[#00d2ff],
+html[data-theme="light"] .text-[#00d2ff],
+html.light .text-[#00f0ff],
+html[data-theme="light"] .text-[#00f0ff] {
+  color: #0284c7 !important;
+}
+
 /* Bordes en Modo Claro */
-html.light [class*="border-"],
-html[data-theme="light"] [class*="border-"] {
+html.light .border-slate-800,
+html[data-theme="light"] .border-slate-800,
+html.light .border-slate-700,
+html[data-theme="light"] .border-slate-700,
+html.light .border-[#1e2d42],
+html[data-theme="light"] .border-[#1e2d42] {
   border-color: #cbd5e1 !important;
 }
 
@@ -283,7 +354,14 @@ html.light input, html.light select, html.light textarea,
 html[data-theme="light"] input, html[data-theme="light"] select, html[data-theme="light"] textarea {
   background-color: #ffffff !important;
   color: #0f172a !important;
-  border-color: #cbd5e1 !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
+}
+
+html.light input:focus, html.light select:focus, html.light textarea:focus,
+html[data-theme="light"] input:focus, html[data-theme="light"] select:focus, html[data-theme="light"] textarea:focus {
+  border-color: #00d2ff !important;
+  box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.15) !important;
 }
 
 html.light input::placeholder, html.light textarea::placeholder,
@@ -291,10 +369,26 @@ html[data-theme="light"] input::placeholder, html[data-theme="light"] textarea::
   color: #64748b !important;
 }
 
+/* Botones de Categorías del Cotizador en Modo Claro */
+html.light .calc-cat-btn,
+html[data-theme="light"] .calc-cat-btn {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+html.light .calc-cat-btn.border-\[\#00f5a0\],
+html[data-theme="light"] .calc-cat-btn.border-\[\#00f5a0\] {
+  background-color: rgba(0, 180, 120, 0.1) !important;
+  border-color: #059669 !important;
+  color: #047857 !important;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.15) !important;
+}
+
 /* Tablas */
 html.light table thead,
 html[data-theme="light"] table thead {
-  background-color: #f8fafc !important;
+  background-color: #f1f5f9 !important;
 }
 
 html.light table tbody tr,
@@ -305,10 +399,10 @@ html[data-theme="light"] table tbody tr {
 
 html.light table tbody tr:hover,
 html[data-theme="light"] table tbody tr:hover {
-  background-color: #f1f5f9 !important;
+  background-color: #f8fafc !important;
 }
 
-/* Excepción: Mantener texto oscuro y gradientes vibrantes en botones de marca */
+/* Mantener el texto oscuro e impecable en botones principales de gradiente */
 html.light .bg-gradient-to-r,
 html[data-theme="light"] .bg-gradient-to-r,
 html.light .btn-cyber,
@@ -331,7 +425,7 @@ html[data-theme="light"] .wilo-btn-primary * {
 /* Scrollbar en Modo Claro */
 html.light ::-webkit-scrollbar-track,
 html[data-theme="light"] ::-webkit-scrollbar-track {
-  background: #f8fafc;
+  background: #f1f5f9;
 }
 
 html.light ::-webkit-scrollbar-thumb,

@@ -43,10 +43,10 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Modo Claro Ultra Luminoso (Fondo Blanco) */
+/* Modo Claro Armonioso */
 html.light, html[data-theme="light"] {
-    --wilo-bg: #ffffff;
-    --wilo-bg-alt: #f8fafc;
+    --wilo-bg: #f8fafc;
+    --wilo-bg-alt: #ffffff;
     --wilo-surface: #ffffff;
     --wilo-surface-hover: #f1f5f9;
     --wilo-border: #cbd5e1;
@@ -54,13 +54,13 @@ html.light, html[data-theme="light"] {
 }
 
 html.light body, html[data-theme="light"] body {
-    background-color: #ffffff !important;
+    background-color: #f8fafc !important;
     color: #0f172a !important;
     background-image: 
-        radial-gradient(circle at 15% 10%, rgba(0, 180, 216, 0.06) 0%, transparent 40%),
-        radial-gradient(circle at 85% 10%, rgba(0, 200, 130, 0.05) 0%, transparent 40%),
-        linear-gradient(to right, rgba(226, 232, 240, 0.7) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(226, 232, 240, 0.7) 1px, transparent 1px) !important;
+        radial-gradient(circle at 15% 10%, rgba(0, 160, 230, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 85% 10%, rgba(0, 200, 120, 0.05) 0%, transparent 40%),
+        linear-gradient(to right, rgba(203, 213, 225, 0.4) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(203, 213, 225, 0.4) 1px, transparent 1px) !important;
 }
 
 /* Estilo Tech para títulos */
