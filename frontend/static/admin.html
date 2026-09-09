@@ -473,6 +473,76 @@
                 </datalist>
               </div>
             </div>
+
+            <!-- Sección de Seguridad y Clave de Bloqueo -->
+            <div class="p-4 sm:p-5 rounded-2xl bg-[#070b14]/90 border border-cyan-500/30 space-y-4 shadow-lg mt-3">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="lock" class="w-4 h-4 text-cyan-400"></i>
+                  <h3 class="font-brand text-xs sm:text-sm font-bold text-white uppercase tracking-wider">Seguridad & Clave de Desbloqueo</h3>
+                </div>
+                <span class="text-[11px] text-slate-400">Requerido para pruebas de diagnóstico e inspección</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                <div>
+                  <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Tipo de Bloqueo *</label>
+                  <select 
+                    id="repair-lock-type" 
+                    name="deviceLockType" 
+                    onchange="handleLockTypeChange()" 
+                    class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-brand focus:border-cyan-400 transition-all"
+                  >
+                    <option value="Sin Bloqueo" selected>🔓 Sin Bloqueo / Sin Clave</option>
+                    <option value="PIN">🔢 PIN Numérico</option>
+                    <option value="Contraseña">🔑 Contraseña Alfanumérica</option>
+                    <option value="Patrón de Desbloqueo">🎨 Patrón de Desbloqueo (Puntos 3x3)</option>
+                  </select>
+                  <p class="text-[11px] text-slate-500 mt-1">Selecciona el tipo de seguridad configurado en el equipo.</p>
+                </div>
+
+                <!-- Contenedor Dinámico para Ingreso de Clave / Patrón -->
+                <div id="lock-code-container" class="space-y-2">
+                  <label id="lock-code-label" class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Clave / PIN (No requerida)
+                  </label>
+                  <div class="relative flex items-center">
+                    <input 
+                      type="text" 
+                      id="repair-lock-code" 
+                      name="deviceLockCode" 
+                      placeholder="Sin clave de bloqueo" 
+                      readonly
+                      class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white font-mono tracking-wider focus:border-cyan-400 transition-all pr-24"
+                    >
+                    <button 
+                      type="button" 
+                      id="btn-clear-pattern" 
+                      onclick="resetPatternMatrix()" 
+                      class="hidden absolute right-2 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-brand transition-colors border border-slate-700"
+                    >
+                      Limpiar Patrón
+                    </button>
+                  </div>
+
+                  <!-- Matriz Interactiva de Patrón 3x3 (Puntos 1 a 9) -->
+                  <div id="pattern-matrix-wrapper" class="hidden pt-2">
+                    <div class="text-[10px] font-brand text-slate-400 mb-1.5">Toca los puntos en orden para marcar la secuencia:</div>
+                    <div class="inline-grid grid-cols-3 gap-2 p-3 bg-[#05070d] border border-slate-800 rounded-xl shadow-inner">
+                      <button type="button" onclick="clickPatternDot(1)" id="pdot-1" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">1</button>
+                      <button type="button" onclick="clickPatternDot(2)" id="pdot-2" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">2</button>
+                      <button type="button" onclick="clickPatternDot(3)" id="pdot-3" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">3</button>
+                      <button type="button" onclick="clickPatternDot(4)" id="pdot-4" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">4</button>
+                      <button type="button" onclick="clickPatternDot(5)" id="pdot-5" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">5</button>
+                      <button type="button" onclick="clickPatternDot(6)" id="pdot-6" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">6</button>
+                      <button type="button" onclick="clickPatternDot(7)" id="pdot-7" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">7</button>
+                      <button type="button" onclick="clickPatternDot(8)" id="pdot-8" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">8</button>
+                      <button type="button" onclick="clickPatternDot(9)" id="pdot-9" class="pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all">9</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Falla Manifestada -->
@@ -812,6 +882,10 @@
               ${t.deviceColor ? `<span class="text-[9px] bg-slate-800 text-[#00f5a0] px-1.5 py-0.5 rounded border border-slate-700">${t.deviceColor}</span>` : ''}
             </div>
             <div class="text-[10px] font-mono text-slate-500">${t.serialOrImei} • ${t.deviceType || 'Equipo'}</div>
+            <div class="text-[10px] font-mono flex items-center gap-1 mt-0.5 ${t.deviceLockType && t.deviceLockType !== 'Sin Bloqueo' ? 'text-cyan-300 font-bold' : 'text-slate-500'}">
+              <i data-lucide="${t.deviceLockType && t.deviceLockType !== 'Sin Bloqueo' ? 'lock' : 'unlock'}" class="w-3 h-3 ${t.deviceLockType && t.deviceLockType !== 'Sin Bloqueo' ? 'text-cyan-400' : 'text-slate-600'}"></i>
+              <span>${t.deviceLockType || 'Sin Bloqueo'}${t.deviceLockCode ? `: <strong class="text-white font-mono">${t.deviceLockCode}</strong>` : ''}</span>
+            </div>
           </td>
           <td class="py-3 px-3.5 max-w-xs truncate text-slate-300" title="${t.issueDescription}">
             ${t.issueDescription}
@@ -922,6 +996,8 @@
         deviceColor: color,
         deviceStorage: storage,
         serialOrImei: formData.get("serialOrImei"),
+        deviceLockType: formData.get("deviceLockType") || "Sin Bloqueo",
+        deviceLockCode: formData.get("deviceLockCode") || "",
         issueDescription: formData.get("issueDescription"),
         status: formData.get("status"),
         technician: formData.get("technician"),
@@ -930,6 +1006,8 @@
       });
 
       form.reset();
+      resetPatternMatrix();
+      handleLockTypeChange();
       clearCustomerAutoFill();
       resetIMEIFeedback();
       renderStats();
@@ -1466,6 +1544,91 @@
         if (icon) icon.setAttribute("data-lucide", "eye");
       }
       if (window.lucide) lucide.createIcons();
+    }
+
+    // --- LÓGICA DE SEGURIDAD Y PATRÓN DE DESBLOQUEO 3x3 ---
+    let currentPatternSequence = [];
+
+    function handleLockTypeChange() {
+      const lockTypeSelect = document.getElementById("repair-lock-type");
+      if (!lockTypeSelect) return;
+      const lockType = lockTypeSelect.value;
+      const codeInput = document.getElementById("repair-lock-code");
+      const codeLabel = document.getElementById("lock-code-label");
+      const matrixWrapper = document.getElementById("pattern-matrix-wrapper");
+      const clearBtn = document.getElementById("btn-clear-pattern");
+
+      resetPatternMatrix();
+
+      if (lockType === "Sin Bloqueo") {
+        if (codeInput) {
+          codeInput.value = "";
+          codeInput.placeholder = "Sin clave de bloqueo";
+          codeInput.readOnly = true;
+        }
+        if (codeLabel) codeLabel.textContent = "Clave / PIN (No requerida)";
+        if (matrixWrapper) matrixWrapper.classList.add("hidden");
+        if (clearBtn) clearBtn.classList.add("hidden");
+      } else if (lockType === "PIN") {
+        if (codeInput) {
+          codeInput.value = "";
+          codeInput.placeholder = "Ej: 1472";
+          codeInput.readOnly = false;
+        }
+        if (codeLabel) codeLabel.textContent = "PIN Numérico de Acceso *";
+        if (matrixWrapper) matrixWrapper.classList.add("hidden");
+        if (clearBtn) clearBtn.classList.add("hidden");
+      } else if (lockType === "Contraseña") {
+        if (codeInput) {
+          codeInput.value = "";
+          codeInput.placeholder = "Ej: miClave2026";
+          codeInput.readOnly = false;
+        }
+        if (codeLabel) codeLabel.textContent = "Contraseña Alfanumérica *";
+        if (matrixWrapper) matrixWrapper.classList.add("hidden");
+        if (clearBtn) clearBtn.classList.add("hidden");
+      } else if (lockType === "Patrón de Desbloqueo") {
+        if (codeInput) {
+          codeInput.value = "";
+          codeInput.placeholder = "Toca la matriz de puntos abajo (Ej: 1-2-3-6-9)";
+          codeInput.readOnly = true;
+        }
+        if (codeLabel) codeLabel.textContent = "Patrón de Desbloqueo (Secuencia de Puntos 3x3) *";
+        if (matrixWrapper) matrixWrapper.classList.remove("hidden");
+        if (clearBtn) clearBtn.classList.remove("hidden");
+      }
+    }
+
+    function clickPatternDot(num) {
+      if (currentPatternSequence.includes(num)) return;
+      currentPatternSequence.push(num);
+
+      const codeInput = document.getElementById("repair-lock-code");
+      if (codeInput) codeInput.value = currentPatternSequence.join("-");
+
+      const dotBtn = document.getElementById(`pdot-${num}`);
+      if (dotBtn) {
+        dotBtn.classList.remove("bg-slate-800", "border-slate-700", "text-slate-400");
+        dotBtn.classList.add("bg-cyan-500/20", "border-cyan-400", "text-cyan-300", "ring-2", "ring-cyan-500/40");
+        dotBtn.innerHTML = `${num} <span class="text-[8px] block text-cyan-400 font-bold">${currentPatternSequence.length}°</span>`;
+      }
+    }
+
+    function resetPatternMatrix() {
+      currentPatternSequence = [];
+      const codeInput = document.getElementById("repair-lock-code");
+      const lockTypeSelect = document.getElementById("repair-lock-type");
+      if (codeInput && lockTypeSelect && lockTypeSelect.value === "Patrón de Desbloqueo") {
+        codeInput.value = "";
+      }
+
+      for (let i = 1; i <= 9; i++) {
+        const dotBtn = document.getElementById(`pdot-${i}`);
+        if (dotBtn) {
+          dotBtn.className = "pattern-dot w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-bold flex items-center justify-center hover:border-cyan-400 transition-all";
+          dotBtn.textContent = i;
+        }
+      }
     }
 
     // --- AUTOCOMPLETADO Y GESTIÓN DE CLIENTES ---

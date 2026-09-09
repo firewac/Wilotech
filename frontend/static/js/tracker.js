@@ -191,6 +191,13 @@ const TechTracker = (function () {
                 <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400"></i> Falla Reportada por Cliente
               </h4>
               <p class="text-sm text-slate-200">${ticket.issueDescription}</p>
+              <div class="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-xs font-tech">
+                <span class="text-slate-400">Seguridad / Bloqueo:</span>
+                <span class="font-bold text-cyan-300 flex items-center gap-1">
+                  <i data-lucide="${ticket.deviceLockType && ticket.deviceLockType !== 'Sin Bloqueo' ? 'lock' : 'unlock'}" class="w-3.5 h-3.5 text-cyan-400"></i>
+                  ${ticket.deviceLockType || 'Sin Bloqueo'} ${ticket.deviceLockCode ? `[ ${ticket.deviceLockCode} ]` : ''}
+                </span>
+              </div>
             </div>
 
             <div class="bg-[#0a101c]/80 rounded-xl p-4 border border-slate-800/80">

@@ -223,6 +223,8 @@ const TechAdmin = (function () {
       deviceColor: data.deviceColor || "",
       deviceStorage: data.deviceStorage || "",
       serialOrImei: data.serialOrImei || "SN-" + Date.now().toString().slice(-6),
+      deviceLockType: data.deviceLockType || "Sin Bloqueo",
+      deviceLockCode: data.deviceLockCode || "",
       issueDescription: data.issueDescription || "Ingreso general para diagnóstico",
       status: data.status || "received",
       statusStep: getStepNumber(data.status || "received"),
@@ -383,6 +385,7 @@ const TechAdmin = (function () {
           ${ticket.deviceStorage ? `<div class="row"><span>Capacidad / Almacenamiento:</span><span>${ticket.deviceStorage}</span></div>` : ''}
           <div class="row"><span>Categoría:</span><span>${ticket.deviceType}</span></div>
           <div class="row"><span>Serial / IMEI:</span><span>${ticket.serialOrImei}</span></div>
+          <div class="row"><span>Seguridad / Bloqueo:</span><strong>${ticket.deviceLockType || 'Sin Bloqueo'} ${ticket.deviceLockCode ? `[ ${ticket.deviceLockCode} ]` : ''}</strong></div>
           <div class="row"><span>Falla Declarada:</span><span>${ticket.issueDescription}</span></div>
         </div>
 
