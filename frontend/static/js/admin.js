@@ -8,17 +8,20 @@ const TechAdmin = (function () {
   const STORAGE_KEYS = {
     TICKETS: "wilotech_tickets_v3",
     CATALOG: "wilotech_catalog_v6",
-    INVENTORY: "wilotech_inventory_v3"
+    INVENTORY: "wilotech_inventory_v3",
+    CUSTOMERS: "wilotech_customers_v1"
   };
 
   let tickets = [];
   let catalog = null;
   let inventory = [];
+  let customers = [];
 
   function init() {
     loadCatalog();
     loadTickets();
     loadInventory();
+    loadCustomers();
   }
 
   // -------------------------------------------------------------
@@ -210,6 +213,7 @@ const TechAdmin = (function () {
     const newTicket = {
       id: newId,
       clientName: data.clientName || "Cliente Mostrador",
+      clientType: data.clientType || "Público",
       clientDni: data.clientDni || "",
       clientPhone: data.clientPhone || "+54 9 11 0000-0000",
       clientAddress: data.clientAddress || "",
@@ -232,6 +236,16 @@ const TechAdmin = (function () {
 
     tickets.unshift(newTicket);
     saveTickets();
+
+    // Auto-guardar o actualizar cliente en la Base de Datos de Clientes
+    upsertCustomer({
+      name: newTicket.clientName,
+      type: newTicket.clientType,
+      dni: newTicket.clientDni,
+      phone: newTicket.clientPhone,
+      address: newTicket.clientAddress
+    });
+
     return newTicket;
   }
 
@@ -353,6 +367,7 @@ const TechAdmin = (function () {
         <div class="section">
           <div class="section-title">Datos del Cliente & Recepción</div>
           <div class="row"><span>Cliente:</span><strong>${ticket.clientName}</strong></div>
+          <div class="row"><span>Categoría / Tipo:</span><strong>${ticket.clientType || 'Público'}</strong></div>
           ${ticket.clientDni ? `<div class="row"><span>DNI / CUIT:</span><strong>${ticket.clientDni}</strong></div>` : ''}
           <div class="row"><span>Teléfono:</span><strong>${ticket.clientPhone}</strong></div>
           ${ticket.clientAddress ? `<div class="row"><span>Dirección:</span><span>${ticket.clientAddress}</span></div>` : ''}
@@ -430,6 +445,87 @@ const TechAdmin = (function () {
     }
   }
 
+  // -------------------------------------------------------------
+  // 5. BASE DE DATOS DE CLIENTES & AUTO-COMPLETADO INTELIGENTE
+  // -------------------------------------------------------------
+  function loadCustomers() {
+    const saved = localStorage.getItem(STORAGE_KEYS.CUSTOMERS);
+    if (saved) {
+      try {
+        customers = JSON.parse(saved);
+      } catch (e) {
+        customers = TECH_CATALOG.sampleCustomers ? [...TECH_CATALOG.sampleCustomers] : [];
+      }
+    } else {
+      customers = TECH_CATALOG.sampleCustomers ? [...TECH_CATALOG.sampleCustomers] : [];
+      saveCustomers();
+    }
+    return customers;
+  }
+
+  function saveCustomers() {
+    localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customers));
+  }
+
+  function getAllCustomers() {
+    if (!customers || customers.length === 0) loadCustomers();
+    return customers;
+  }
+
+  function findCustomerByDniOrPhone(query) {
+    if (!query) return null;
+    const clean = query.toString().replace(/\D/g, "");
+    if (clean.length < 5) return null;
+
+    getAllCustomers();
+    return customers.find(c => {
+      const cDni = (c.dni || "").replace(/\D/g, "");
+      const cPhone = (c.phone || "").replace(/\D/g, "");
+      return (cDni && cDni === clean) || (cPhone && cPhone === clean) || (cDni && clean.endsWith(cDni)) || (cPhone && clean.endsWith(cPhone));
+    }) || null;
+  }
+
+  function upsertCustomer(data) {
+    if (!data.name) return null;
+    getAllCustomers();
+    const cleanDni = (data.dni || "").replace(/\D/g, "");
+    const cleanPhone = (data.phone || "").replace(/\D/g, "");
+
+    let existingIndex = customers.findIndex(c => {
+      const cDni = (c.dni || "").replace(/\D/g, "");
+      const cPhone = (c.phone || "").replace(/\D/g, "");
+      return (cleanDni && cDni === cleanDni) || (cleanPhone && cPhone === cleanPhone);
+    });
+
+    if (existingIndex >= 0) {
+      customers[existingIndex] = {
+        ...customers[existingIndex],
+        name: data.name || customers[existingIndex].name,
+        type: data.type || customers[existingIndex].type,
+        dni: data.dni || customers[existingIndex].dni,
+        phone: data.phone || customers[existingIndex].phone,
+        address: data.address || customers[existingIndex].address
+      };
+    } else {
+      const newCustomer = {
+        id: `CUST-${Math.floor(1000 + Math.random() * 9000)}`,
+        name: data.name,
+        type: data.type || "Público",
+        dni: data.dni || "",
+        phone: data.phone || "",
+        address: data.address || ""
+      };
+      customers.unshift(newCustomer);
+    }
+    saveCustomers();
+  }
+
+  function deleteCustomer(customerId) {
+    getAllCustomers();
+    customers = customers.filter(c => c.id !== customerId);
+    saveCustomers();
+  }
+
   return {
     init: init,
     getCatalog: getCatalog,
@@ -447,7 +543,11 @@ const TechAdmin = (function () {
     notifyClientWhatsApp: notifyClientWhatsApp,
     printTicketReceipt: printTicketReceipt,
     getInventory: getInventory,
-    adjustStock: adjustStock
+    adjustStock: adjustStock,
+    getAllCustomers: getAllCustomers,
+    findCustomerByDniOrPhone: findCustomerByDniOrPhone,
+    upsertCustomer: upsertCustomer,
+    deleteCustomer: deleteCustomer
   };
 })();
 

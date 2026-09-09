@@ -159,6 +159,11 @@ const TechTracker = (function () {
             <p class="text-xs font-mono text-slate-400 mt-0.5">S/N - IMEI: ${ticket.serialOrImei}</p>
             <div class="flex flex-wrap items-center gap-3 text-xs text-slate-300 font-tech mt-2">
               <span>Cliente: <strong class="text-white">${ticket.clientName}</strong></span>
+              ${ticket.clientType ? `<span class="px-2 py-0.5 rounded text-[10px] font-brand font-bold uppercase ${
+                ticket.clientType === 'Gremio Mayorista' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
+                ticket.clientType === 'Gremio' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40' :
+                'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+              }">${ticket.clientType}</span>` : ''}
               ${ticket.clientDni ? `<span class="text-cyan-400 font-mono">DNI: ${ticket.clientDni}</span>` : ''}
               ${ticket.clientAddress ? `<span class="text-slate-400">📍 ${ticket.clientAddress}</span>` : ''}
             </div>

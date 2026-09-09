@@ -831,18 +831,26 @@
           <form id="admin-new-ticket-form" class="space-y-4 max-w-2xl mx-auto font-tech">
             <h4 class="font-brand text-xs font-bold text-slate-200 uppercase tracking-wider mb-2">Ingresar Nuevo Equipo a Taller</h4>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1">Nombre del Cliente *</label>
                 <input type="text" name="clientName" required placeholder="Ej: Marcos Benítez" class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
               </div>
               <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Tipo de Cliente *</label>
+                <select name="clientType" required class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+                  <option value="Público" selected>Público</option>
+                  <option value="Gremio">Gremio</option>
+                  <option value="Gremio Mayorista">Gremio Mayorista</option>
+                </select>
+              </div>
+              <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1">DNI / CUIT *</label>
-                <input type="text" name="clientDni" required placeholder="Ej: 38.942.105" class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+                <input type="text" name="clientDni" required oninput="handleCustomerLookup(this)" placeholder="Ej: 38.942.105" class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1">Teléfono (WhatsApp) *</label>
-                <input type="text" name="clientPhone" required placeholder="+54 9 11..." class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+                <input type="text" name="clientPhone" required oninput="handleCustomerLookup(this)" placeholder="+54 9 11..." class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1">Dirección / Domicilio</label>

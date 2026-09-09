@@ -541,11 +541,21 @@ const TECH_CATALOG = {
     }
   ],
 
+  // Base de Datos de Clientes Frecuentes Precargados
+  sampleCustomers: [
+    { id: "CUST-101", name: "Lucas Ferreira", dni: "38.942.105", phone: "+54 9 11 4589-2311", type: "Público", address: "Av. Cabildo 2450, CABA" },
+    { id: "CUST-102", name: "Valeria Gómez", dni: "41.205.882", phone: "+54 9 11 6321-7744", type: "Gremio", address: "Calle Florida 890, 4º B, CABA" },
+    { id: "CUST-103", name: "Matías Calderón", dni: "35.811.904", phone: "+54 9 11 2984-1102", type: "Gremio Mayorista", address: "Av. Rivadavia 5210, Flores" },
+    { id: "CUST-104", name: "Gonzalo Peralta", dni: "39.402.118", phone: "+54 9 11 9912-4433", type: "Gremio", address: "Av. Santa Fe 3120, Palermo" },
+    { id: "CUST-105", name: "Marcos Benítez", dni: "37.102.948", phone: "+54 9 11 4820-1920", type: "Público", address: "Av. Corrientes 1450, CABA" }
+  ],
+
   // Órdenes de prueba precargadas para demostrar el rastreador de tickets
   sampleTickets: [
     {
       id: "TF-8492",
       clientName: "Lucas Ferreira",
+      clientType: "Público",
       clientDni: "38.942.105",
       clientPhone: "+54 9 11 4589-2311",
       clientAddress: "Av. Cabildo 2450, CABA",
@@ -565,6 +575,7 @@ const TECH_CATALOG = {
     {
       id: "TF-7310",
       clientName: "Valeria Gómez",
+      clientType: "Gremio",
       clientDni: "41.205.882",
       clientPhone: "+54 9 11 6321-7744",
       clientAddress: "Calle Florida 890, 4º B, CABA",
@@ -584,6 +595,7 @@ const TECH_CATALOG = {
     {
       id: "TF-6194",
       clientName: "Matías Calderón",
+      clientType: "Gremio Mayorista",
       clientDni: "35.811.904",
       clientPhone: "+54 9 11 2984-1102",
       clientAddress: "Av. Rivadavia 5210, Flores",
@@ -603,6 +615,7 @@ const TECH_CATALOG = {
     {
       id: "TF-5520",
       clientName: "Gonzalo Peralta",
+      clientType: "Gremio",
       clientDni: "39.402.118",
       clientPhone: "+54 9 11 9912-4433",
       clientAddress: "Av. Santa Fe 3120, Palermo",

@@ -171,6 +171,15 @@
         <i data-lucide="package" class="w-4 h-4"></i>
         <span>4. INVENTARIO DE REPUESTOS</span>
       </button>
+
+      <button 
+        id="tab-btn-customers"
+        onclick="switchAdminTab('customers')" 
+        class="admin-nav-tab py-4 px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors"
+      >
+        <i data-lucide="users" class="w-4 h-4"></i>
+        <span>5. BASE DE DATOS DE CLIENTES</span>
+      </button>
     </div>
 
     <!-- PESTAÑA 1: LISTADO DE REPARACIONES Y CAMBIO DE ESTADOS -->
@@ -183,8 +192,8 @@
             <p class="text-xs text-slate-400 mt-0.5">Los cambios de estado se sincronizan en tiempo real con el rastreador público</p>
           </div>
 
-          <!-- Filtro rápido por estado -->
-          <div class="flex items-center gap-2 w-full sm:w-auto">
+          <!-- Filtro rápido por estado y tipo de cliente -->
+          <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <select 
               id="filter-order-status" 
               onchange="filterRepairsTable()"
@@ -197,6 +206,17 @@
               <option value="repairing">4. En Reparación</option>
               <option value="ready">5. Listos para Retiro</option>
               <option value="delivered">6. Entregados</option>
+            </select>
+
+            <select 
+              id="filter-client-type" 
+              onchange="filterRepairsTable()"
+              class="w-full sm:w-auto bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2 text-xs font-brand text-slate-200 focus:border-[#00f5a0]"
+            >
+              <option value="all">Todos los Clientes</option>
+              <option value="Público">Público</option>
+              <option value="Gremio">Gremio</option>
+              <option value="Gremio Mayorista">Gremio Mayorista</option>
             </select>
           </div>
         </div>
@@ -238,23 +258,40 @@
 
         <form id="form-create-repair" onsubmit="handleCreateRepair(event)" class="space-y-4">
           <!-- Datos del Cliente -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Nombre y Apellido *</label>
               <input type="text" name="clientName" required placeholder="Ej: Marcos Benítez" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]">
             </div>
             <div>
+              <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Tipo de Cliente *</label>
+              <select name="clientType" required class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]">
+                <option value="Público" selected>Público</option>
+                <option value="Gremio">Gremio</option>
+                <option value="Gremio Mayorista">Gremio Mayorista</option>
+              </select>
+            </div>
+            <div>
               <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">DNI / CUIT *</label>
-              <input type="text" name="clientDni" required placeholder="Ej: 38.942.105" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]">
+              <input type="text" name="clientDni" required list="customer-dni-list" oninput="handleCustomerLookup(this)" placeholder="Ej: 38.942.105 (Busca en BD)" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]">
             </div>
             <div>
               <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Teléfono / WhatsApp *</label>
-              <input type="text" name="clientPhone" required placeholder="Ej: +54 9 11 4589-2311" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]">
+              <input type="text" name="clientPhone" required list="customer-phone-list" oninput="handleCustomerLookup(this)" placeholder="Ej: +54 9 11 4589-2311" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]">
             </div>
             <div>
               <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Dirección / Domicilio</label>
               <input type="text" name="clientAddress" placeholder="Ej: Av. Corrientes 1450, CABA" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]">
             </div>
+          </div>
+
+          <!-- Badge de cliente autocompletado en tiempo real -->
+          <div id="customer-auto-badge" class="hidden p-3 rounded-xl bg-[#00f5a0]/10 border border-[#00f5a0]/40 text-[#00f5a0] text-xs font-brand flex items-center justify-between transition-all shadow-md">
+            <div class="flex items-center gap-2">
+              <i data-lucide="user-check" class="w-4 h-4 text-[#00f5a0]"></i>
+              <span id="customer-auto-text">Cliente frecuente detectado. Datos autocompletados desde Base de Datos.</span>
+            </div>
+            <button type="button" onclick="clearCustomerAutoFill()" class="text-slate-400 hover:text-white text-[10px] underline">Limpiar</button>
           </div>
 
           <!-- Datos del Dispositivo & Auto-detección por IMEI -->
@@ -607,6 +644,50 @@
       </div>
     </section>
 
+    <!-- PESTAÑA 5: BASE DE DATOS DE CLIENTES -->
+    <section id="pane-customers" class="admin-pane hidden space-y-4">
+      <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-[#00f5a0]/20 space-y-6">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h2 class="font-brand text-xl font-bold text-white flex items-center gap-2">
+              <i data-lucide="users" class="w-6 h-6 text-[#00f5a0]"></i>
+              Base de Datos de Clientes Registrados
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Al ingresar DNI o Teléfono en una nueva orden, los datos se autocompletarán desde aquí.</p>
+          </div>
+          
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <input 
+              type="text" 
+              id="search-customers-input" 
+              oninput="renderCustomersTable()" 
+              placeholder="Buscar por Nombre, DNI o Teléfono..." 
+              class="w-full sm:w-72 bg-[#05070d] border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-brand text-white focus:border-[#00f5a0]"
+            >
+          </div>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-800 rounded-xl">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-[#05070d] text-[11px] font-brand font-bold text-[#00f5a0] uppercase tracking-wider border-b border-slate-800">
+                <th class="py-3 px-3.5">ID Cliente</th>
+                <th class="py-3 px-3.5">Nombre y Apellido</th>
+                <th class="py-3 px-3.5">Categoría / Tipo</th>
+                <th class="py-3 px-3.5">DNI / CUIT</th>
+                <th class="py-3 px-3.5">Teléfono / WhatsApp</th>
+                <th class="py-3 px-3.5">Dirección / Domicilio</th>
+                <th class="py-3 px-3.5 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="customers-table-body">
+              <!-- Renderizado dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- SCRIPTS -->
@@ -624,6 +705,8 @@
       renderRepairsTable();
       initPricingManager();
       renderStockTable();
+      renderCustomersTable();
+      updateCustomerDatalists();
       initIMEIAutoDetection();
       if (window.lucide) lucide.createIcons();
     });
@@ -648,6 +731,7 @@
       if (tabName === 'repairs') renderRepairsTable();
       if (tabName === 'pricing') initPricingManager();
       if (tabName === 'stock') renderStockTable();
+      if (tabName === 'customers') renderCustomersTable();
     }
 
     // 1. MÉTRICAS
@@ -671,8 +755,11 @@
       if (!tbody) return;
 
       let tickets = TechAdmin.getAllTickets();
-      if (filterStatus !== "all") {
+      if (filterStatus && filterStatus !== "all") {
         tickets = tickets.filter(t => t.status === filterStatus);
+      }
+      if (filterClientType && filterClientType !== "all") {
+        tickets = tickets.filter(t => (t.clientType || "Público") === filterClientType);
       }
 
       if (tickets.length === 0) {
@@ -686,7 +773,10 @@
             ${t.id}
           </td>
           <td class="py-3 px-3.5">
-            <div class="font-bold text-white">${t.clientName}</div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="font-bold text-white">${t.clientName}</span>
+              ${getClientTypeBadge(t.clientType)}
+            </div>
             ${t.clientDni ? `<div class="text-[10px] text-cyan-400 font-mono mt-0.5">DNI: ${t.clientDni}</div>` : ''}
             <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
               <i data-lucide="phone" class="w-3 h-3 text-[#00f5a0]"></i> ${t.clientPhone}
@@ -754,6 +844,18 @@
       if (window.lucide) lucide.createIcons();
     }
 
+    function getClientTypeBadge(type = "Público") {
+      switch (type) {
+        case "Gremio Mayorista":
+          return `<span class="text-[9px] font-brand font-bold uppercase px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">Gremio Mayorista</span>`;
+        case "Gremio":
+          return `<span class="text-[9px] font-brand font-bold uppercase px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/30">Gremio</span>`;
+        case "Público":
+        default:
+          return `<span class="text-[9px] font-brand font-bold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/30">Público</span>`;
+      }
+    }
+
     function handleStatusChange(ticketId, newStatus) {
       TechAdmin.updateTicketStatus(ticketId, newStatus);
       renderStats();
@@ -761,8 +863,9 @@
     }
 
     function filterRepairsTable() {
-      const status = document.getElementById("filter-order-status").value;
-      renderRepairsTable(status);
+      const status = document.getElementById("filter-order-status") ? document.getElementById("filter-order-status").value : "all";
+      const clientType = document.getElementById("filter-client-type") ? document.getElementById("filter-client-type").value : "all";
+      renderRepairsTable(status, clientType);
     }
 
     function handleDeleteTicket(ticketId) {
@@ -787,6 +890,7 @@
 
       const newOrder = TechAdmin.createNewTicket({
         clientName: formData.get("clientName"),
+        clientType: formData.get("clientType") || "Público",
         clientDni: formData.get("clientDni"),
         clientPhone: formData.get("clientPhone"),
         clientAddress: formData.get("clientAddress"),
@@ -804,8 +908,10 @@
       });
 
       form.reset();
+      clearCustomerAutoFill();
       resetIMEIFeedback();
       renderStats();
+      updateCustomerDatalists();
       showToast(`¡Orden #${newOrder.id} registrada exitosamente!`, "success");
 
       // Preguntar si desea imprimir comprobante
@@ -1338,6 +1444,125 @@
         if (icon) icon.setAttribute("data-lucide", "eye");
       }
       if (window.lucide) lucide.createIcons();
+    }
+
+    // --- AUTOCOMPLETADO Y GESTIÓN DE CLIENTES ---
+    function updateCustomerDatalists() {
+      if (typeof TechAdmin === "undefined") return;
+      const customers = TechAdmin.getAllCustomers();
+      let dniDatalist = document.getElementById("customer-dni-list");
+      let phoneDatalist = document.getElementById("customer-phone-list");
+      if (!dniDatalist) {
+        dniDatalist = document.createElement("datalist");
+        dniDatalist.id = "customer-dni-list";
+        document.body.appendChild(dniDatalist);
+      }
+      if (!phoneDatalist) {
+        phoneDatalist = document.createElement("datalist");
+        phoneDatalist.id = "customer-phone-list";
+        document.body.appendChild(phoneDatalist);
+      }
+
+      dniDatalist.innerHTML = customers.filter(c => c.dni).map(c => `<option value="${c.dni}">${c.name} (${c.type || 'Público'})</option>`).join("");
+      phoneDatalist.innerHTML = customers.filter(c => c.phone).map(c => `<option value="${c.phone}">${c.name} (${c.type || 'Público'})</option>`).join("");
+    }
+
+    function handleCustomerLookup(inputEl) {
+      if (!inputEl || typeof TechAdmin === "undefined") return;
+      const val = inputEl.value;
+      if (!val || val.trim().length < 4) {
+        clearCustomerAutoFill();
+        return;
+      }
+
+      const customer = TechAdmin.findCustomerByDniOrPhone(val);
+      if (customer) {
+        const form = inputEl.closest("form");
+        if (form) {
+          if (form.clientName) form.clientName.value = customer.name;
+          if (form.clientType) form.clientType.value = customer.type || "Público";
+          if (form.clientDni) form.clientDni.value = customer.dni || "";
+          if (form.clientPhone) form.clientPhone.value = customer.phone || "";
+          if (form.clientAddress && customer.address) form.clientAddress.value = customer.address;
+
+          showCustomerAutoBadge(customer);
+        }
+      }
+    }
+
+    function showCustomerAutoBadge(c) {
+      const badge = document.getElementById("customer-auto-badge");
+      const text = document.getElementById("customer-auto-text");
+      if (badge && text) {
+        text.innerHTML = `Cliente Frecuente Detectado: <strong>${c.name}</strong> (${c.type || 'Público'}) — Datos autocompletados desde Base de Datos.`;
+        badge.classList.remove("hidden");
+      }
+    }
+
+    function clearCustomerAutoFill() {
+      const badge = document.getElementById("customer-auto-badge");
+      if (badge) badge.classList.add("hidden");
+    }
+
+    function renderCustomersTable() {
+      const tbody = document.getElementById("customers-table-body");
+      if (!tbody || typeof TechAdmin === "undefined") return;
+
+      const customers = TechAdmin.getAllCustomers();
+      const searchInput = document.getElementById("search-customers-input");
+      const q = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+      const filtered = customers.filter(c => {
+        if (!q) return true;
+        return (c.name && c.name.toLowerCase().includes(q)) ||
+               (c.dni && c.dni.toLowerCase().includes(q)) ||
+               (c.phone && c.phone.toLowerCase().includes(q)) ||
+               (c.type && c.type.toLowerCase().includes(q));
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-500">No hay clientes registrados o coincidentes con la búsqueda.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(c => `
+        <tr class="border-b border-slate-800/70 hover:bg-[#0a101c]/60 transition-colors text-xs font-tech">
+          <td class="py-3 px-3.5 font-brand font-bold text-slate-400 whitespace-nowrap">
+            ${c.id}
+          </td>
+          <td class="py-3 px-3.5 font-bold text-white">
+            ${c.name}
+          </td>
+          <td class="py-3 px-3.5">
+            ${getClientTypeBadge(c.type)}
+          </td>
+          <td class="py-3 px-3.5 font-mono text-cyan-400">
+            ${c.dni || '-'}
+          </td>
+          <td class="py-3 px-3.5 font-mono text-[#00f5a0]">
+            ${c.phone || '-'}
+          </td>
+          <td class="py-3 px-3.5 text-slate-300">
+            ${c.address || '-'}
+          </td>
+          <td class="py-3 px-3.5 text-right whitespace-nowrap">
+            <button onclick="handleDeleteCustomer('${c.id}')" class="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 transition-colors" title="Eliminar cliente">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </td>
+        </tr>
+      `).join("");
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function handleDeleteCustomer(id) {
+      if (confirm("¿Seguro que deseas eliminar este cliente de la Base de Datos?")) {
+        TechAdmin.deleteCustomer(id);
+        renderCustomersTable();
+        updateCustomerDatalists();
+        showToast("Cliente eliminado de la Base de Datos", "warning");
+      }
     }
 
     document.addEventListener("DOMContentLoaded", () => {
