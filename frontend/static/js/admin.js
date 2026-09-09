@@ -7,7 +7,7 @@
 const TechAdmin = (function () {
   const STORAGE_KEYS = {
     TICKETS: "wilotech_tickets_v3",
-    CATALOG: "wilotech_catalog_v5",
+    CATALOG: "wilotech_catalog_v6",
     INVENTORY: "wilotech_inventory_v3"
   };
 
@@ -25,11 +25,18 @@ const TechAdmin = (function () {
   // 1. GESTIÓN DEL CATÁLOGO DE PRECIOS Y MODELOS INDIVIDUALES
   // -------------------------------------------------------------
   function loadCatalog() {
+    ["wilotech_catalog_v1", "wilotech_catalog_v2", "wilotech_catalog_v3", "wilotech_catalog_v4", "wilotech_catalog_v5"].forEach(k => {
+      localStorage.removeItem(k);
+    });
+
     const saved = localStorage.getItem(STORAGE_KEYS.CATALOG);
     if (saved) {
       try {
         catalog = JSON.parse(saved);
-        if (!catalog || !catalog.categories || catalog.categories.length < TECH_CATALOG.categories.length) {
+        const techCatBrandsCount = TECH_CATALOG.categories.reduce((acc, c) => acc + (c.brands ? c.brands.length : 0), 0);
+        const loadedBrandsCount = (catalog && catalog.categories) ? catalog.categories.reduce((acc, c) => acc + (c.brands ? c.brands.length : 0), 0) : 0;
+
+        if (loadedBrandsCount < techCatBrandsCount) {
           catalog = JSON.parse(JSON.stringify(TECH_CATALOG));
           saveCatalog();
         }
@@ -444,5 +451,6 @@ const TechAdmin = (function () {
   };
 })();
 
-// Inicializar al cargar el script
-TechAdmin.init();
+if (typeof window !== "undefined") {
+  window.TechAdmin = TechAdmin;
+}

@@ -632,3 +632,8 @@ const TECH_CATALOG = {
     { code: "REP-PASTA-MX6", name: "Pasta Térmica Arctic MX-6 Jeringa 8g", qty: 12, min: 4, unitCost: 12 }
   ]
 };
+
+// Exportar globalmente
+if (typeof window !== "undefined") {
+  window.TECH_CATALOG = TECH_CATALOG;
+}

@@ -252,3 +252,7 @@ const TechTracker = (function () {
     searchById: performSearch
   };
 })();
+
+if (typeof window !== "undefined") {
+  window.TechTracker = TechTracker;
+}

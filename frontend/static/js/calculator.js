@@ -349,6 +349,12 @@ const TechCalculator = (function () {
   }
 
   return {
-    init: init
+    init: init,
+    selectCategory: selectCategory,
+    selectBrand: selectBrand
   };
 })();
+
+if (typeof window !== "undefined") {
+  window.TechCalculator = TechCalculator;
+}
