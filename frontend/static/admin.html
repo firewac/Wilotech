@@ -192,8 +192,16 @@
             <p class="text-xs text-slate-400 mt-0.5">Los cambios de estado se sincronizan en tiempo real con el rastreador público</p>
           </div>
 
-          <!-- Filtro rápido por estado y tipo de cliente -->
+          <!-- Filtro rápido por estado, tipo de cliente y búsqueda -->
           <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <input 
+              type="text" 
+              id="search-repairs-input" 
+              oninput="filterRepairsTable()" 
+              placeholder="Buscar por Ticket, Cliente, IMEI..." 
+              class="w-full sm:w-52 bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2 text-xs font-brand text-slate-200 focus:border-[#00f5a0]"
+            >
+
             <select 
               id="filter-order-status" 
               onchange="filterRepairsTable()"
@@ -750,16 +758,30 @@
     }
 
     // 2. TABLA DE REPARACIONES
-    function renderRepairsTable(filterStatus = "all") {
+    function renderRepairsTable(filterStatus = "all", filterClientType = "all") {
       const tbody = document.getElementById("repairs-table-body");
       if (!tbody) return;
 
+      const statusVal = filterStatus !== "all" ? filterStatus : (document.getElementById("filter-order-status") ? document.getElementById("filter-order-status").value : "all");
+      const clientTypeVal = filterClientType !== "all" ? filterClientType : (document.getElementById("filter-client-type") ? document.getElementById("filter-client-type").value : "all");
+      const searchVal = document.getElementById("search-repairs-input") ? document.getElementById("search-repairs-input").value.toLowerCase().trim() : "";
+
       let tickets = TechAdmin.getAllTickets();
-      if (filterStatus && filterStatus !== "all") {
-        tickets = tickets.filter(t => t.status === filterStatus);
+      if (statusVal && statusVal !== "all") {
+        tickets = tickets.filter(t => t.status === statusVal);
       }
-      if (filterClientType && filterClientType !== "all") {
-        tickets = tickets.filter(t => (t.clientType || "Público") === filterClientType);
+      if (clientTypeVal && clientTypeVal !== "all") {
+        tickets = tickets.filter(t => (t.clientType || "Público") === clientTypeVal);
+      }
+      if (searchVal) {
+        tickets = tickets.filter(t => 
+          (t.id && t.id.toLowerCase().includes(searchVal)) ||
+          (t.clientName && t.clientName.toLowerCase().includes(searchVal)) ||
+          (t.clientDni && t.clientDni.toLowerCase().includes(searchVal)) ||
+          (t.clientPhone && t.clientPhone.toLowerCase().includes(searchVal)) ||
+          (t.serialOrImei && t.serialOrImei.toLowerCase().includes(searchVal)) ||
+          (t.deviceModel && t.deviceModel.toLowerCase().includes(searchVal))
+        );
       }
 
       if (tickets.length === 0) {
@@ -1504,11 +1526,21 @@
       if (badge) badge.classList.add("hidden");
     }
 
+    function filterOrdersByClient(clientName) {
+      switchAdminTab("repairs");
+      const searchInput = document.getElementById("search-repairs-input");
+      if (searchInput) {
+        searchInput.value = clientName;
+        filterRepairsTable();
+      }
+    }
+
     function renderCustomersTable() {
       const tbody = document.getElementById("customers-table-body");
       if (!tbody || typeof TechAdmin === "undefined") return;
 
       const customers = TechAdmin.getAllCustomers();
+      const allTickets = TechAdmin.getAllTickets();
       const searchInput = document.getElementById("search-customers-input");
       const q = searchInput ? searchInput.value.toLowerCase().trim() : "";
 
@@ -1525,7 +1557,16 @@
         return;
       }
 
-      tbody.innerHTML = filtered.map(c => `
+      tbody.innerHTML = filtered.map(c => {
+        const cDni = (c.dni || "").replace(/\D/g, "");
+        const cPhone = (c.phone || "").replace(/\D/g, "");
+        const clientTickets = allTickets.filter(t => {
+          const tDni = (t.clientDni || "").replace(/\D/g, "");
+          const tPhone = (t.clientPhone || "").replace(/\D/g, "");
+          return (cDni && tDni && cDni === tDni) || (cPhone && tPhone && cPhone === tPhone) || (t.clientName && c.name && t.clientName.toLowerCase() === c.name.toLowerCase());
+        });
+
+        return `
         <tr class="border-b border-slate-800/70 hover:bg-[#0a101c]/60 transition-colors text-xs font-tech">
           <td class="py-3 px-3.5 font-brand font-bold text-slate-400 whitespace-nowrap">
             ${c.id}
@@ -1543,7 +1584,16 @@
             ${c.phone || '-'}
           </td>
           <td class="py-3 px-3.5 text-slate-300">
-            ${c.address || '-'}
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-brand font-bold bg-[#00f5a0]/10 text-[#00f5a0] border border-[#00f5a0]/30 whitespace-nowrap">
+                ${clientTickets.length} orden(es)
+              </span>
+              ${clientTickets.length > 0 ? `
+                <button onclick="filterOrdersByClient('${c.name.replace(/'/g, "\\'")}')" class="text-[10px] text-cyan-400 hover:text-cyan-300 underline font-brand" title="Ver órdenes de este cliente">
+                  Ver Historial
+                </button>
+              ` : ''}
+            </div>
           </td>
           <td class="py-3 px-3.5 text-right whitespace-nowrap">
             <button onclick="handleDeleteCustomer('${c.id}')" class="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 transition-colors" title="Eliminar cliente">
@@ -1551,7 +1601,8 @@
             </button>
           </td>
         </tr>
-      `).join("");
+      `;
+      }).join("");
 
       if (window.lucide) lucide.createIcons();
     }
