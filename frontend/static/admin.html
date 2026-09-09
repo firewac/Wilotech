@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administración | WILOTECH Laboratorio</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              cyan: '#00d2ff',
+              green: '#00f5a0',
+              dark: '#05070d',
+              card: 'rgba(10, 16, 28, 0.85)'
+            }
+          },
+          fontFamily: {
+            brand: ['Orbitron', 'sans-serif'],
+            tech: ['Rajdhani', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="lab-grid-bg text-slate-200 min-h-screen flex flex-col font-tech selection:bg-[#00f5a0] selection:text-slate-950">
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- HEADER ADMINISTRATIVO -->
+  <header class="w-full glass-panel border-b border-[#00f5a0]/25 bg-[#05070d]/95 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+      
+      <div class="flex items-center gap-3.5">
+        <div class="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-[#00f5a0]/50 shadow-lg shadow-[#00f5a0]/20">
+          <img src="assets/logo.png" alt="WILOTECH" class="w-full h-full object-cover">
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-brand text-2xl font-black text-white">WILO<span class="text-[#00f5a0]">TECH</span></span>
+            <span class="font-brand text-[9px] font-bold uppercase bg-[#00f5a0]/20 text-[#00f5a0] border border-[#00f5a0]/40 px-2 py-0.5 rounded">
+              ADMIN DASHBOARD
+            </span>
+          </div>
+          <p class="font-brand text-[8px] tracking-[0.2em] text-[#00d2ff] uppercase">SISTEMA DE GESTIÓN TÉCNICA & TARIFAS</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 flex-wrap">
+        <!-- BOTÓN DESTACADO AL COMPARADOR DE REPUESTOS -->
+        <a 
+          href="comparador.html" 
+          class="inline-flex items-center gap-2 py-2 px-4 rounded-xl border border-[#00f5a0] bg-[#00f5a0]/15 hover:bg-[#00f5a0]/30 text-[#00f5a0] text-xs font-brand font-bold transition-all shadow-lg shadow-[#00f5a0]/20"
+        >
+          <i data-lucide="search" class="w-4 h-4 text-[#00f5a0]"></i>
+          <span>🔍 COMPARADOR DE REPUESTOS MAYORISTAS</span>
+        </a>
+
+        <a 
+          href="index.html" 
+          class="inline-flex items-center gap-2 py-2 px-4 rounded-xl border border-slate-700 bg-[#0a101c] hover:border-[#00f5a0] hover:text-[#00f5a0] text-xs font-brand font-bold transition-all text-slate-300"
+        >
+          <i data-lucide="external-link" class="w-4 h-4 text-[#00d2ff]"></i>
+          <span>VER WEB PÚBLICA</span>
+        </a>
+
+        <button 
+          onclick="logoutAdmin()" 
+          class="inline-flex items-center gap-2 py-2 px-3.5 rounded-xl border border-rose-500/40 bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 text-xs font-brand font-bold transition-all"
+          title="Cerrar sesión de taller"
+        >
+          <i data-lucide="log-out" class="w-4 h-4 text-rose-400"></i>
+          <span class="hidden sm:inline">SALIR</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL DEL DASHBOARD -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-8">
+    
+    <!-- 1. BARRA DE MÉTRICAS KPI -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="p-4 sm:p-5 rounded-2xl glass-panel border border-[#00f5a0]/20">
+        <div class="flex items-center justify-between text-slate-400 text-xs uppercase font-brand">
+          <span>Órdenes Totales</span>
+          <i data-lucide="clipboard-list" class="w-5 h-5 text-[#00d2ff]"></i>
+        </div>
+        <div id="stat-total-orders" class="font-brand text-3xl font-black text-white mt-2">0</div>
+        <p class="text-[11px] text-slate-500 mt-1">Registradas en sistema</p>
+      </div>
+
+      <div class="p-4 sm:p-5 rounded-2xl glass-panel border border-amber-500/20">
+        <div class="flex items-center justify-between text-slate-400 text-xs uppercase font-brand">
+          <span>En Banco / Pruebas</span>
+          <i data-lucide="cpu" class="w-5 h-5 text-amber-400"></i>
+        </div>
+        <div id="stat-in-repair" class="font-brand text-3xl font-black text-amber-400 mt-2">0</div>
+        <p class="text-[11px] text-slate-500 mt-1">En diagnóstico o soldadura</p>
+      </div>
+
+      <div class="p-4 sm:p-5 rounded-2xl glass-panel border border-[#00f5a0]/30">
+        <div class="flex items-center justify-between text-slate-400 text-xs uppercase font-brand">
+          <span>Listos para Retiro</span>
+          <i data-lucide="check-circle" class="w-5 h-5 text-[#00f5a0]"></i>
+        </div>
+        <div id="stat-ready-orders" class="font-brand text-3xl font-black text-[#00f5a0] mt-2">0</div>
+        <p class="text-[11px] text-slate-500 mt-1">Esperando al cliente</p>
+      </div>
+
+      <div class="p-4 sm:p-5 rounded-2xl glass-panel border border-[#00d2ff]/20">
+        <div class="flex items-center justify-between text-slate-400 text-xs uppercase font-brand">
+          <span>Presupuesto Activo</span>
+          <i data-lucide="dollar-sign" class="w-5 h-5 text-[#00d2ff]"></i>
+        </div>
+        <div id="stat-total-revenue" class="font-brand text-3xl font-black text-[#00d2ff] mt-2">$0 USD</div>
+        <p class="text-[11px] text-slate-500 mt-1">Volumen en taller</p>
+      </div>
+    </div>
+
+    <!-- 2. NAVEGACIÓN POR PESTAÑAS DEL DASHBOARD -->
+    <div class="flex border-b border-slate-800 bg-[#0a101c]/80 rounded-t-2xl px-4 font-brand text-xs sm:text-sm font-bold overflow-x-auto">
+      <button 
+        id="tab-btn-repairs"
+        onclick="switchAdminTab('repairs')" 
+        class="admin-nav-tab py-4 px-5 border-b-2 border-[#00f5a0] text-[#00f5a0] flex items-center gap-2 whitespace-nowrap transition-colors"
+      >
+        <i data-lucide="wrench" class="w-4 h-4"></i>
+        <span>1. CONTROL DE REPARACIONES (TICKETS)</span>
+      </button>
+
+      <button 
+        id="tab-btn-new-order"
+        onclick="switchAdminTab('new-order')" 
+        class="admin-nav-tab py-4 px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors"
+      >
+        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+        <span>2. REGISTRAR NUEVO EQUIPO</span>
+      </button>
+
+      <button 
+        id="tab-btn-pricing"
+        onclick="switchAdminTab('pricing')" 
+        class="admin-nav-tab py-4 px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors"
+      >
+        <i data-lucide="tag" class="w-4 h-4"></i>
+        <span>3. GESTOR DE PRECIOS & MODELOS</span>
+      </button>
+
+      <button 
+        id="tab-btn-stock"
+        onclick="switchAdminTab('stock')" 
+        class="admin-nav-tab py-4 px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors"
+      >
+        <i data-lucide="package" class="w-4 h-4"></i>
+        <span>4. INVENTARIO DE REPUESTOS</span>
+      </button>
+    </div>
+
+    <!-- PESTAÑA 1: LISTADO DE REPARACIONES Y CAMBIO DE ESTADOS -->
+    <section id="pane-repairs" class="admin-pane space-y-4">
+      <div class="glass-panel p-6 rounded-2xl border border-[#00f5a0]/20 space-y-4">
+        
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h2 class="font-brand text-xl font-bold text-white">Órdenes y Equipos en Taller</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Los cambios de estado se sincronizan en tiempo real con el rastreador público</p>
+          </div>
+
+          <!-- Filtro rápido por estado -->
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <select 
+              id="filter-order-status" 
+              onchange="filterRepairsTable()"
+              class="w-full sm:w-auto bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2 text-xs font-brand text-slate-200 focus:border-[#00f5a0]"
+            >
+              <option value="all">Ver Todos los Estados</option>
+              <option value="received">1. En Recepción</option>
+              <option value="diagnosing">2. En Diagnóstico</option>
+              <option value="waiting_parts">3. Esperando Repuestos</option>
+              <option value="repairing">4. En Reparación</option>
+              <option value="ready">5. Listos para Retiro</option>
+              <option value="delivered">6. Entregados</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tabla de Órdenes -->
+        <div class="overflow-x-auto border border-slate-800 rounded-xl">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-[#05070d] text-[11px] font-brand font-bold text-[#00f5a0] uppercase tracking-wider border-b border-slate-800">
+                <th class="py-3 px-3.5">Ticket</th>
+                <th class="py-3 px-3.5">Cliente</th>
+                <th class="py-3 px-3.5">Dispositivo & Serial</th>
+                <th class="py-3 px-3.5">Falla Reportada</th>
+                <th class="py-3 px-3.5">Estado en Taller</th>
+                <th class="py-3 px-3.5">Costo</th>
+                <th class="py-3 px-3.5 text-right">Acciones Rápidas</th>
+              </tr>
+            </thead>
+            <tbody id="repairs-table-body">
+              <!-- Renderizado por admin.js -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- PESTAÑA 2: REGISTRAR NUEVA REPARACIÓN -->
+    <section id="pane-new-order" class="admin-pane hidden">
+      <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-[#00f5a0]/30 max-w-4xl mx-auto space-y-6">
+        
+        <div>
+          <span class="font-brand text-[10px] font-bold uppercase tracking-widest text-[#00f5a0] bg-[#00f5a0]/10 border border-[#00f5a0]/30 px-3 py-1 rounded-full">
+            Recepción de Equipos
+          </span>
+          <h2 class="font-brand text-2xl font-extrabold text-white mt-2">Registrar Nueva Orden de Servicio Técnico</h2>
+          <p class="text-xs text-slate-400 mt-1">Completa los datos de ingreso. Se generará un número de ticket único y podrás imprimir el comprobante con un clic.</p>
+        </div>
+
+        <form id="form-create-repair" onsubmit="handleCreateRepair(event)" class="space-y-4">
+          <!-- Datos del Cliente -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Nombre y Apellido *</label>
+              <input type="text" name="clientName" required placeholder="Ej: Marcos Benítez" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]">
+            </div>
+            <div>
+              <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">DNI / CUIT *</label>
+              <input type="text" name="clientDni" required placeholder="Ej: 38.942.105" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]">
+            </div>
+            <div>
+              <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Teléfono / WhatsApp *</label>
+              <input type="text" name="clientPhone" required placeholder="Ej: +54 9 11 4589-2311" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]">
+            </div>
+            <div>
+              <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Dirección / Domicilio</label>
+              <input type="text" name="clientAddress" placeholder="Ej: Av. Corrientes 1450, CABA" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]">
+            </div>
+          </div>
+
+          <!-- Datos del Dispositivo & Auto-detección por IMEI -->
+          <div class="p-4 sm:p-5 rounded-2xl bg-[#070b14]/90 border border-[#00f5a0]/30 space-y-4 shadow-lg shadow-black/40">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#00f5a0] animate-pulse"></span>
+                <h3 class="font-brand text-xs sm:text-sm font-bold text-white uppercase tracking-wider">Identificación y Trazabilidad del Equipo</h3>
+              </div>
+              <span class="text-[11px] text-slate-400">
+                Escribe o pega el <strong class="text-[#00f5a0]">IMEI</strong> para autocompletar los datos
+              </span>
+            </div>
+
+            <!-- Campo Principal de IMEI con estado de validación -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block font-brand text-xs font-bold text-slate-200 uppercase tracking-wider">
+                  N° de Serie / IMEI (15 dígitos) *
+                </label>
+                <span id="imei-luhn-badge" class="text-[10px] font-brand font-bold px-2.5 py-0.5 rounded-full border border-slate-700 text-slate-400 bg-slate-900/80 transition-all">
+                  Esperando IMEI...
+                </span>
+              </div>
+              <div class="relative flex items-center">
+                <i data-lucide="scan" class="w-5 h-5 text-slate-500 absolute left-3.5 pointer-events-none"></i>
+                <input 
+                  type="text" 
+                  id="input-repair-imei"
+                  name="serialOrImei" 
+                  placeholder="Ej: 352874119482015 (marca *#06# en el celular para ver el IMEI)" 
+                  class="w-full bg-[#05070d] border-2 border-slate-700 focus:border-[#00f5a0] rounded-xl px-4 py-3 text-sm text-white font-mono tracking-wider focus:outline-none transition-all pl-11 pr-32"
+                  autocomplete="off"
+                  maxlength="18"
+                >
+                <div class="absolute right-2 flex items-center gap-1.5">
+                  <button 
+                    type="button" 
+                    id="btn-paste-imei"
+                    onclick="handlePasteIMEI()"
+                    title="Pegar IMEI del portapapeles"
+                    class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-brand flex items-center gap-1 transition-colors border border-slate-700"
+                  >
+                    <i data-lucide="clipboard" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Pegar</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    id="btn-lookup-imei"
+                    onclick="handleManualIMEILookup()"
+                    title="Detectar equipo inmediatamente"
+                    class="px-3 py-1.5 rounded-lg bg-[#00f5a0]/20 hover:bg-[#00f5a0]/30 text-[#00f5a0] border border-[#00f5a0]/40 text-xs font-brand font-bold flex items-center gap-1 transition-colors"
+                  >
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    <span>Detectar</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Cartel de Feedback Dinámico -->
+              <div id="imei-detection-feedback" class="mt-2 text-xs p-2.5 rounded-xl border border-slate-800 bg-[#05070d]/70 text-slate-400 flex items-center gap-2 transition-all">
+                <i id="imei-feedback-icon" data-lucide="info" class="w-4 h-4 text-[#00d2ff] shrink-0"></i>
+                <span id="imei-feedback-text">Al ingresar el IMEI, los campos <strong>Marca</strong>, <strong>Modelo</strong>, <strong>Color</strong> y <strong>Almacenamiento</strong> se autocompletarán de inmediato.</span>
+              </div>
+            </div>
+
+            <!-- Campos del Dispositivo: Categoría, Marca, Modelo, Color, Almacenamiento -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
+              <div>
+                <label class="block font-brand text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">Categoría *</label>
+                <select id="repair-device-type" name="deviceType" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:border-[#00f5a0] transition-all">
+                  <option value="Celular">Celular / Smartphone</option>
+                  <option value="Tablet">Tablet / iPad</option>
+                  <option value="Laptop Gamer">Laptop Gamer / Notebook</option>
+                  <option value="PC Escritorio">PC de Escritorio / Gaming</option>
+                  <option value="Consola">Consola de Videojuegos</option>
+                  <option value="Smartwatch">Smartwatch</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-brand text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Marca *</span>
+                  <span id="badge-auto-brand" class="hidden text-[9px] text-[#00f5a0] font-brand font-bold uppercase">AUTO</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="repair-device-brand"
+                  name="deviceBrand" 
+                  required 
+                  placeholder="Ej: Apple" 
+                  class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-medium focus:border-[#00f5a0] transition-all"
+                  list="brand-options"
+                >
+                <datalist id="brand-options">
+                  <option value="Apple">
+                  <option value="Samsung">
+                  <option value="Motorola">
+                  <option value="Xiaomi">
+                  <option value="Redmi">
+                  <option value="POCO">
+                  <option value="Google">
+                  <option value="Huawei">
+                  <option value="Sony">
+                  <option value="LG">
+                  <option value="TCL">
+                </datalist>
+              </div>
+
+              <div>
+                <label class="block font-brand text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Modelo *</span>
+                  <span id="badge-auto-model" class="hidden text-[9px] text-[#00f5a0] font-brand font-bold uppercase">AUTO</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="repair-device-model"
+                  name="deviceModel" 
+                  required 
+                  placeholder="Ej: iPhone 14 Pro Max" 
+                  class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-medium focus:border-[#00f5a0] transition-all"
+                >
+              </div>
+
+              <div>
+                <label class="block font-brand text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Color *</span>
+                  <span id="badge-auto-color" class="hidden text-[9px] text-[#00f5a0] font-brand font-bold uppercase">AUTO</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="repair-device-color"
+                  name="deviceColor" 
+                  placeholder="Ej: Space Black" 
+                  class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-medium focus:border-[#00f5a0] transition-all"
+                  list="color-options"
+                >
+                <datalist id="color-options">
+                  <option value="Negro Espacial">
+                  <option value="Titanio Natural">
+                  <option value="Plata / Silver">
+                  <option value="Oro / Gold">
+                  <option value="Deep Purple">
+                  <option value="Azul Sierra">
+                  <option value="Phantom Black">
+                  <option value="Midnight Blue">
+                  <option value="Verde Noche">
+                  <option value="Blanco Estrella">
+                </datalist>
+              </div>
+
+              <div>
+                <label class="block font-brand text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Almacenamiento *</span>
+                  <span id="badge-auto-storage" class="hidden text-[9px] text-[#00f5a0] font-brand font-bold uppercase">AUTO</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="repair-device-storage"
+                  name="deviceStorage" 
+                  placeholder="Ej: 128 GB" 
+                  class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-medium focus:border-[#00f5a0] transition-all"
+                  list="storage-options"
+                >
+                <datalist id="storage-options">
+                  <option value="64 GB">
+                  <option value="128 GB">
+                  <option value="256 GB">
+                  <option value="512 GB">
+                  <option value="1 TB">
+                </datalist>
+              </div>
+            </div>
+          </div>
+
+          <!-- Falla Manifestada -->
+          <div>
+            <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Falla Reportada por el Cliente *</label>
+            <textarea name="issueDescription" rows="2" required placeholder="Ej: No da imagen por HDMI tras un tirón de cable / No enciende luego de una sobrecarga..." class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0]"></textarea>
+          </div>
+
+          <!-- Diagnóstico Técnico & Presupuesto -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Estado Inicial *</label>
+              <select name="status" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:border-[#00f5a0]">
+                <option value="received">1. En Recepción</option>
+                <option value="diagnosing">2. En Diagnóstico</option>
+                <option value="waiting_parts">3. Esperando Repuestos</option>
+                <option value="repairing">4. En Reparación</option>
+                <option value="ready">5. Listo para Retiro</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Técnico Responsable</label>
+              <input type="text" name="technician" value="Laboratorio WILOTECH" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0]">
+            </div>
+            <div>
+              <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Presupuesto Estimado (USD) *</label>
+              <input type="number" name="finalCost" value="65" required class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm font-brand font-bold text-[#00f5a0] focus:border-[#00f5a0]">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Notas Técnicas Iniciales de Banco</label>
+            <input type="text" name="technicianNotes" value="Equipo ingresado para inspección en microscopio y prueba de líneas de alimentación." class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00f5a0]">
+          </div>
+
+          <div class="pt-4 border-t border-slate-800 flex justify-end gap-3">
+            <button 
+              type="submit" 
+              class="btn-cyber py-3.5 px-8 rounded-xl text-xs uppercase tracking-wider flex items-center gap-2"
+            >
+              <i data-lucide="check" class="w-4 h-4 text-slate-950"></i>
+              <span>CREAR ORDEN Y GUARDAR EN SISTEMA</span>
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </section>
+
+    <!-- PESTAÑA 3: GESTOR DE PRECIOS Y MODELOS (CARGA Y EDICIÓN) -->
+    <section id="pane-pricing" class="admin-pane hidden space-y-6">
+      
+      <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-[#00f5a0]/30 space-y-6">
+        <div>
+          <span class="font-brand text-[10px] font-bold uppercase tracking-widest text-[#00d2ff] bg-[#00d2ff]/10 border border-[#00d2ff]/30 px-3 py-1 rounded-full">
+            Tarifario Oficial & Cotizador
+          </span>
+          <h2 class="font-brand text-2xl font-extrabold text-white mt-2">Gestor de Precios, Fallas y Modelos</h2>
+          <p class="text-xs text-slate-400 mt-1">Modifica los precios y tiempos de cada reparación. Los cambios se guardan y actualizan automáticamente el cotizador público que ven los clientes.</p>
+        </div>
+
+        <!-- Selectores de Navegación del Catálogo -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-[#05070d] border border-slate-800">
+          <div>
+            <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">1. Categoría</label>
+            <select id="pricing-category-select" onchange="handlePricingCategoryChange()" class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:border-[#00f5a0]">
+              <!-- Inyectado dinámicamente -->
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">2. Marca o Fabricante</label>
+            <select id="pricing-brand-select" onchange="handlePricingBrandChange()" class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:border-[#00f5a0]">
+              <!-- Inyectado dinámicamente -->
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">3. Modelo Específico</label>
+            <select id="pricing-model-select" onchange="handlePricingModelChange()" class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:border-[#00f5a0]">
+              <!-- Inyectado dinámicamente -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Acciones Rápidas: Agregar Nuevo Modelo -->
+        <div class="p-4 rounded-xl bg-[#05070d]/60 border border-[#00d2ff]/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="plus-square" class="w-5 h-5 text-[#00d2ff]"></i>
+            <span class="text-xs font-brand text-slate-300">¿Deseas agregar un modelo nuevo a esta marca?</span>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <input type="text" id="new-model-input" placeholder="Ej: PlayStation 5 Pro / Galaxy S25" class="bg-[#0a101c] border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-[#00d2ff]">
+            <button onclick="handleAddNewModel()" class="btn-cyber py-1.5 px-3 rounded-lg text-xs whitespace-nowrap">Agregar Modelo</button>
+          </div>
+        </div>
+
+        <!-- Tabla Editable de Precios de Fallas -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-brand text-sm font-bold text-white uppercase tracking-wider">Tarifas de Reparación para esta Marca</h3>
+            <span class="text-xs text-[#00f5a0] font-tech font-semibold">Edita los valores directamente en las casillas</span>
+          </div>
+
+          <div class="overflow-x-auto border border-slate-800 rounded-xl">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-[#05070d] text-[11px] font-brand font-bold text-[#00f5a0] uppercase tracking-wider border-b border-slate-800">
+                  <th class="py-3 px-3.5">Falla Técnica / Tipo de Reparación</th>
+                  <th class="py-3 px-3.5 w-40">Precio Base (USD)</th>
+                  <th class="py-3 px-3.5 w-48">Demora de Laboratorio</th>
+                  <th class="py-3 px-3.5 text-right w-24">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="pricing-faults-tbody">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Formulario para Agregar Nueva Falla a esta Marca -->
+        <div class="p-5 rounded-xl border border-slate-800 bg-[#05070d] space-y-3">
+          <h4 class="font-brand text-xs font-bold text-[#00f5a0] uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-4 h-4 text-[#00f5a0]"></i>
+            Agregar Nuevo Servicio o Falla a esta Marca
+          </h4>
+
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div class="sm:col-span-2">
+              <input type="text" id="new-fault-name" placeholder="Descripción de la falla (Ej: Cambio de Conector Type-C)" class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-[#00f5a0]">
+            </div>
+            <div>
+              <input type="number" id="new-fault-price" placeholder="Precio en USD (Ej: 45)" class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-3 py-2 text-xs font-brand text-[#00f5a0] focus:border-[#00f5a0]">
+            </div>
+            <div>
+              <input type="text" id="new-fault-time" placeholder="Tiempo (Ej: 2 a 3 horas)" class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-[#00f5a0]">
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button onclick="handleAddNewFault()" class="btn-cyber py-2 px-5 rounded-xl text-xs uppercase tracking-wider flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4 text-slate-950"></i>
+              <span>Agregar Servicio al Catálogo</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- PESTAÑA 4: INVENTARIO DE REPUESTOS -->
+    <section id="pane-stock" class="admin-pane hidden space-y-4">
+      <div class="glass-panel p-6 rounded-2xl border border-[#00f5a0]/20 space-y-4">
+        <div>
+          <h2 class="font-brand text-xl font-bold text-white">Stock de Componentes Críticos</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Control de piezas OEM en depósito para reparaciones inmediatas</p>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-800 rounded-xl">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-[#05070d] text-[11px] font-brand font-bold text-[#00f5a0] uppercase tracking-wider border-b border-slate-800">
+                <th class="py-3 px-3.5">Código OEM</th>
+                <th class="py-3 px-3.5">Descripción de Componente</th>
+                <th class="py-3 px-3.5">Stock Físico</th>
+                <th class="py-3 px-3.5">Costo Unit. (USD)</th>
+                <th class="py-3 px-3.5 text-right">Ajuste Rápido</th>
+              </tr>
+            </thead>
+            <tbody id="stock-table-body">
+              <!-- Inyectado dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- SCRIPTS -->
+  <script src="js/data.js"></script>
+  <script src="js/imei-service.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- LÓGICA DE INTERFAZ DEL DASHBOARD -->
+  <script>
+    let activeTab = 'repairs';
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderStats();
+      renderRepairsTable();
+      initPricingManager();
+      renderStockTable();
+      initIMEIAutoDetection();
+      if (window.lucide) lucide.createIcons();
+    });
+
+    function switchAdminTab(tabName) {
+      activeTab = tabName;
+      document.querySelectorAll(".admin-nav-tab").forEach(btn => {
+        btn.classList.remove("border-[#00f5a0]", "text-[#00f5a0]");
+        btn.classList.add("border-transparent", "text-slate-400");
+      });
+      document.querySelectorAll(".admin-pane").forEach(pane => pane.classList.add("hidden"));
+
+      const targetBtn = document.getElementById(`tab-btn-${tabName}`);
+      const targetPane = document.getElementById(`pane-${tabName}`);
+
+      if (targetBtn) {
+        targetBtn.classList.add("border-[#00f5a0]", "text-[#00f5a0]");
+        targetBtn.classList.remove("border-transparent", "text-slate-400");
+      }
+      if (targetPane) targetPane.classList.remove("hidden");
+
+      if (tabName === 'repairs') renderRepairsTable();
+      if (tabName === 'pricing') initPricingManager();
+      if (tabName === 'stock') renderStockTable();
+    }
+
+    // 1. MÉTRICAS
+    function renderStats() {
+      const tickets = TechAdmin.getAllTickets();
+      document.getElementById("stat-total-orders").textContent = tickets.length;
+      
+      const inRepair = tickets.filter(t => t.status === 'diagnosing' || t.status === 'repairing' || t.status === 'waiting_parts').length;
+      document.getElementById("stat-in-repair").textContent = inRepair;
+
+      const ready = tickets.filter(t => t.status === 'ready').length;
+      document.getElementById("stat-ready-orders").textContent = ready;
+
+      const totalRevenue = tickets.reduce((acc, t) => acc + (t.finalCost || 0), 0);
+      document.getElementById("stat-total-revenue").textContent = `$${totalRevenue} USD`;
+    }
+
+    // 2. TABLA DE REPARACIONES
+    function renderRepairsTable(filterStatus = "all") {
+      const tbody = document.getElementById("repairs-table-body");
+      if (!tbody) return;
+
+      let tickets = TechAdmin.getAllTickets();
+      if (filterStatus !== "all") {
+        tickets = tickets.filter(t => t.status === filterStatus);
+      }
+
+      if (tickets.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-500">No hay órdenes para mostrar con este filtro.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = tickets.map(t => `
+        <tr class="border-b border-slate-800/70 hover:bg-[#0a101c]/60 transition-colors text-xs font-tech">
+          <td class="py-3 px-3.5 font-brand font-bold text-[#00f5a0] whitespace-nowrap">
+            ${t.id}
+          </td>
+          <td class="py-3 px-3.5">
+            <div class="font-bold text-white">${t.clientName}</div>
+            ${t.clientDni ? `<div class="text-[10px] text-cyan-400 font-mono mt-0.5">DNI: ${t.clientDni}</div>` : ''}
+            <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+              <i data-lucide="phone" class="w-3 h-3 text-[#00f5a0]"></i> ${t.clientPhone}
+            </div>
+            ${t.clientAddress ? `<div class="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5 truncate max-w-[170px]" title="${t.clientAddress}"><i data-lucide="map-pin" class="w-3 h-3 text-amber-400"></i> ${t.clientAddress}</div>` : ''}
+          </td>
+          <td class="py-3 px-3.5">
+            <div class="font-bold text-slate-200 flex items-center gap-1.5 flex-wrap">
+              <span>${t.deviceBrand ? `<span class="text-[#00d2ff]">${t.deviceBrand}</span> ` : ''}${t.deviceModel}</span>
+              ${t.deviceStorage ? `<span class="text-[9px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700">${t.deviceStorage}</span>` : ''}
+              ${t.deviceColor ? `<span class="text-[9px] bg-slate-800 text-[#00f5a0] px-1.5 py-0.5 rounded border border-slate-700">${t.deviceColor}</span>` : ''}
+            </div>
+            <div class="text-[10px] font-mono text-slate-500">${t.serialOrImei} • ${t.deviceType || 'Equipo'}</div>
+          </td>
+          <td class="py-3 px-3.5 max-w-xs truncate text-slate-300" title="${t.issueDescription}">
+            ${t.issueDescription}
+          </td>
+          <td class="py-3 px-3.5">
+            <select 
+              class="bg-[#05070d] border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-white font-brand focus:border-[#00f5a0]"
+              onchange="handleStatusChange('${t.id}', this.value)"
+            >
+              <option value="received" ${t.status === 'received' ? 'selected' : ''}>1. En Recepción</option>
+              <option value="diagnosing" ${t.status === 'diagnosing' ? 'selected' : ''}>2. En Diagnóstico</option>
+              <option value="waiting_parts" ${t.status === 'waiting_parts' ? 'selected' : ''}>3. Esperando Repuesto</option>
+              <option value="repairing" ${t.status === 'repairing' ? 'selected' : ''}>4. En Reparación</option>
+              <option value="ready" ${t.status === 'ready' ? 'selected' : ''}>5. Listo para Retiro</option>
+              <option value="delivered" ${t.status === 'delivered' ? 'selected' : ''}>6. Entregado</option>
+            </select>
+          </td>
+          <td class="py-3 px-3.5 font-brand text-[#00f5a0] font-black text-sm whitespace-nowrap">
+            $${t.finalCost} USD
+          </td>
+          <td class="py-3 px-3.5 text-right whitespace-nowrap">
+            <div class="inline-flex items-center gap-1.5">
+              <button 
+                onclick="TechAdmin.notifyClientWhatsApp('${t.id}')"
+                class="py-1.5 px-2.5 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1 text-[11px]"
+                title="Enviar estado actual al cliente por WhatsApp"
+              >
+                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">WhatsApp</span>
+              </button>
+
+              <button 
+                onclick="TechAdmin.printTicketReceipt('${t.id}')"
+                class="py-1.5 px-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
+                title="Imprimir Comprobante de Taller"
+              >
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+              </button>
+
+              <button 
+                onclick="handleDeleteTicket('${t.id}')"
+                class="py-1.5 px-2 rounded-lg bg-rose-950/40 border border-rose-800/40 text-rose-400 hover:bg-rose-900 transition-colors"
+                title="Eliminar orden"
+              >
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function handleStatusChange(ticketId, newStatus) {
+      TechAdmin.updateTicketStatus(ticketId, newStatus);
+      renderStats();
+      showToast(`Orden #${ticketId} actualizada a: ${newStatus}`, "info");
+    }
+
+    function filterRepairsTable() {
+      const status = document.getElementById("filter-order-status").value;
+      renderRepairsTable(status);
+    }
+
+    function handleDeleteTicket(ticketId) {
+      if (confirm(`¿Eliminar la orden #${ticketId}?`)) {
+        TechAdmin.deleteTicket(ticketId);
+        renderStats();
+        renderRepairsTable();
+        showToast(`Orden #${ticketId} eliminada.`, "warning");
+      }
+    }
+
+    // 3. REGISTRAR NUEVO EQUIPO
+    function handleCreateRepair(e) {
+      e.preventDefault();
+      const form = document.getElementById("form-create-repair");
+      const formData = new FormData(form);
+
+      const brand = formData.get("deviceBrand") || "";
+      const model = formData.get("deviceModel") || "";
+      const color = formData.get("deviceColor") || "";
+      const storage = formData.get("deviceStorage") || "";
+
+      const newOrder = TechAdmin.createNewTicket({
+        clientName: formData.get("clientName"),
+        clientDni: formData.get("clientDni"),
+        clientPhone: formData.get("clientPhone"),
+        clientAddress: formData.get("clientAddress"),
+        deviceType: formData.get("deviceType"),
+        deviceBrand: brand,
+        deviceModel: model,
+        deviceColor: color,
+        deviceStorage: storage,
+        serialOrImei: formData.get("serialOrImei"),
+        issueDescription: formData.get("issueDescription"),
+        status: formData.get("status"),
+        technician: formData.get("technician"),
+        finalCost: formData.get("finalCost"),
+        technicianNotes: formData.get("technicianNotes")
+      });
+
+      form.reset();
+      resetIMEIFeedback();
+      renderStats();
+      showToast(`¡Orden #${newOrder.id} registrada exitosamente!`, "success");
+
+      // Preguntar si desea imprimir comprobante
+      if (confirm(`¡Orden #${newOrder.id} creada! ¿Deseas imprimir el comprobante para el cliente ahora?`)) {
+        TechAdmin.printTicketReceipt(newOrder.id);
+      }
+
+      switchAdminTab("repairs");
+    }
+
+    // --- AUTO-DETECCIÓN INTELIGENTE POR IMEI ---
+    let imeiDebounceTimer = null;
+
+    function initIMEIAutoDetection() {
+      const imeiInput = document.getElementById("input-repair-imei");
+      if (!imeiInput) return;
+
+      imeiInput.addEventListener("input", () => {
+        clearTimeout(imeiDebounceTimer);
+        const clean = (imeiInput.value || "").replace(/\D/g, "");
+        updateIMEIBadge(clean);
+
+        if (clean.length >= 8) {
+          imeiDebounceTimer = setTimeout(() => {
+            performIMEILookup(clean);
+          }, 150);
+        } else if (clean.length === 0) {
+          resetIMEIFeedback();
+        } else {
+          setIMEIFeedback(`Ingresa al menos 8 dígitos para consultar el modelo (actual: ${clean.length} de 15)`, "info");
+        }
+      });
+
+      imeiInput.addEventListener("paste", () => {
+        setTimeout(() => {
+          const clean = (imeiInput.value || "").replace(/\D/g, "");
+          updateIMEIBadge(clean);
+          if (clean.length >= 8) {
+            performIMEILookup(clean);
+          }
+        }, 60);
+      });
+    }
+
+    function updateIMEIBadge(clean) {
+      const badge = document.getElementById("imei-luhn-badge");
+      if (!badge) return;
+
+      if (!clean || clean.length === 0) {
+        badge.textContent = "Esperando IMEI...";
+        badge.className = "text-[10px] font-brand font-bold px-2.5 py-0.5 rounded-full border border-slate-700 text-slate-400 bg-slate-900/80 transition-all";
+        return;
+      }
+
+      if (clean.length < 8) {
+        badge.textContent = `${clean.length}/15 dígitos`;
+        badge.className = "text-[10px] font-brand font-bold px-2.5 py-0.5 rounded-full border border-amber-500/40 text-amber-400 bg-amber-950/40 transition-all";
+        return;
+      }
+
+      if (clean.length < 15) {
+        badge.textContent = `TAC ${clean.slice(0, 8)} (${clean.length}/15)`;
+        badge.className = "text-[10px] font-brand font-bold px-2.5 py-0.5 rounded-full border border-[#00d2ff]/40 text-[#00d2ff] bg-[#00d2ff]/10 transition-all";
+        return;
+      }
+
+      // 15 dígitos: validar Luhn
+      const isValid = window.IMEIService ? IMEIService.isValidLuhn(clean) : true;
+      if (isValid) {
+        badge.textContent = "✓ IMEI Válido (15 dígitos)";
+        badge.className = "text-[10px] font-brand font-bold px-2.5 py-0.5 rounded-full border border-[#00f5a0]/50 text-[#00f5a0] bg-[#00f5a0]/20 shadow-sm shadow-[#00f5a0]/20 transition-all animate-pulse";
+      } else {
+        badge.textContent = "15 dígitos (Luhn no verificado)";
+        badge.className = "text-[10px] font-brand font-bold px-2.5 py-0.5 rounded-full border border-amber-500/50 text-amber-300 bg-amber-950/40 transition-all";
+      }
+    }
+
+    async function performIMEILookup(cleanImei) {
+      if (!window.IMEIService) return;
+
+      setIMEIFeedback(`Consultando base de datos oficial (TAC ${cleanImei.slice(0, 8)})...`, "loading");
+
+      try {
+        const res = await IMEIService.lookup(cleanImei);
+        if (res && res.found) {
+          applyDetectedData(res);
+        } else if (res && res.suggestedBrand) {
+          const brandInput = document.getElementById("repair-device-brand");
+          if (brandInput && !brandInput.value) {
+            brandInput.value = res.suggestedBrand;
+          }
+          setIMEIFeedback(`TAC ${res.tac} reconocido (${res.suggestedBrand}). Puedes completar el modelo específico.`, "info");
+        } else {
+          setIMEIFeedback(`TAC ${cleanImei.slice(0, 8)} no identificado automáticamente. Puedes ingresar los datos manualmente.`, "warning");
+        }
+      } catch (err) {
+        console.error("Error en lookup IMEI:", err);
+      }
+    }
+
+    function applyDetectedData(data) {
+      const brandInput = document.getElementById("repair-device-brand");
+      const modelInput = document.getElementById("repair-device-model");
+      const colorInput = document.getElementById("repair-device-color");
+      const storageInput = document.getElementById("repair-device-storage");
+      const typeSelect = document.getElementById("repair-device-type");
+
+      if (brandInput && data.brand) brandInput.value = data.brand;
+      if (modelInput && data.model) modelInput.value = data.model;
+      if (colorInput && data.color) colorInput.value = data.color;
+      if (storageInput && data.storage) storageInput.value = data.storage;
+      if (typeSelect && data.deviceType) typeSelect.value = data.deviceType;
+
+      // Actualizar listas desplegables datalist dinámicamente con la paleta oficial del modelo
+      if (data.availableColors && data.availableColors.length > 0) {
+        const colorDl = document.getElementById("color-options");
+        if (colorDl) {
+          colorDl.innerHTML = data.availableColors.map(c => `<option value="${c}">`).join("");
+        }
+        if (colorInput && !colorInput.value) {
+          colorInput.placeholder = `Ej: ${data.availableColors[0]} (${data.availableColors.length} colores disponibles)`;
+        }
+      }
+
+      if (data.availableStorages && data.availableStorages.length > 0) {
+        const storageDl = document.getElementById("storage-options");
+        if (storageDl) {
+          storageDl.innerHTML = data.availableStorages.map(s => `<option value="${s}">`).join("");
+        }
+      }
+
+      // Efecto visual de autocompletado en los campos
+      [brandInput, modelInput, storageInput].forEach(el => {
+        if (el) {
+          el.classList.add("ring-2", "ring-[#00f5a0]", "bg-[#00f5a0]/15");
+          setTimeout(() => {
+            el.classList.remove("ring-2", "ring-[#00f5a0]", "bg-[#00f5a0]/15");
+          }, 1400);
+        }
+      });
+      if (colorInput && (data.color || colorInput.value)) {
+        colorInput.classList.add("ring-2", "ring-[#00f5a0]", "bg-[#00f5a0]/15");
+        setTimeout(() => {
+          colorInput.classList.remove("ring-2", "ring-[#00f5a0]", "bg-[#00f5a0]/15");
+        }, 1400);
+      }
+
+      // Mostrar badges "AUTO" para marca, modelo y almacenamiento; e indicar si hay opciones de color
+      ["badge-auto-brand", "badge-auto-model", "badge-auto-storage"].forEach(id => {
+        const badge = document.getElementById(id);
+        if (badge) {
+          badge.classList.remove("hidden");
+          setTimeout(() => badge.classList.add("hidden"), 3500);
+        }
+      });
+      const colorBadge = document.getElementById("badge-auto-color");
+      if (colorBadge) {
+        colorBadge.textContent = data.color ? "AUTO" : "OPCIONES CARGADAS";
+        colorBadge.classList.remove("hidden");
+        setTimeout(() => colorBadge.classList.add("hidden"), 4500);
+      }
+
+      // Cartel de éxito indicando la información detectada y estado del color
+      const feedbackBox = document.getElementById("imei-detection-feedback");
+      const feedbackText = document.getElementById("imei-feedback-text");
+      if (feedbackBox && feedbackText) {
+        const displayColor = data.color || (colorInput && colorInput.value) || (data.availableColors && data.availableColors.length > 0 ? `Seleccionar (${data.availableColors.length} colores)` : "A especificar");
+        feedbackBox.className = "mt-2 text-xs p-2.5 rounded-xl border border-[#00f5a0]/40 bg-[#00f5a0]/10 text-slate-200 flex items-center gap-2 transition-all";
+        feedbackText.innerHTML = `✓ <strong>${data.brand} ${data.model}</strong> detectado por IMEI • Color: <strong class="text-[#00f5a0]">${displayColor}</strong> • Memoria: <strong class="text-[#00f5a0]">${data.storage || 'N/D'}</strong>`;
+      }
+
+      if (typeof showToast === "function") {
+        showToast(`✓ Detectado por IMEI: ${data.brand} ${data.model}`, "success");
+      }
+    }
+
+    function setIMEIFeedback(text, type = "info") {
+      const box = document.getElementById("imei-detection-feedback");
+      const span = document.getElementById("imei-feedback-text");
+      if (!box || !span) return;
+
+      span.textContent = text;
+      if (type === "loading") {
+        box.className = "mt-2 text-xs p-2.5 rounded-xl border border-[#00d2ff]/40 bg-[#00d2ff]/10 text-[#00d2ff] flex items-center gap-2 animate-pulse";
+      } else if (type === "warning") {
+        box.className = "mt-2 text-xs p-2.5 rounded-xl border border-amber-500/40 bg-amber-950/30 text-amber-300 flex items-center gap-2";
+      } else {
+        box.className = "mt-2 text-xs p-2.5 rounded-xl border border-slate-800 bg-[#05070d]/70 text-slate-400 flex items-center gap-2";
+      }
+    }
+
+    function resetIMEIFeedback() {
+      setIMEIFeedback("Al ingresar el IMEI, los campos Marca, Modelo, Color y Almacenamiento se autocompletarán de inmediato.", "info");
+      updateIMEIBadge("");
+    }
+
+    async function handlePasteIMEI() {
+      try {
+        const text = await navigator.clipboard.readText();
+        const imeiInput = document.getElementById("input-repair-imei");
+        if (imeiInput && text) {
+          imeiInput.value = text.trim();
+          imeiInput.dispatchEvent(new Event("input"));
+          if (typeof showToast === "function") showToast("IMEI pegado desde el portapapeles", "info");
+        }
+      } catch (err) {
+        const manual = prompt("Pega el número de IMEI aquí:");
+        if (manual) {
+          const imeiInput = document.getElementById("input-repair-imei");
+          if (imeiInput) {
+            imeiInput.value = manual.trim();
+            imeiInput.dispatchEvent(new Event("input"));
+          }
+        }
+      }
+    }
+
+    function handleManualIMEILookup() {
+      const imeiInput = document.getElementById("input-repair-imei");
+      if (!imeiInput || !imeiInput.value) {
+        if (typeof showToast === "function") showToast("Por favor escribe o pega un IMEI primero", "warning");
+        return;
+      }
+      const clean = imeiInput.value.replace(/\D/g, "");
+      if (clean.length < 8) {
+        if (typeof showToast === "function") showToast("El IMEI debe tener al menos 8 dígitos", "warning");
+        return;
+      }
+      performIMEILookup(clean);
+    }
+
+    // 4. GESTOR DE PRECIOS Y MODELOS
+    let selectedCatId = null;
+    let selectedBrandId = null;
+
+    function initPricingManager() {
+      const catalog = TechAdmin.getCatalog();
+      const catSelect = document.getElementById("pricing-category-select");
+      if (!catSelect) return;
+
+      catSelect.innerHTML = catalog.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+      selectedCatId = catalog.categories[0].id;
+
+      handlePricingCategoryChange();
+    }
+
+    function handlePricingCategoryChange() {
+      const catalog = TechAdmin.getCatalog();
+      selectedCatId = document.getElementById("pricing-category-select").value;
+      const cat = catalog.categories.find(c => c.id === selectedCatId);
+
+      const brandSelect = document.getElementById("pricing-brand-select");
+      brandSelect.innerHTML = cat.brands.map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+      selectedBrandId = cat.brands[0].id;
+
+      handlePricingBrandChange();
+    }
+
+    let selectedModelName = null;
+
+    function handlePricingBrandChange() {
+      const catalog = TechAdmin.getCatalog();
+      selectedBrandId = document.getElementById("pricing-brand-select").value;
+      const cat = catalog.categories.find(c => c.id === selectedCatId);
+      const brand = cat.brands.find(b => b.id === selectedBrandId);
+
+      const modelSelect = document.getElementById("pricing-model-select");
+      modelSelect.innerHTML = brand.models.map(m => `<option value="${m}">${m}</option>`).join("");
+      selectedModelName = brand.models[0] || null;
+
+      handlePricingModelChange();
+    }
+
+    function handlePricingModelChange() {
+      selectedModelName = document.getElementById("pricing-model-select").value;
+      const faults = TechAdmin.getModelFaults(selectedCatId, selectedBrandId, selectedModelName);
+      renderPricingFaults(faults);
+    }
+
+    function renderPricingFaults(faults) {
+      const tbody = document.getElementById("pricing-faults-tbody");
+      if (!tbody) return;
+
+      tbody.innerHTML = faults.map(f => `
+        <tr class="border-b border-slate-800/70 hover:bg-[#0a101c]/60 text-xs">
+          <td class="py-3 px-3.5 font-medium text-slate-200">
+            ${f.name}
+          </td>
+          <td class="py-3 px-3.5">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[#00f5a0] font-brand font-bold">$</span>
+              <input 
+                type="number" 
+                id="price-input-${f.id}" 
+                value="${f.basePrice}" 
+                class="w-24 bg-[#05070d] border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-brand font-bold text-[#00f5a0] focus:border-[#00f5a0]"
+              >
+              <span class="text-slate-500 font-brand text-[10px]">USD</span>
+            </div>
+          </td>
+          <td class="py-3 px-3.5">
+            <input 
+              type="text" 
+              id="time-input-${f.id}" 
+              value="${f.time}" 
+              class="w-full bg-[#05070d] border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-300 focus:border-[#00f5a0]"
+            >
+          </td>
+          <td class="py-3 px-3.5 text-right">
+            <button 
+              onclick="saveSinglePrice('${f.id}')"
+              class="btn-cyber py-1 px-3 rounded-lg text-[11px] font-brand font-bold whitespace-nowrap"
+            >
+              Guardar
+            </button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function saveSinglePrice(faultId) {
+      const priceInput = document.getElementById(`price-input-${faultId}`);
+      const timeInput = document.getElementById(`time-input-${faultId}`);
+
+      if (priceInput) {
+        TechAdmin.updateModelFaultPrice(selectedCatId, selectedBrandId, selectedModelName, faultId, priceInput.value, timeInput ? timeInput.value : null);
+        showToast(`¡Tarifa de ${selectedModelName} guardada con éxito!`, "success");
+      }
+    }
+
+    function handleAddNewFault() {
+      const name = document.getElementById("new-fault-name").value.trim();
+      const price = document.getElementById("new-fault-price").value.trim();
+      const time = document.getElementById("new-fault-time").value.trim();
+
+      if (!name || !price) {
+        showToast("Por favor ingresa nombre y precio para la nueva falla.", "warning");
+        return;
+      }
+
+      TechAdmin.addNewModelFault(selectedCatId, selectedBrandId, selectedModelName, name, price, time);
+      document.getElementById("new-fault-name").value = "";
+      document.getElementById("new-fault-price").value = "";
+      document.getElementById("new-fault-time").value = "";
+
+      handlePricingModelChange();
+      showToast(`¡Nuevo servicio añadido a ${selectedModelName}!`, "success");
+    }
+
+    function handleAddNewModel() {
+      const modelInput = document.getElementById("new-model-input");
+      const name = modelInput.value.trim();
+      if (!name) {
+        showToast("Ingresa el nombre del nuevo modelo.", "warning");
+        return;
+      }
+
+      TechAdmin.addNewModel(selectedCatId, selectedBrandId, name);
+      modelInput.value = "";
+      handlePricingBrandChange();
+      showToast(`¡Modelo ${name} agregado al catálogo!`, "success");
+    }
+
+    // 5. INVENTARIO
+    function renderStockTable() {
+      const tbody = document.getElementById("stock-table-body");
+      if (!tbody) return;
+
+      const items = TechAdmin.getInventory();
+      tbody.innerHTML = items.map((item, idx) => {
+        const isLow = item.qty <= item.min;
+        return `
+          <tr class="border-b border-slate-800/70 hover:bg-[#0a101c]/60 text-xs">
+            <td class="py-3 px-3.5 font-mono text-slate-400 font-bold">${item.code}</td>
+            <td class="py-3 px-3.5 font-bold text-white">${item.name}</td>
+            <td class="py-3 px-3.5 font-brand font-black ${isLow ? 'text-rose-400' : 'text-[#00f5a0]'} text-sm">
+              ${item.qty} un. ${isLow ? '<span class="text-[10px] bg-rose-950 text-rose-300 px-1.5 py-0.5 rounded ml-1 font-tech">STOCK BAJO</span>' : ''}
+            </td>
+            <td class="py-3 px-3.5 font-brand text-[#00d2ff]">$${item.unitCost} USD</td>
+            <td class="py-3 px-3.5 text-right">
+              <div class="inline-flex items-center gap-1">
+                <button onclick="handleAdjustStock(${idx}, -1)" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center font-bold text-sm">-</button>
+                <button onclick="handleAdjustStock(${idx}, 1)" class="w-7 h-7 rounded-lg bg-[#00f5a0]/20 text-[#00f5a0] hover:bg-[#00f5a0]/40 flex items-center justify-center font-bold text-sm">+</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function handleAdjustStock(idx, delta) {
+      TechAdmin.adjustStock(idx, delta);
+      renderStockTable();
+    }
+  </script>
+
+  <!-- MODAL DE AUTENTICACIÓN / LOGIN DE TALLER -->
+  <div id="admin-login-modal" class="fixed inset-0 z-50 bg-[#05070d]/95 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="glass-panel-glow max-w-md w-full p-6 sm:p-8 rounded-3xl border-2 border-[#00f5a0]/40 shadow-2xl shadow-[#00f5a0]/15 space-y-6 relative overflow-hidden">
+      
+      <!-- Glow decorativos de fondo -->
+      <div class="absolute -top-12 -left-12 w-36 h-36 bg-[#00f5a0]/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-12 -right-12 w-36 h-36 bg-[#00d2ff]/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="text-center space-y-2 relative z-10">
+        <div class="w-16 h-16 mx-auto rounded-2xl border-2 border-[#00f5a0] bg-[#05070d] flex items-center justify-center shadow-lg shadow-[#00f5a0]/30 mb-4">
+          <i data-lucide="shield-lock" class="w-8 h-8 text-[#00f5a0]"></i>
+        </div>
+        <h2 class="font-brand text-xl sm:text-2xl font-black text-white tracking-wider">ACCESO PANEL TALLER</h2>
+        <p class="text-xs font-tech text-slate-400">Ingresa las credenciales autorizadas del laboratorio técnico</p>
+      </div>
+
+      <form id="form-admin-login" onsubmit="handleAdminLogin(event)" class="space-y-4 font-tech relative z-10">
+        <div>
+          <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-2">
+            <i data-lucide="user" class="w-3.5 h-3.5 text-[#00d2ff]"></i>
+            <span>Usuario / Técnico</span>
+          </label>
+          <input 
+            type="text" 
+            id="login-username" 
+            required 
+            placeholder="Ej: admin"
+            class="w-full bg-[#05070d] border border-slate-700 focus:border-[#00f5a0] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#00f5a0] transition-all"
+            autocomplete="username"
+          >
+        </div>
+
+        <div>
+          <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-2">
+            <i data-lucide="key-round" class="w-3.5 h-3.5 text-[#00f5a0]"></i>
+            <span>Contraseña</span>
+          </label>
+          <div class="relative">
+            <input 
+              type="password" 
+              id="login-password" 
+              required 
+              placeholder="Contraseña de seguridad"
+              class="w-full bg-[#05070d] border border-slate-700 focus:border-[#00f5a0] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#00f5a0] transition-all pr-10"
+              autocomplete="current-password"
+            >
+            <button 
+              type="button" 
+              onclick="togglePasswordVisibility()"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1"
+              title="Mostrar/Ocultar contraseña"
+            >
+              <i id="eye-icon" data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="login-error-msg" class="hidden text-xs text-rose-400 bg-rose-950/40 border border-rose-800/50 p-3 rounded-xl flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400 shrink-0"></i>
+          <span>Usuario o contraseña incorrectos.</span>
+        </div>
+
+        <button 
+          type="submit" 
+          class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#00d2ff] to-[#00f5a0] hover:opacity-95 text-slate-950 font-brand font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-[#00f5a0]/30 hover:scale-[1.01]"
+        >
+          <i data-lucide="lock" class="w-4 h-4 inline-block mr-1"></i>
+          INGRESAR AL PANEL
+        </button>
+      </form>
+
+      <div class="text-center pt-2 border-t border-slate-800/80 relative z-10">
+        <p class="text-[11px] text-slate-500 font-tech">
+          Usuario: <strong class="text-slate-300">admin</strong> • Contraseña: <strong class="text-[#00f5a0]">admin123</strong>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function checkAuthStatus() {
+      const isAuth = sessionStorage.getItem("admin_authenticated") === "true" || localStorage.getItem("admin_authenticated") === "true";
+      const modal = document.getElementById("admin-login-modal");
+      if (modal) {
+        if (isAuth) {
+          modal.classList.add("hidden");
+        } else {
+          modal.classList.remove("hidden");
+        }
+      }
+    }
+
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const userIn = document.getElementById("login-username").value.trim().toLowerCase();
+      const passIn = document.getElementById("login-password").value;
+      const errorBox = document.getElementById("login-error-msg");
+
+      if ((userIn === "admin" && passIn === "admin123") || (userIn === "wilotech" && passIn === "wilotech2026")) {
+        sessionStorage.setItem("admin_authenticated", "true");
+        localStorage.setItem("admin_authenticated", "true");
+        if (errorBox) errorBox.classList.add("hidden");
+        checkAuthStatus();
+        if (typeof showToast === "function") {
+          showToast("✓ Sesión iniciada correctamente", "success");
+        }
+      } else {
+        if (errorBox) errorBox.classList.remove("hidden");
+        if (typeof showToast === "function") {
+          showToast("Usuario o contraseña incorrectos", "error");
+        }
+      }
+    }
+
+    function logoutAdmin() {
+      sessionStorage.removeItem("admin_authenticated");
+      localStorage.removeItem("admin_authenticated");
+      checkAuthStatus();
+      if (typeof showToast === "function") {
+        showToast("Sesión cerrada", "info");
+      }
+    }
+
+    function togglePasswordVisibility() {
+      const input = document.getElementById("login-password");
+      const icon = document.getElementById("eye-icon");
+      if (!input) return;
+      if (input.type === "password") {
+        input.type = "text";
+        if (icon) icon.setAttribute("data-lucide", "eye-off");
+      } else {
+        input.type = "password";
+        if (icon) icon.setAttribute("data-lucide", "eye");
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      checkAuthStatus();
+    });
+  </script>
+
+</body>
+</html>

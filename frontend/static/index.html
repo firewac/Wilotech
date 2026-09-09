@@ -1,546 +1,923 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wilotech — Laboratorio Técnico | Comparador de Repuestos</title>
-    <link rel="icon" type="image/png" href="/static/assets/logo.png">
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Wilotech Custom Styles -->
-    <link rel="stylesheet" href="/static/styles.css">
-    
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        wilo: {
-                            cyan: '#00f0ff',
-                            green: '#00ff87',
-                            dark: '#07090e',
-                            surface: '#0d1320',
-                            card: '#101726',
-                            border: '#1e2d42'
-                        }
-                    },
-                    fontFamily: {
-                        tech: ['Rajdhani', 'sans-serif'],
-                        mono: ['"JetBrains Mono"', 'monospace'],
-                        sans: ['Inter', 'sans-serif']
-                    }
-                }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WILOTECH | Laboratorio Técnico de Celulares, PC y Consolas</title>
+  <meta name="description" content="WILOTECH - Laboratorio de microelectrónica y reparación de celulares, PC gamer, notebooks y consolas de videojuegos. Reballing, pantallas OLED y puertos HDMI.">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              cyan: '#00d2ff',
+              green: '#00f5a0',
+              dark: '#05070d',
+              card: 'rgba(10, 16, 28, 0.8)'
             }
+          },
+          fontFamily: {
+            brand: ['Orbitron', 'sans-serif'],
+            tech: ['Rajdhani', 'sans-serif']
+          }
         }
-    </script>
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Styles with Orbitron Typography & Logo Palette -->
+  <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="selection:bg-cyan-500/30 selection:text-cyan-200 min-h-screen flex flex-col">
+<body class="lab-grid-bg antialiased text-slate-200 min-h-screen flex flex-col selection:bg-[#00f5a0] selection:text-slate-950">
 
-    <!-- ==================== BARRA DE NAVEGACIÓN SUPERIOR ==================== -->
-    <header class="border-b border-cyan-500/20 bg-[#07090e]/90 backdrop-blur-xl sticky top-0 z-40 shadow-xl shadow-black/50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-            
-            <!-- Marca y Logo Wilotech -->
-            <div class="flex items-center gap-3.5">
-                <a href="/" class="flex items-center gap-3.5 group">
-                    <div class="relative">
-                        <img src="/static/assets/logo.png" alt="Wilotech Laboratorio Técnico" class="h-12 w-12 object-contain wilo-logo-img">
-                        <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#00ff87] border-2 border-[#07090e] neon-glow-green animate-pulse"></span>
-                    </div>
-                    <div>
-                        <div class="flex items-baseline gap-1.5">
-                            <span class="font-tech text-2xl font-bold tracking-wider text-white">WILO<span class="text-[#00ff87]">TECH</span></span>
-                            <span class="text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono">LAB PRO</span>
-                        </div>
-                        <p class="text-[10px] tracking-[0.22em] text-cyan-400 font-semibold font-tech uppercase">Laboratorio Técnico &bull; <span class="text-slate-400 tracking-normal capitalize font-sans">Comparador de Repuestos</span></p>
-                    </div>
-                </a>
-            </div>
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
 
-            <!-- Acciones y Herramientas -->
-            <div class="flex items-center gap-2.5 sm:gap-3">
-                
-                <!-- Cotización Dólar Blue en Vivo -->
-                <button id="dolar-blue-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 text-xs font-semibold hover:border-emerald-400 hover:bg-emerald-900/50 hover:shadow-lg hover:shadow-emerald-950/50 transition-all cursor-pointer" title="Cotización del Dólar Blue del día. Clic para ver o cambiar.">
-                    <span class="text-sm">💵</span>
-                    <span class="text-slate-300 font-medium">Blue:</span>
-                    <span id="dolar-blue-val" class="font-mono font-bold text-white text-xs">$...</span>
-                </button>
-
-                <!-- Estado de Distribuidoras Conectadas -->
-                <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0e1524] border border-cyan-500/20 text-xs text-slate-300">
-                    <span class="w-2 h-2 rounded-full bg-[#00ff87] neon-glow-green animate-pulse"></span>
-                    <span id="active-distributors-count" class="font-mono text-[11px]">Cargando distribuidoras...</span>
-                </div>
-
-                <!-- Botón Modal Listas Excel -->
-                <button id="open-excel-modal-btn" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0c1a1a] hover:bg-[#102424] border border-emerald-500/40 text-emerald-300 text-xs font-semibold transition-all hover:border-emerald-400 shadow-sm cursor-pointer">
-                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>Listas Excel</span>
-                </button>
-
-                <!-- Botón Modal Cuentas Web Scraper -->
-                <button id="open-distributors-btn" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0d1526] hover:bg-[#131f38] border border-cyan-500/30 text-cyan-200 text-xs font-semibold transition-all hover:border-cyan-400 shadow-sm cursor-pointer">
-                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    <span>Cuentas Web</span>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-6">
-
-        <!-- CAJA DE BÚSQUEDA CENTRAL CYBERPUNK -->
-        <section class="p-6 sm:p-7 rounded-2xl bg-[#0c1220]/80 border border-cyan-500/25 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl space-y-4 relative overflow-hidden">
-            
-            <!-- Acento decorativo sutil en la esquina -->
-            <div class="absolute -top-12 -right-12 w-36 h-36 bg-gradient-to-br from-cyan-500/10 to-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-            <!-- Cabecera de búsqueda -->
-            <div class="flex items-center justify-between text-xs pb-1">
-                <div class="flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 neon-glow-cyan"></span>
-                    <span class="font-tech uppercase tracking-widest text-cyan-300 text-[11px] font-semibold">Búsqueda Inteligente Multidistribuidora</span>
-                </div>
-                <span class="text-[11px] text-slate-500 font-mono hidden sm:inline">Módulos OLED &bull; Baterías &bull; Flex &bull; ICs &bull; Pines</span>
-            </div>
-
-            <!-- Formulario de Entrada -->
-            <form id="search-form" class="relative flex items-center">
-                <div class="absolute left-4 pointer-events-none text-cyan-400">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-                <input 
-                    type="text" 
-                    id="search-input" 
-                    placeholder="Buscar repuesto (ej: Modulo Samsung A14, Bateria iPhone 11, Pin de carga Moto G8, Pantalla Xiaomi...)"
-                    class="w-full pl-12 pr-36 py-4 rounded-xl bg-[#070b14]/90 border border-slate-700/80 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 text-sm sm:text-base font-medium transition-all shadow-inner"
-                    autofocus
-                    autocomplete="off"
-                >
-                <button type="button" id="clear-btn" class="hidden absolute right-32 text-slate-400 hover:text-white p-1 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-                <button 
-                    type="submit" 
-                    class="absolute right-2 px-6 py-2.5 rounded-lg wilo-btn-primary text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer"
-                >
-                    <span>Comparar</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                </button>
-            </form>
-
-            <!-- CHIPS DE CONSULTA RÁPIDA -->
-            <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                <span class="text-slate-400 font-medium flex items-center gap-1.5">
-                    <span class="text-[#00ff87]">⚡</span> Sugerencias rápidas:
-                </span>
-                <button type="button" class="suggestion-chip px-2.5 py-1 rounded-lg bg-[#0e1626] hover:bg-[#142036] text-slate-300 border border-slate-700/70 text-xs transition-all cursor-pointer" data-query="Bateria iPhone 11">Batería iPhone 11</button>
-                <button type="button" class="suggestion-chip px-2.5 py-1 rounded-lg bg-[#0e1626] hover:bg-[#142036] text-slate-300 border border-slate-700/70 text-xs transition-all cursor-pointer" data-query="Modulo Samsung A14">Módulo Samsung A14</button>
-                <button type="button" class="suggestion-chip px-2.5 py-1 rounded-lg bg-[#0e1626] hover:bg-[#142036] text-slate-300 border border-slate-700/70 text-xs transition-all cursor-pointer" data-query="Pin de carga Moto G8">Pin de Carga Moto G8</button>
-                <button type="button" class="suggestion-chip px-2.5 py-1 rounded-lg bg-[#0e1626] hover:bg-[#142036] text-slate-300 border border-slate-700/70 text-xs transition-all cursor-pointer" data-query="Pantalla Motorola G22">Pantalla Motorola G22</button>
-                <button type="button" class="suggestion-chip px-2.5 py-1 rounded-lg bg-[#0e1626] hover:bg-[#142036] text-slate-300 border border-slate-700/70 text-xs transition-all cursor-pointer" data-query="Modulo Xiaomi Redmi Note">Módulo Xiaomi Redmi</button>
-                <button type="button" class="suggestion-chip px-2.5 py-1 rounded-lg bg-[#0e1626] hover:bg-[#142036] text-slate-300 border border-slate-700/70 text-xs transition-all cursor-pointer" data-query="Flex de carga">Flex de Carga</button>
-            </div>
-
-            <!-- FILTRO DE DISTRIBUIDORAS PARTICIPANTES -->
-            <div class="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs text-slate-400 font-medium">Comparar en:</span>
-                    <div id="distributor-filters" class="flex flex-wrap gap-2">
-                        <!-- Generado dinámicamente con estilos Wilotech -->
-                    </div>
-                </div>
-
-                <!-- HISTORIAL RECIENTE -->
-                <div class="hidden lg:flex items-center gap-2 text-xs">
-                    <span class="text-slate-500 font-mono">Historial:</span>
-                    <div id="search-history-container" class="flex items-center gap-1.5">
-                        <!-- Generado dinámicamente -->
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- BANNER DE ERROR -->
-        <div id="error-banner" class="hidden p-4 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-sm flex items-center gap-3 backdrop-blur-md">
-            <svg class="w-5 h-5 text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            <span id="error-banner-text">Error al consultar</span>
+  <!-- =========================================================================
+       1. ENCABEZADO DE 2 NIVELES (LOGO PROTAGÓNICO + LÍNEA DE MENÚ)
+       ========================================================================= -->
+  <header class="sticky top-0 z-40 w-full glass-panel border-b border-[#00f5a0]/25 bg-[#05070d]/95 backdrop-blur-xl">
+    
+    <!-- NIVEL SUPERIOR: LOGO DE GRAN TAMAÑO Y NOMBRE DE MARCA -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+      
+      <!-- Bloque Principal de Marca (Logo Grande + Tipografía) -->
+      <a href="#" class="flex items-center gap-4 sm:gap-6 group">
+        <!-- Logo de tamaño destacado para apreciar el mando, celular y circuitos PCB -->
+        <div class="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden border-2 border-[#00f5a0]/60 shadow-xl shadow-[#00f5a0]/25 group-hover:scale-105 group-hover:border-[#00d2ff] group-hover:shadow-[#00d2ff]/30 transition-all duration-300 shrink-0">
+          <img src="assets/logo.png" alt="Logo Oficial WILOTECH" class="w-full h-full object-cover">
         </div>
 
-        <!-- BANNER RESUMEN DE PRECIOS Y ESTADÍSTICAS -->
-        <section id="summary-banner" class="hidden space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800/80">
+        <div class="flex flex-col text-left">
+          <div class="flex items-center gap-2">
+            <span class="font-brand text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-wider text-white">
+              WILO<span class="text-[#00f5a0]">TECH</span>
+            </span>
+            <span class="font-brand text-[9px] sm:text-[10px] font-bold uppercase tracking-wider bg-[#00f5a0]/15 text-[#00f5a0] border border-[#00f5a0]/40 px-2 py-0.5 rounded shadow-sm">
+              LAB
+            </span>
+          </div>
+
+          <!-- Subtítulo con líneas de circuito -->
+          <div class="flex items-center gap-2 mt-1">
+            <span class="w-5 sm:w-10 h-[2px] bg-gradient-to-r from-transparent to-[#00d2ff]"></span>
+            <p class="font-brand text-[9px] sm:text-xs md:text-sm tracking-[0.25em] sm:tracking-[0.3em] text-[#00f5a0] uppercase font-bold">
+              LABORATORIO TÉCNICO
+            </p>
+            <span class="w-5 sm:w-10 h-[2px] bg-gradient-to-l from-transparent to-[#00f5a0]"></span>
+          </div>
+
+          <p class="font-tech text-xs sm:text-sm text-slate-400 mt-1 tracking-wide hidden sm:block">
+            Celulares • PC Gamer & Notebooks • Consolas de Videojuegos
+          </p>
+        </div>
+      </a>
+
+      <!-- Acciones de Contacto / Taller a la derecha -->
+      <div class="flex items-center gap-3">
+        <!-- Enlace Panel Taller (Técnicos) -->
+        <a 
+          href="admin.html"
+          class="inline-flex items-center gap-1.5 font-brand text-[11px] font-bold py-2.5 px-3.5 rounded-xl border border-[#00f5a0]/30 bg-[#0a101c] hover:border-[#00f5a0] hover:text-[#00f5a0] text-slate-300 transition-all"
+          title="Abrir Panel Interno de Gestión"
+        >
+          <i data-lucide="sliders" class="w-4 h-4 text-[#00d2ff]"></i>
+          <span class="hidden md:inline">PANEL TALLER</span>
+        </a>
+
+        <!-- Botón de WhatsApp Directo -->
+        <a 
+          href="https://wa.me/542235914163?text=Hola%20WILOTECH,%20necesito%20hacer%20una%20consulta%20técnica" 
+          target="_blank"
+          class="inline-flex items-center gap-2 py-2.5 px-4 sm:px-5 rounded-xl bg-gradient-to-r from-[#00d2ff] to-[#00f5a0] hover:opacity-95 text-slate-950 font-brand font-black text-xs uppercase tracking-wider shadow-lg shadow-[#00f5a0]/25 transition-all hover:scale-105"
+        >
+          <i data-lucide="message-circle" class="w-4 h-4 text-slate-950"></i>
+          <span>WHATSAPP TALLER</span>
+        </a>
+
+        <!-- Botón Menú Móvil -->
+        <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-300 hover:text-white" aria-label="Abrir menú">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- NIVEL INFERIOR: LÍNEA EXCLUSIVA DE NAVEGACIÓN Y MENÚ -->
+    <div class="border-t border-[#00f5a0]/20 bg-[#05070d]/90 py-2.5 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        
+        <!-- Enlaces de Navegación -->
+        <nav class="hidden md:flex items-center gap-8 font-tech text-base lg:text-lg font-bold uppercase tracking-wider text-slate-300">
+          <a href="#cotizador" class="hover:text-[#00f5a0] transition-colors flex items-center gap-2 py-1 border-b-2 border-transparent hover:border-[#00f5a0]">
+            <i data-lucide="calculator" class="w-4 h-4 text-[#00d2ff]"></i>
+            <span>Cotizador Online</span>
+          </a>
+          <a href="#tracker-section" class="hover:text-[#00f5a0] transition-colors flex items-center gap-2 py-1 border-b-2 border-transparent hover:border-[#00f5a0]">
+            <i data-lucide="search" class="w-4 h-4 text-[#00f5a0]"></i>
+            <span>Rastrear Orden</span>
+          </a>
+          <a href="#servicios" class="hover:text-[#00f5a0] transition-colors flex items-center gap-2 py-1 border-b-2 border-transparent hover:border-[#00f5a0]">
+            <i data-lucide="wrench" class="w-4 h-4 text-[#00d2ff]"></i>
+            <span>Especialidades Técnicas</span>
+          </a>
+          <a href="#laboratorio" class="hover:text-[#00f5a0] transition-colors flex items-center gap-2 py-1 border-b-2 border-transparent hover:border-[#00f5a0]">
+            <i data-lucide="microscope" class="w-4 h-4 text-[#00f5a0]"></i>
+            <span>Equipamiento de Laboratorio</span>
+          </a>
+
+        </nav>
+
+        <!-- Indicador de Guardia / Taller en vivo -->
+        <div class="hidden lg:flex items-center gap-2 text-xs font-tech font-semibold text-[#00f5a0]">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#00f5a0] animate-ping"></span>
+          <span>LABORATORIO ACTIVO • DIAGNÓSTICO EN 24 HORAS</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Menú Desplegable Móvil -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-slate-800 bg-[#05070d]/98 px-4 py-4 space-y-3 font-tech text-base">
+      <a href="#cotizador" class="block py-2 text-slate-300 hover:text-[#00f5a0]">Cotizador Online</a>
+      <a href="#tracker-section" class="block py-2 text-slate-300 hover:text-[#00f5a0]">Rastrear Orden de Reparación</a>
+      <a href="#servicios" class="block py-2 text-slate-300 hover:text-[#00f5a0]">Especialidades & Servicios</a>
+      <a href="#laboratorio" class="block py-2 text-slate-300 hover:text-[#00f5a0]">Equipamiento Técnico</a>
+      <a href="#taller" class="block py-2 text-[#00d2ff] hover:text-[#00f5a0] font-bold flex items-center gap-2">
+        <i data-lucide="cpu" class="w-4 h-4"></i> Taller & Repuestos
+      </a>
+      <a href="admin.html" class="block py-2 font-brand text-xs text-[#00f5a0] border-t border-slate-800 pt-3">
+        Acceso Panel Taller (Técnicos)
+      </a>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+    <!-- =========================================================================
+         2. HERO SECTION CON ESTILO CYBER-LAB
+         ========================================================================= -->
+    <section class="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden">
+      <!-- Glows de fondo con los tonos del logo (Cyan & Verde Neón) -->
+      <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[32rem] h-[32rem] bg-[#00f5a0]/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute top-1/3 right-10 w-96 h-96 bg-[#00d2ff]/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center max-w-3xl mx-auto">
+          
+          <!-- Badge de Especialidad y Certificación -->
+          <div class="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-[#00f5a0]/35 bg-[#0a101c]/90 text-[#00f5a0] text-xs font-brand tracking-wider uppercase mb-6 shadow-lg shadow-[#00f5a0]/15">
+            <span class="w-2 h-2 rounded-full bg-[#00f5a0] animate-ping"></span>
+            Laboratorio Especializado Nivel 3 & 4 • Microelectrónica en Placa
+          </div>
+
+          <!-- Título Principal con Tipografía Orbitron -->
+          <h1 class="font-brand text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight">
+            REPARACIÓN TÉCNICA DE <br class="hidden sm:inline">
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00d2ff] via-sky-300 to-[#00f5a0]">
+              CELULARES, PC & CONSOLAS
+            </span>
+          </h1>
+
+          <!-- Bajada -->
+          <p class="mt-6 text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto">
+            Diagnóstico avanzado con instrumental de precisión: microelectrónica en placa madre, reballing, puertos HDMI 2.1, pastas térmicas de cambio de fase y metal líquido.
+          </p>
+
+          <!-- Botones de Acción Hero -->
+          <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
+            <a 
+              href="#cotizador" 
+              class="btn-cyber py-4 px-7 rounded-xl flex items-center gap-2.5 text-xs sm:text-sm uppercase tracking-wider"
+            >
+              <i data-lucide="calculator" class="w-4 h-4 text-slate-950"></i>
+              <span>Cotizar Reparación Online</span>
+            </a>
+
+            <button 
+              id="hero-track-btn"
+              type="button" 
+              class="inline-flex items-center gap-2 py-4 px-6 rounded-xl border border-slate-700 bg-[#0a101c]/90 hover:border-[#00f5a0] text-white font-brand text-xs sm:text-sm font-bold transition-all"
+            >
+              <i data-lucide="search" class="w-4 h-4 text-[#00f5a0]"></i>
+              <span>Rastrear mi Orden</span>
+            </button>
+          </div>
+
+          <!-- 4 Métricas de Confianza con acentos Neón -->
+          <div class="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+            <div class="p-4 rounded-xl glass-panel border border-[#00f5a0]/20 interactive-card">
+              <div class="flex items-center gap-2.5 text-[#00f5a0] mb-1">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+                <span class="font-brand text-xs font-bold text-white">Garantía Escrita</span>
+              </div>
+              <p class="text-xs text-slate-400 font-tech">Hasta 180 días en reparaciones de placa madre.</p>
+            </div>
+
+            <div class="p-4 rounded-xl glass-panel border border-[#00d2ff]/20 interactive-card">
+              <div class="flex items-center gap-2.5 text-[#00d2ff] mb-1">
+                <i data-lucide="clock-3" class="w-5 h-5"></i>
+                <span class="font-brand text-xs font-bold text-white">Diagnóstico 24h</span>
+              </div>
+              <p class="text-xs text-slate-400 font-tech">Evaluación con informe técnico de banco.</p>
+            </div>
+
+            <div class="p-4 rounded-xl glass-panel border border-[#00f5a0]/20 interactive-card">
+              <div class="flex items-center gap-2.5 text-[#00f5a0] mb-1">
+                <i data-lucide="cpu" class="w-5 h-5"></i>
+                <span class="font-brand text-xs font-bold text-white">Microsoldadura</span>
+              </div>
+              <p class="text-xs text-slate-400 font-tech">Reparación a nivel de integrados SMD / BGA.</p>
+            </div>
+
+            <div class="p-4 rounded-xl glass-panel border border-[#00d2ff]/20 interactive-card">
+              <div class="flex items-center gap-2.5 text-[#00d2ff] mb-1">
+                <i data-lucide="badge-check" class="w-5 h-5"></i>
+                <span class="font-brand text-xs font-bold text-white">Repuestos OEM</span>
+              </div>
+              <p class="text-xs text-slate-400 font-tech">Piezas genuinas testeadas bajo normas de fábrica.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         3. COTIZADOR INTERACTIVO INTELIGENTE
+         ========================================================================= -->
+    <section id="cotizador" class="py-16 border-t border-[#00f5a0]/15 bg-[#05070d]/80 relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-2xl mx-auto mb-12">
+          <span class="font-brand text-[10px] font-bold uppercase tracking-widest text-[#00f5a0] bg-[#00f5a0]/10 border border-[#00f5a0]/30 px-3 py-1 rounded-full">
+            Presupuesto Transparente
+          </span>
+          <h2 class="font-brand text-2xl sm:text-4xl font-extrabold text-white mt-3">Calculadora de Reparaciones</h2>
+          <p class="text-sm text-slate-400 mt-2 font-tech text-base">
+            Selecciona tu equipo, modelo y falla para obtener un presupuesto estimado y coordinar turno inmediato en WILOTECH.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          
+          <!-- Selector y Opciones (2 Columnas) -->
+          <div class="lg:col-span-2 glass-panel p-6 sm:p-8 rounded-2xl border border-[#00f5a0]/20 space-y-6">
+            
+            <!-- Paso 1: Tipo de Dispositivo -->
+            <div>
+              <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
+                1. Tipo de Dispositivo
+              </label>
+              <div id="calc-category-tabs" class="grid grid-cols-1 sm:grid-cols-3 gap-3 font-tech text-base">
+                <!-- Inyectado dinámicamente por calculator.js -->
+              </div>
+            </div>
+
+            <!-- Paso 2: Marca y Modelo -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="calc-brand-select" class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                  2. Marca o Fabricante
+                </label>
+                <select 
+                  id="calc-brand-select"
+                  class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]"
+                >
+                  <option value="">-- Selecciona una categoría primero --</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="calc-model-select" class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                  3. Modelo Específico
+                </label>
+                <select 
+                  id="calc-model-select"
+                  disabled
+                  class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">-- Primero selecciona una marca --</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Paso 3: Falla / Servicio Técnico -->
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  4. Selecciona el Síntoma o Falla Común
+                </label>
+                <span class="text-xs text-[#00f5a0] font-mono">Mano de obra incluida</span>
+              </div>
+              <div id="calc-faults-container" class="grid grid-cols-1 gap-2.5 max-h-80 overflow-y-auto pr-1">
+                <!-- Inyectado dinámicamente -->
+              </div>
+            </div>
+
+            <!-- Opción Express -->
+            <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-[#00f5a0]/15 border border-[#00f5a0]/30 flex items-center justify-center text-[#00f5a0]">
+                  <i data-lucide="zap" class="w-5 h-5"></i>
+                </div>
                 <div>
-                    <h2 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                        <span>Comparativa de Cotizaciones</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono">EN VIVO</span>
-                    </h2>
-                    <p id="search-meta" class="text-xs text-slate-400">Resultados en tiempo real</p>
+                  <h4 class="font-brand text-xs font-bold text-white">SERVICIO EXPRESS PRIORITARIO</h4>
+                  <p class="text-xs text-slate-400 font-tech">Turno preferencial en banco de trabajo (+25%)</p>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button id="export-excel-btn" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-500/40 text-xs font-semibold transition-colors shadow-sm cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <span>Exportar Excel (.xlsx)</span>
-                    </button>
-                    <button id="export-csv-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0e1626] hover:bg-[#15223a] text-slate-300 border border-slate-700 text-xs font-semibold transition-colors cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        <span>CSV</span>
-                    </button>
-                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="calc-express-toggle" class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00f5a0]"></div>
+              </label>
             </div>
 
-            <!-- TARJETAS DE MÉTRICAS CYBER -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <!-- Tarjeta Mejor Precio -->
-                <div class="p-4 rounded-xl border border-emerald-500/50 bg-gradient-to-br from-emerald-950/40 to-[#0c1220] relative overflow-hidden shadow-lg shadow-emerald-950/30">
-                    <div class="text-[11px] font-tech font-bold uppercase tracking-wider text-[#00ff87] flex items-center justify-between">
-                        <span>Mejor Opción</span>
-                        <span>🏆</span>
-                    </div>
-                    <div id="stat-best-price" class="text-xl md:text-2xl font-black text-white font-mono mt-1">--</div>
-                    <div id="stat-best-distributor" class="text-[11px] text-emerald-400 font-medium truncate mt-0.5">--</div>
-                </div>
+          </div>
 
-                <!-- Tarjeta Precio Promedio -->
-                <div class="p-4 rounded-xl border border-slate-800 bg-[#0c1220]/70 backdrop-blur-md">
-                    <div class="text-[11px] font-tech font-bold uppercase tracking-wider text-slate-400">Promedio de Mercado</div>
-                    <div id="stat-avg-price" class="text-xl md:text-2xl font-black text-slate-100 font-mono mt-1">--</div>
-                    <div class="text-[11px] text-slate-500 mt-0.5">Promedio de ofertas con stock</div>
-                </div>
-
-                <!-- Tarjeta Rango -->
-                <div class="p-4 rounded-xl border border-slate-800 bg-[#0c1220]/70 backdrop-blur-md">
-                    <div class="text-[11px] font-tech font-bold uppercase tracking-wider text-slate-400">Rango de Precios</div>
-                    <div id="stat-range-price" class="text-lg md:text-xl font-black text-slate-200 font-mono mt-1">--</div>
-                    <div class="text-[11px] text-slate-500 mt-0.5">Mínimo - Máximo cotizado</div>
-                </div>
-
-                <!-- Tarjeta Total Opciones -->
-                <div class="p-4 rounded-xl border border-cyan-500/30 bg-[#0c1220]/70 backdrop-blur-md">
-                    <div class="text-[11px] font-tech font-bold uppercase tracking-wider text-cyan-400">Disponibilidad</div>
-                    <div id="stat-total-results" class="text-xl md:text-2xl font-black text-cyan-300 font-mono mt-1">--</div>
-                    <div class="text-[11px] text-slate-500 mt-0.5">En distribuidoras conectadas</div>
-                </div>
+          <!-- Resumen de Cotización (Columna lateral) -->
+          <div id="calc-summary-card" class="glass-panel-glow p-6 sm:p-8 rounded-2xl border border-[#00f5a0]/40 sticky top-28">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+              <span class="font-brand text-xs uppercase tracking-widest text-[#00f5a0] font-bold">Presupuesto WILOTECH</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800 text-emerald-400 font-semibold font-tech">Sin costo apertura</span>
             </div>
 
-            <!-- BARRA DE FILTRADO Y REFINAMIENTO INTERACTIVO -->
-            <div id="results-filter-bar" class="p-3.5 rounded-xl border border-cyan-500/20 bg-[#0a0f1a]/80 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div class="flex flex-wrap items-center gap-2.5">
-                    <span class="text-cyan-300 font-semibold flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-                        Afinar:
-                    </span>
-                    <input 
-                        type="text" 
-                        id="filter-refine-input" 
-                        placeholder="Filtrar (ej: OLED, Incell, Pro Max, JK...)" 
-                        class="px-3 py-1.5 rounded-lg bg-[#070b14] border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 text-xs w-48 sm:w-64 transition-all"
-                    >
-                    <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer bg-[#0e1626] px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-cyan-500/50 transition-colors">
-                        <input type="checkbox" id="filter-stock-only" class="rounded border-slate-700 text-cyan-400 focus:ring-0">
-                        <span>Solo con stock</span>
-                    </label>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <span class="text-slate-400">Ordenar por:</span>
-                    <select id="sort-results-select" class="px-2.5 py-1.5 rounded-lg bg-[#070b14] border border-slate-700 text-white focus:outline-none focus:border-cyan-400 text-xs">
-                        <option value="price_asc" selected>Menor Precio (Mejor Oferta)</option>
-                        <option value="price_desc">Mayor Precio</option>
-                        <option value="distributor">Distribuidora</option>
-                    </select>
-                    <span id="filtered-count-badge" class="text-cyan-400 font-mono text-[11px] ml-1"></span>
-                </div>
+            <div class="my-6">
+              <span class="text-xs text-slate-400 font-tech uppercase tracking-wider">Total aproximado:</span>
+              <div id="calc-estimated-price" class="font-brand text-4xl font-black text-[#00f5a0] mt-1">$0 USD</div>
+              <p class="text-[11px] text-slate-500 mt-1">Sujeto a verificación visual bajo microscopio.</p>
             </div>
-        </section>
 
-        <!-- LISTADO DE RESULTADOS -->
-        <section id="results-container" class="space-y-3">
-            <!-- Renderizado dinámico desde app.js -->
-        </section>
+            <div class="space-y-3 py-4 border-y border-slate-800 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400 flex items-center gap-1.5 font-tech">
+                  <i data-lucide="clock" class="w-4 h-4 text-[#00d2ff]"></i> Tiempo en banco:
+                </span>
+                <span id="calc-estimated-time" class="font-mono font-semibold text-slate-200">--</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400 flex items-center gap-1.5 font-tech">
+                  <i data-lucide="shield" class="w-4 h-4 text-[#00f5a0]"></i> Cobertura de Garantía:
+                </span>
+                <span class="font-mono font-semibold text-[#00f5a0]">90 a 180 días</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400 flex items-center gap-1.5 font-tech">
+                  <i data-lucide="microchip" class="w-4 h-4 text-[#00d2ff]"></i> Repuestos:
+                </span>
+                <span class="font-mono font-semibold text-slate-200">OEM Calidad Original</span>
+              </div>
+            </div>
 
-        <!-- ESTADO VACÍO / INICIAL -->
-        <section id="empty-state" class="py-16 text-center space-y-4 max-w-md mx-auto">
-            <div class="relative w-20 h-20 rounded-2xl bg-[#0c1220] border border-cyan-500/30 flex items-center justify-center mx-auto shadow-xl shadow-cyan-950/30">
-                <img src="/static/assets/logo.png" alt="Wilotech" class="w-12 h-12 object-contain opacity-70">
+            <!-- Botón WhatsApp -->
+            <button 
+              id="calc-whatsapp-btn"
+              type="button" 
+              disabled
+              class="w-full mt-6 py-4 px-4 rounded-xl bg-gradient-to-r from-[#00d2ff] to-[#00f5a0] text-slate-950 font-brand font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#00f5a0]/25 transition-all opacity-50 cursor-not-allowed hover:opacity-90"
+            >
+              <i data-lucide="message-circle" class="w-5 h-5 text-slate-950"></i>
+              <span>Enviar a WhatsApp Taller</span>
+            </button>
+
+            <p class="text-[11px] text-center text-slate-500 mt-3 font-tech">
+              Abre WhatsApp con todos los detalles técnicos para coordinar tu ingreso.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         4. SISTEMA DE SEGUIMIENTO EN TIEMPO REAL (TRACKER)
+         ========================================================================= -->
+    <section id="tracker-section" class="py-16 border-t border-[#00f5a0]/15 relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-2xl mx-auto mb-10">
+          <span class="font-brand text-[10px] font-bold uppercase tracking-widest text-[#00d2ff] bg-[#00d2ff]/10 border border-[#00d2ff]/30 px-3 py-1 rounded-full">
+            Seguimiento 24/7
+          </span>
+          <h2 class="font-brand text-2xl sm:text-4xl font-extrabold text-white mt-3">Rastreador de Reparaciones</h2>
+          <p class="text-sm text-slate-400 mt-2 font-tech text-base">
+            Consulta en vivo el avance de tu equipo en nuestro laboratorio técnico mediante tu número de orden o ticket.
+          </p>
+
+          <!-- Input de Búsqueda -->
+          <div class="mt-6 flex flex-col sm:flex-row gap-2 max-w-lg mx-auto">
+            <div class="relative flex-1">
+              <i data-lucide="search" class="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input 
+                type="text" 
+                id="tracker-search-input"
+                placeholder="Ejemplo: TF-8492 o tu teléfono"
+                class="w-full bg-[#0a101c] border border-slate-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white font-mono placeholder:font-sans focus:outline-none focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]"
+              >
+            </div>
+            <button 
+              id="tracker-search-btn"
+              type="button" 
+              class="py-3 px-6 rounded-xl btn-cyber font-brand text-xs uppercase tracking-wider flex items-center justify-center gap-2 shrink-0"
+            >
+              <span>Consultar</span>
+              <i data-lucide="arrow-right" class="w-4 h-4 text-slate-950"></i>
+            </button>
+          </div>
+
+          <!-- Sugerencias de Órdenes Demo -->
+          <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-400 font-tech">
+            <span class="text-slate-500">Tickets de prueba:</span>
+            <div id="tracker-demo-badges" class="flex flex-wrap gap-1.5">
+              <!-- Inyectado por tracker.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensaje Ticket No Encontrado -->
+        <div id="tracker-not-found" class="hidden text-center py-12 glass-panel rounded-2xl border border-rose-500/30 max-w-xl mx-auto">
+          <div class="w-12 h-12 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="alert-circle" class="w-6 h-6"></i>
+          </div>
+          <h3 class="font-brand text-base font-bold text-white">Orden no encontrada</h3>
+          <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1 font-tech">
+            Verifica que el número de ticket esté bien escrito (ej: <span class="font-mono text-[#00f5a0]">TF-8492</span>) o consulta directamente por WhatsApp.
+          </p>
+        </div>
+
+        <!-- Estado Inicial (Empty State) -->
+        <div id="tracker-empty-state" class="text-center py-12 glass-panel rounded-2xl border border-slate-800 max-w-xl mx-auto">
+          <i data-lucide="activity" class="w-10 h-10 text-[#00f5a0]/50 mx-auto mb-3 animate-pulse"></i>
+          <h4 class="font-brand text-sm font-bold text-slate-200 uppercase tracking-wider">Monitoreo de Mesa de Laboratorio</h4>
+          <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1 font-tech">
+            Ingresa tu ticket para ver las pruebas de diagnóstico, consumo en fuente DC, repuestos reemplazados e informe del técnico asignado.
+          </p>
+        </div>
+
+        <!-- Contenedor del Resultado (Stepper + Ficha) -->
+        <div id="tracker-result-container" class="hidden max-w-4xl mx-auto">
+          <!-- Inyectado dinámicamente por tracker.js -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         5. CATÁLOGO DE ESPECIALIDADES TÉCNICAS
+         ========================================================================= -->
+    <section id="servicios" class="py-16 border-t border-[#00f5a0]/15 bg-[#05070d]/60">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-2xl mx-auto mb-12">
+          <span class="font-brand text-[10px] font-bold uppercase tracking-widest text-[#00f5a0] bg-[#00f5a0]/10 border border-[#00f5a0]/30 px-3 py-1 rounded-full">
+            Servicio de Precisión
+          </span>
+          <h2 class="font-brand text-2xl sm:text-4xl font-extrabold text-white mt-3">Áreas de Laboratorio WILOTECH</h2>
+          <p class="text-sm text-slate-400 mt-2 font-tech text-base">
+            No solo cambiamos módulos; solucionamos fallas complejas a nivel componente electrónico e ingeniería inversa.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <!-- Tarjeta 1: Celulares -->
+          <div class="glass-panel p-6 sm:p-7 rounded-2xl border border-[#00f5a0]/20 interactive-card">
+            <div class="w-12 h-12 rounded-xl bg-[#00f5a0]/10 border border-[#00f5a0]/30 flex items-center justify-center text-[#00f5a0] mb-5">
+              <i data-lucide="smartphone" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-brand text-lg font-bold text-white mb-2">Smartphones & Tablets</h3>
+            <p class="text-xs text-slate-400 leading-relaxed mb-4 font-tech text-sm">
+              Laboratorio preparado para micro-soldadura en placas sándwich (iPhone 11 a 15, Samsung Galaxy S Series).
+            </p>
+            <ul class="space-y-2 text-xs text-slate-300 border-t border-slate-800 pt-4 font-tech text-sm">
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-[#00f5a0] shrink-0"></i>
+                <span>Diagnóstico térmico de cortos en línea VDD_MAIN</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-[#00f5a0] shrink-0"></i>
+                <span>Reemplazo de ICs Hydra, Tristar, PMIC y Audio</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-[#00f5a0] shrink-0"></i>
+                <span>Reballing CPU y memoria UFS en Xiaomi/POCO</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-[#00f5a0] shrink-0"></i>
+                <span>Pantallas OLED genuinas y reprogramación TrueTone</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Tarjeta 2: PC & Laptops Gamer -->
+          <div class="glass-panel p-6 sm:p-7 rounded-2xl border border-[#00d2ff]/20 interactive-card">
+            <div class="w-12 h-12 rounded-xl bg-[#00d2ff]/10 border border-[#00d2ff]/30 flex items-center justify-center text-[#00d2ff] mb-5">
+              <i data-lucide="laptop" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-brand text-lg font-bold text-white mb-2">PC Gamer & Notebooks</h3>
+            <p class="text-xs text-slate-400 leading-relaxed mb-4 font-tech text-sm">
+              Ingeniería térmica y solución a problemas de alimentación en equipos de alto rendimiento y workstations.
+            </p>
+            <ul class="space-y-2 text-xs text-slate-300 border-t border-slate-800 pt-4 font-tech text-sm">
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-[#00d2ff] shrink-0"></i>
+                <span>Reemplazo térmico con Honeywell PTM7950</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-[#00d2ff] shrink-0"></i>
+                <span>Reprogramación de BIOS SPI corruptas (CH341A)</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-[#00d2ff] shrink-0"></i>
+                <span>Solución de cortos en línea principal de 19V / USB-PD</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-[#00d2ff] shrink-0"></i>
+                <span>Reparación de GPU (VRAM dañadas, fases VRM)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Tarjeta 3: Consolas de Videojuegos -->
+          <div class="glass-panel p-6 sm:p-7 rounded-2xl border border-[#00f5a0]/20 interactive-card">
+            <div class="w-12 h-12 rounded-xl bg-[#00f5a0]/10 border border-[#00f5a0]/30 flex items-center justify-center text-[#00f5a0] mb-5">
+              <i data-lucide="gamepad-2" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-brand text-lg font-bold text-white mb-2">Consolas de Videojuegos</h3>
+            <p class="text-xs text-slate-400 leading-relaxed mb-4 font-tech text-sm">
+              Especialistas en PlayStation 5, Xbox Series X/S y Nintendo Switch. Solución definitiva a fallas de video y sobrecalentamiento.
+            </p>
+            <ul class="space-y-2 text-xs text-slate-300 border-t border-slate-800 pt-4 font-tech text-sm">
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-[#00f5a0] shrink-0"></i>
+                <span>Cambio de Puerto HDMI 2.1 reforzado (PS5 / Xbox)</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-[#00f5a0] shrink-0"></i>
+                <span>Reemplazo de Metal Líquido y sellado de APU</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-[#00f5a0] shrink-0"></i>
+                <span>Chips Retimer HDMI (Panasonic / TDP158)</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-[#00f5a0] shrink-0"></i>
+                <span>Nintendo Switch: Integrados M92T36, BQ24193 y USB-C</span>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         6. EQUIPAMIENTO DEL LABORATORIO (AUTORIDAD TÉCNICA)
+         ========================================================================= -->
+    <section id="laboratorio" class="py-16 border-t border-[#00f5a0]/15">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="glass-panel p-8 sm:p-12 rounded-3xl border border-[#00f5a0]/30 relative overflow-hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            
+            <div>
+              <span class="font-brand text-[10px] font-bold uppercase tracking-widest text-[#00d2ff] bg-[#00d2ff]/10 border border-[#00d2ff]/30 px-3 py-1 rounded-full">
+                Infraestructura de Precisión
+              </span>
+              <h2 class="font-brand text-2xl sm:text-3xl font-extrabold text-white mt-3">Instrumental de Diagnóstico Grado Laboratorio</h2>
+              <p class="text-sm text-slate-400 mt-3 leading-relaxed font-tech text-base">
+                No adivinamos componentes defectuosos ni aplicamos calor indiscriminado. Cada diagnóstico se sustenta en mediciones objetivas con cámaras termográficas, osciloscopios digitales y esquemáticos vectoriales (ZXW / Borneo).
+              </p>
+
+              <div class="mt-6 grid grid-cols-2 gap-4 text-xs font-tech">
+                <div class="flex items-start gap-2.5">
+                  <i data-lucide="microscope" class="w-5 h-5 text-[#00f5a0] shrink-0"></i>
+                  <div>
+                    <strong class="text-white block font-brand text-xs">Microscopio Trinocular</strong>
+                    <span class="text-slate-400">Inspección de pistas y soldaduras frías.</span>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-2.5">
+                  <i data-lucide="flame" class="w-5 h-5 text-[#00d2ff] shrink-0"></i>
+                  <div>
+                    <strong class="text-white block font-brand text-xs">Cámara Térmica Infrarroja</strong>
+                    <span class="text-slate-400">Detección inmediata de líneas en corto.</span>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-2.5">
+                  <i data-lucide="activity" class="w-5 h-5 text-[#00f5a0] shrink-0"></i>
+                  <div>
+                    <strong class="text-white block font-brand text-xs">Osciloscopio Digital</strong>
+                    <span class="text-slate-400">Medición de señales de reloj (CLK) y bus I2C.</span>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-2.5">
+                  <i data-lucide="zap" class="w-5 h-5 text-[#00d2ff] shrink-0"></i>
+                  <div>
+                    <strong class="text-white block font-brand text-xs">Fuente DC de 4 Dígitos</strong>
+                    <span class="text-slate-400">Análisis milimétrico de consumo en reposo.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel de Garantía WILOTECH con el Logo Oficial -->
+            <div class="bg-[#0a101c]/90 p-6 sm:p-8 rounded-2xl border border-[#00f5a0]/30 text-center relative overflow-hidden">
+              <div class="w-20 h-20 rounded-2xl overflow-hidden border-2 border-[#00f5a0]/60 shadow-xl shadow-[#00f5a0]/20 mx-auto mb-4">
+                <img src="assets/logo.jpg" alt="Certificado WILOTECH" class="w-full h-full object-cover">
+              </div>
+              <h3 class="font-brand text-lg font-bold text-white">Certificado de Garantía WILOTECH</h3>
+              <p class="text-xs text-slate-400 mt-2 max-w-sm mx-auto font-tech text-sm">
+                Cada equipo reparado pasa por nuestro protocolo de 12 puntos de control de calidad y pruebas de estrés térmico continuo antes de su entrega.
+              </p>
+              
+              <div class="mt-6 flex items-center justify-center gap-6 text-center border-t border-slate-800 pt-6">
+                <div>
+                  <div class="font-brand text-2xl font-bold text-[#00d2ff]">+4.500</div>
+                  <div class="text-[11px] text-slate-500 font-tech uppercase">Equipos Reparados</div>
+                </div>
+                <div class="w-px h-8 bg-slate-800"></div>
+                <div>
+                  <div class="font-brand text-2xl font-bold text-[#00f5a0]">98.4%</div>
+                  <div class="text-[11px] text-slate-500 font-tech uppercase">Tasa de Éxito</div>
+                </div>
+                <div class="w-px h-8 bg-slate-800"></div>
+                <div>
+                  <div class="font-brand text-2xl font-bold text-[#00d2ff]">6 Meses</div>
+                  <div class="text-[11px] text-slate-500 font-tech uppercase">Garantía Máxima</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+  </main>
+
+  <!-- =========================================================================
+       7. FOOTER CON IDENTIDAD WILOTECH
+       ========================================================================= -->
+  <footer class="border-t border-[#00f5a0]/15 bg-[#05070d] py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        
+        <div class="md:col-span-2 space-y-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl overflow-hidden border border-[#00f5a0]/40 shadow-md">
+              <img src="assets/logo.jpg" alt="WILOTECH" class="w-full h-full object-cover">
             </div>
             <div>
-                <h3 id="empty-state-title" class="text-base font-bold text-white font-tech tracking-wide text-lg">Comienza a comparar repuestos</h3>
-                <p id="empty-state-desc" class="text-xs text-slate-400 mt-1 leading-relaxed">
-                    Escribe el modelo o código del repuesto en la barra superior para consultar simultáneamente los precios y stock en todas las distribuidoras conectadas.
-                </p>
+              <span class="font-brand text-xl font-black text-white">WILO<span class="text-[#00f5a0]">TECH</span></span>
+              <p class="font-brand text-[8px] tracking-[0.2em] text-[#00d2ff] uppercase">LABORATORIO TÉCNICO</p>
             </div>
-        </section>
-
-    </main>
-
-    <!-- FOOTER SUTIL DE MARCA -->
-    <footer class="border-t border-slate-800/80 bg-[#06090e] py-4 text-center text-xs text-slate-500">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-                <img src="/static/assets/logo.png" alt="Wilotech" class="w-5 h-5 object-contain">
-                <span class="font-tech text-slate-400 font-bold tracking-wider">WILOTECH</span>
-                <span>&bull; Laboratorio Técnico Especializado</span>
-            </div>
-            <div class="font-mono text-[11px] text-slate-500">
-                Comparador Multidistribuidora &bull; Sistema Interno de Cotización
-            </div>
+          </div>
+          <p class="text-xs text-slate-400 max-w-md leading-relaxed font-tech text-sm">
+            Servicio técnico integral de microelectrónica y reparación de hardware para celulares multimarca, computadoras de escritorio, laptops y consolas de videojuegos.
+          </p>
+          <div class="text-xs text-slate-500 font-tech">
+            Laboratorio Central & Mesa de Entregas • Lunes a Sábados de 09:00 a 19:00 hs.
+          </div>
         </div>
-    </footer>
 
-    <!-- ==================== MODALES ==================== -->
-
-    <!-- MODAL DE ADMINISTRACIÓN DE DISTRIBUIDORAS -->
-    <div id="distributors-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-[#0b101c] border border-cyan-500/30 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl shadow-cyan-950/40 overflow-hidden">
-            <!-- Cabecera del Modal -->
-            <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-[#070b14]/80">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
-                        ⚙️
-                    </div>
-                    <div>
-                        <h3 class="text-base font-bold text-white font-tech tracking-wide">Configuración de Distribuidoras</h3>
-                        <p class="text-xs text-slate-400">Administra cuentas, contraseñas cifradas y conexión web en vivo</p>
-                    </div>
-                </div>
-                <button type="button" id="close-distributors-modal" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-
-            <!-- Aviso de Seguridad Local -->
-            <div class="px-5 py-3 bg-cyan-950/30 border-b border-cyan-900/30 text-xs text-cyan-300 flex items-center gap-2">
-                <svg class="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                <span><strong>Privacidad garantizada:</strong> Tus contraseñas se almacenan cifradas localmente con Fernet (AES-128) en tu propia máquina. Nunca se transmiten a servidores de terceros.</span>
-            </div>
-
-            <!-- Cuerpo del Modal -->
-            <div class="flex-1 overflow-y-auto p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                <!-- COLUMNA 1: FORMULARIO -->
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h4 id="form-title" class="text-sm font-bold text-white font-tech">Agregar Nueva Distribuidora</h4>
-                        <button type="button" id="new-distributor-btn" class="text-xs text-cyan-400 hover:text-cyan-300 font-medium cursor-pointer">+ Limpiar</button>
-                    </div>
-
-                    <form id="distributor-form" class="space-y-3 text-xs">
-                        <input type="hidden" id="dist-id">
-
-                        <div>
-                            <label class="block text-slate-300 font-medium mb-1">Nombre de la Distribuidora *</label>
-                            <input type="text" id="dist-name" required placeholder="Ej: Mayorista B2B Repuestos" class="w-full px-3 py-2 rounded-lg bg-[#070b14] border border-slate-700 text-white focus:outline-none focus:border-cyan-400">
-                        </div>
-
-                        <div>
-                            <label class="block text-slate-300 font-medium mb-1">URL Base del Portal Web *</label>
-                            <input type="url" id="dist-base-url" required placeholder="https://portal.distribuidor.com" class="w-full px-3 py-2 rounded-lg bg-[#070b14] border border-slate-700 text-white focus:outline-none focus:border-cyan-400 font-mono">
-                        </div>
-
-                        <div>
-                            <label class="block text-slate-300 font-medium mb-1">URL de Login</label>
-                            <input type="url" id="dist-login-url" placeholder="https://portal.distribuidor.com/login" class="w-full px-3 py-2 rounded-lg bg-[#070b14] border border-slate-700 text-white focus:outline-none focus:border-cyan-400 font-mono">
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-slate-300 font-medium mb-1">Usuario / Email</label>
-                                <input type="text" id="dist-username" placeholder="usuario_mayorista" class="w-full px-3 py-2 rounded-lg bg-[#070b14] border border-slate-700 text-white focus:outline-none focus:border-cyan-400">
-                            </div>
-                            <div>
-                                <label class="block text-slate-300 font-medium mb-1">Contraseña</label>
-                                <input type="password" id="dist-password" placeholder="••••••••" class="w-full px-3 py-2 rounded-lg bg-[#070b14] border border-slate-700 text-white focus:outline-none focus:border-cyan-400">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-slate-300 font-medium mb-1">Tipo de Scraper</label>
-                                <select id="dist-type" class="w-full px-3 py-2 rounded-lg bg-[#070b14] border border-slate-700 text-white focus:outline-none focus:border-cyan-400">
-                                    <option value="mock">Simulado (Demostración)</option>
-                                    <option value="generic_http">HTTP Web / API Directo</option>
-                                    <option value="playwright">Navegador Automático</option>
-                                </select>
-                            </div>
-                            <div class="flex items-center pt-5">
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" id="dist-active" checked class="rounded border-slate-700 text-cyan-500 focus:ring-0">
-                                    <span class="text-slate-300">Activa para búsquedas</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-2 pt-2">
-                            <button type="submit" class="flex-1 py-2.5 rounded-lg wilo-btn-primary font-bold cursor-pointer">
-                                Guardar Distribuidora
-                            </button>
-                            <button type="button" id="cancel-edit-btn" onclick="resetDistributorForm()" class="hidden px-3 py-2.5 rounded-lg bg-[#141e33] hover:bg-[#1a2845] text-slate-300 font-medium transition-colors cursor-pointer">
-                                Cancelar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- COLUMNA 2: LISTA DE DISTRIBUIDORAS CONFIGURADAS -->
-                <div class="space-y-3">
-                    <h4 class="text-sm font-bold text-white font-tech flex items-center justify-between">
-                        <span>Distribuidoras Registradas</span>
-                    </h4>
-                    <div id="modal-distributors-list" class="space-y-3 overflow-y-auto max-h-[420px] pr-1">
-                        <!-- Generado dinámicamente -->
-                    </div>
-                </div>
-
-            </div>
+        <div>
+          <h4 class="font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">Accesos Directos</h4>
+          <ul class="space-y-2 text-xs text-slate-400 font-tech text-sm">
+            <li><a href="#cotizador" class="hover:text-[#00f5a0] transition-colors">Cotizador de Reparaciones</a></li>
+            <li><a href="#tracker-section" class="hover:text-[#00f5a0] transition-colors">Rastreo de Ticket en Vivo</a></li>
+            <li><a href="#servicios" class="hover:text-[#00f5a0] transition-colors">Microelectrónica en Celulares</a></li>
+            <li><a href="#servicios" class="hover:text-[#00f5a0] transition-colors">Reparación de Consolas (HDMI)</a></li>
+          </ul>
         </div>
+
+        <div>
+          <h4 class="font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">Atención & Turnos</h4>
+          <div class="space-y-2 text-xs text-slate-400 font-tech text-sm">
+            <p class="flex items-center gap-2">
+              <i data-lucide="phone" class="w-3.5 h-3.5 text-[#00f5a0]"></i> +54 223 591-4163
+            </p>
+            <p class="flex items-center gap-2">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-[#00d2ff]"></i> Colón 1475, Mar del Plata, Bs. As., Argentina
+            </p>
+            <p class="flex items-center gap-2">
+              <i data-lucide="mail" class="w-3.5 h-3.5 text-[#00f5a0]"></i> wil_18_22@hotmail.com
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mt-8 pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 font-tech">
+        <p>© 2026 WILOTECH. Todos los derechos reservados.</p>
+        <p class="mt-2 sm:mt-0">Laboratorio de Microelectrónica & Servicio Técnico Especializado.</p>
+      </div>
     </div>
+  </footer>
 
-    <!-- MODAL DE LISTAS DE PRECIOS EXCEL / CSV -->
-    <div id="excel-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-[#0b101c] border border-emerald-500/30 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl shadow-emerald-950/40 overflow-hidden">
-            <!-- Cabecera del Modal -->
-            <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-[#070b14]/80">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center font-bold">
-                        📊
-                    </div>
-                    <div>
-                        <h3 class="text-base font-bold text-white font-tech tracking-wide">Listas de Precios en Excel</h3>
-                        <p class="text-xs text-slate-400">Importa planillas de proveedores e inclúyelas en la comparativa en tiempo real</p>
-                    </div>
-                </div>
-                <button type="button" id="close-excel-modal" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-
-            <!-- Banner Explicativo -->
-            <div class="px-5 py-3 bg-emerald-950/30 border-b border-emerald-900/40 text-xs text-emerald-300 flex items-center gap-2">
-                <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span><strong>Detección inteligente:</strong> Acepta archivos <code>.xlsx</code>, <code>.xls</code> o <code>.csv</code>. Detección de columnas de descripción, precio gremio/efectivo, código y stock.</span>
-            </div>
-
-            <!-- Cuerpo del Modal -->
-            <div class="flex-1 overflow-y-auto p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                <!-- COLUMNA 1: SUBIR PLANILLA -->
-                <div class="space-y-4">
-                    <h4 class="text-sm font-bold text-white font-tech">Cargar Nueva Lista / Actualizar</h4>
-
-                    <form id="excel-upload-form" class="space-y-3 text-xs">
-                        <div>
-                            <label class="block text-slate-300 font-medium mb-1">Nombre del Proveedor / Mayorista *</label>
-                            <input type="text" id="excel-supplier-name" required placeholder="Ej: Mayorista Once Cell" class="w-full px-3 py-2 rounded-lg bg-[#070b14] border border-slate-700 text-white focus:outline-none focus:border-emerald-400">
-                        </div>
-
-                        <div>
-                            <label class="block text-slate-300 font-medium mb-1">Moneda de la Lista</label>
-                            <select id="excel-currency" class="w-full px-3 py-2 rounded-lg bg-[#070b14] border border-slate-700 text-white focus:outline-none focus:border-emerald-400">
-                                <option value="ARS" selected>ARS ($ Pesos Argentinos)</option>
-                                <option value="USD">USD ($ Dólares)</option>
-                            </select>
-                        </div>
-
-                        <!-- Dropzone para Archivo -->
-                        <div>
-                            <label class="block text-slate-300 font-medium mb-1">Archivo Excel o CSV *</label>
-                            <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-emerald-400 rounded-xl p-5 text-center cursor-pointer bg-[#070b14]/70 transition-colors">
-                                <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" class="hidden">
-                                <div class="space-y-1">
-                                    <div class="text-2xl">📄</div>
-                                    <p id="dropzone-text" class="text-slate-300 font-medium text-xs">Haz clic o arrastra tu archivo aquí</p>
-                                    <p class="text-[10px] text-slate-500 font-mono">Formatos admitidos: .xlsx, .xls, .csv</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="upload-status" class="hidden p-3 rounded-lg text-xs"></div>
-
-                        <button type="submit" id="upload-excel-btn" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-slate-950 font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-950/40">
-                            <span>Importar y Procesar Planilla</span>
-                        </button>
-                    </form>
-                </div>
-
-                <!-- COLUMNA 2: LISTAS IMPORTADAS ACTIVAS -->
-                <div class="space-y-3">
-                    <h4 class="text-sm font-bold text-white font-tech flex items-center justify-between">
-                        <span>Listas Cargadas en el Sistema</span>
-                    </h4>
-                    <div id="modal-excel-list" class="space-y-3 overflow-y-auto max-h-[420px] pr-1">
-                        <!-- Generado dinámicamente -->
-                    </div>
-                </div>
-
-            </div>
+  <!-- =========================================================================
+       8. MODAL DE ADMINISTRACIÓN DEL TALLER (GESTIÓN DE TICKETS & INVENTARIO)
+       ========================================================================= -->
+  <div id="admin-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="relative w-full max-w-5xl bg-[#0a101c] border border-[#00f5a0]/40 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      
+      <!-- Encabezado del Modal -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#05070d]">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl overflow-hidden border border-[#00f5a0]/50">
+            <img src="assets/logo.jpg" alt="WILOTECH" class="w-full h-full object-cover">
+          </div>
+          <div>
+            <h3 class="font-brand text-sm font-bold text-white">PANEL INTERNO WILOTECH</h3>
+            <p class="text-[11px] text-slate-400 font-tech">Gestión en tiempo real de órdenes de laboratorio y stock</p>
+          </div>
         </div>
-    </div>
 
-    <!-- MODAL DE COTIZACIÓN DÓLAR BLUE -->
-    <div id="dolar-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-[#0b101c] border border-emerald-500/30 rounded-2xl max-w-md w-full flex flex-col shadow-2xl shadow-emerald-950/40 overflow-hidden">
-            <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-[#070b14]/80">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center font-bold">
-                        💵
-                    </div>
-                    <div>
-                        <h3 class="text-base font-bold text-white font-tech tracking-wide">Dólar Blue del Día</h3>
-                        <p class="text-xs text-slate-400">Conversor en tiempo real para repuestos cotizados en USD</p>
-                    </div>
-                </div>
-                <button type="button" id="close-dolar-modal" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
+        <button id="close-admin-btn" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
 
-            <div class="p-5 space-y-4 text-xs">
-                <!-- Info en Vivo -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 text-center">
-                        <div class="text-[10px] text-emerald-400 uppercase font-bold tracking-wider font-tech">Venta (Conversión)</div>
-                        <div id="modal-dolar-venta" class="text-xl font-black text-emerald-300 font-mono mt-1">$...</div>
-                    </div>
-                    <div class="p-3.5 rounded-xl border border-slate-800 bg-[#070b14] text-center">
-                        <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider font-tech">Compra</div>
-                        <div id="modal-dolar-compra" class="text-xl font-black text-slate-200 font-mono mt-1">$...</div>
-                    </div>
-                </div>
+      <!-- Navegación de Tabs Internas -->
+      <div class="flex border-b border-slate-800 px-6 bg-[#05070d]/60 font-brand">
+        <button data-tab="tickets" class="admin-tab-btn py-3 px-4 text-xs font-bold border-b-2 border-[#00f5a0] text-[#00f5a0] transition-colors flex items-center gap-1.5">
+          <i data-lucide="list-checks" class="w-4 h-4"></i> Órdenes de Servicio
+        </button>
+        <button data-tab="new-ticket" class="admin-tab-btn py-3 px-4 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> Nueva Orden Técnica
+        </button>
+        <button data-tab="inventory" class="admin-tab-btn py-3 px-4 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5">
+          <i data-lucide="package" class="w-4 h-4"></i> Stock de Repuestos
+        </button>
+      </div>
 
-                <div class="text-slate-400 text-[11px] leading-relaxed">
-                    <span id="modal-dolar-fuente" class="font-mono">Fuente: Consultando en vivo...</span><br>
-                    <span class="text-slate-500">Los repuestos de catálogos o mayoristas en dólares se multiplican automáticamente por este valor para ordenarlos junto a los precios en pesos.</span>
-                </div>
+      <!-- Cuerpo del Modal -->
+      <div class="p-6 overflow-y-auto flex-1 space-y-6">
+        
+        <!-- Tab 1: Listado y Cambio de Estado de Órdenes -->
+        <div id="admin-pane-tickets" class="admin-tab-content">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-brand text-xs font-bold text-slate-200 uppercase tracking-wider">Órdenes Registradas en Sistema</h4>
+            <span class="text-xs text-slate-500 font-tech">Actualización instantánea en el rastreador</span>
+          </div>
 
-                <!-- Modificar cotización manual -->
-                <form id="dolar-custom-form" class="space-y-2 pt-2 border-t border-slate-800">
-                    <label class="block text-slate-300 font-medium">¿Deseas fijar un valor manual específico?</label>
-                    <div class="flex gap-2">
-                        <input type="number" id="dolar-custom-input" step="1" min="100" max="10000" placeholder="Ej: 1540" class="flex-1 px-3 py-2 rounded-lg bg-[#070b14] border border-slate-700 text-white focus:outline-none focus:border-emerald-400 font-mono">
-                        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors cursor-pointer">
-                            Fijar
-                        </button>
-                    </div>
-                    <button type="button" id="reset-dolar-btn" class="w-full py-2 rounded-lg bg-[#141e33] hover:bg-[#1b2947] text-slate-300 font-medium transition-colors cursor-pointer">
-                        Restablecer a cotización automática del día
-                    </button>
-                </form>
-            </div>
+          <div class="overflow-x-auto border border-slate-800 rounded-xl">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-[#05070d] text-[11px] font-brand font-bold text-[#00f5a0] uppercase tracking-wider border-b border-slate-800">
+                  <th class="py-3 px-3">Ticket</th>
+                  <th class="py-3 px-3">Cliente</th>
+                  <th class="py-3 px-3">Equipo / Serial</th>
+                  <th class="py-3 px-3">Estado Actual</th>
+                  <th class="py-3 px-3">Costo</th>
+                  <th class="py-3 px-3 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="admin-tickets-tbody">
+                <!-- Inyectado por admin.js -->
+              </tbody>
+            </table>
+          </div>
         </div>
-    </div>
 
-    <!-- Scripts de la Aplicación -->
-    <script src="/static/app.js"></script>
+        <!-- Tab 2: Crear Nueva Orden -->
+        <div id="admin-pane-new-ticket" class="admin-tab-content hidden">
+          <form id="admin-new-ticket-form" class="space-y-4 max-w-2xl mx-auto font-tech">
+            <h4 class="font-brand text-xs font-bold text-slate-200 uppercase tracking-wider mb-2">Ingresar Nuevo Equipo a Taller</h4>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Nombre del Cliente *</label>
+                <input type="text" name="clientName" required placeholder="Ej: Marcos Benítez" class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">DNI / CUIT *</label>
+                <input type="text" name="clientDni" required placeholder="Ej: 38.942.105" class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Teléfono (WhatsApp) *</label>
+                <input type="text" name="clientPhone" required placeholder="+54 9 11..." class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Dirección / Domicilio</label>
+                <input type="text" name="clientAddress" placeholder="Ej: Av. Corrientes 1450" class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Categoría</label>
+                <select name="deviceType" class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+                  <option value="Celular">Celular</option>
+                  <option value="Laptop Gamer">Laptop Gamer</option>
+                  <option value="PC Escritorio">PC Escritorio</option>
+                  <option value="Consola">Consola</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Modelo del Equipo</label>
+                <input type="text" name="deviceModel" required placeholder="Ej: Sony PS5 Slim" class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Número de Serie / IMEI</label>
+                <input type="text" name="serialOrImei" placeholder="SN o IMEI" class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Falla Reportada</label>
+              <textarea name="issueDescription" rows="2" required placeholder="Describe lo que manifiesta el cliente..." class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Estado Inicial</label>
+                <select name="status" class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+                  <option value="received">1. Recepción</option>
+                  <option value="diagnosing">2. Diagnóstico</option>
+                  <option value="waiting_parts">3. Esperando Repuesto</option>
+                  <option value="repairing">4. En Reparación</option>
+                  <option value="ready">5. Listo para Entrega</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Técnico Responsable</label>
+                <input type="text" name="technician" value="Ing. Martín Ramos" class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Costo Estimado (USD)</label>
+                <input type="number" name="finalCost" value="50" class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Notas Iniciales de Banco de Trabajo</label>
+              <input type="text" name="technicianNotes" value="Equipo ingresado para revisión de laboratorio y despiece inicial." class="w-full bg-[#05070d] border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+            </div>
+
+            <div class="pt-3">
+              <button type="submit" class="w-full py-3 rounded-xl btn-cyber font-brand text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4 text-slate-950"></i> Registrar Orden en Base de Datos
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tab 3: Inventario de Repuestos -->
+        <div id="admin-pane-inventory" class="admin-tab-content hidden">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-brand text-xs font-bold text-slate-200 uppercase tracking-wider">Inventario de Componentes Críticos</h4>
+            <span class="text-xs text-slate-500 font-tech">Control de stock de laboratorio</span>
+          </div>
+
+          <div class="overflow-x-auto border border-slate-800 rounded-xl">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-[#05070d] text-[11px] font-brand font-bold text-[#00f5a0] uppercase tracking-wider border-b border-slate-800">
+                  <th class="py-3 px-3">Código</th>
+                  <th class="py-3 px-3">Descripción del Componente</th>
+                  <th class="py-3 px-3">Stock Disponible</th>
+                  <th class="py-3 px-3">Costo Unit.</th>
+                  <th class="py-3 px-3 text-right">Ajustar</th>
+                </tr>
+              </thead>
+              <tbody id="admin-inventory-tbody">
+                <!-- Inyectado por admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Pie del Modal -->
+      <div class="px-6 py-3 border-t border-slate-800 bg-[#05070d] flex items-center justify-between text-xs text-slate-500 font-tech">
+        <span>Datos guardados localmente en el navegador (LocalStorage)</span>
+        <button onclick="document.getElementById('close-admin-btn').click()" class="text-slate-400 hover:text-white">Cerrar</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Scripts de la Aplicación -->
+  <script src="js/data.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/tracker.js"></script>
+  <script src="js/app.js"></script>
+
 </body>
 </html>

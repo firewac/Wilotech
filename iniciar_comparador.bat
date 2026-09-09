@@ -1,9 +1,9 @@
 @echo off
-title AutoPrice Pro - Comparador de Precios de Repuestos
+title WILOTECH - Suite de Taller y Comparador de Repuestos
 cd /d "%~dp0"
 
 echo =======================================================================
-echo          AutoPrice Pro - Comparador de Repuestos Multidistribuidora
+echo     WILOTECH - Suite de Gestión de Taller & Comparador Mayorista
 echo =======================================================================
 echo.
 

@@ -24,6 +24,7 @@ from backend.database.models import (
 )
 from backend.parsers.excel_parser import parse_price_list_file
 from backend.services.currency_service import CurrencyService
+from backend.services.imei_service import IMEIService
 from backend.scrapers.manager import ScraperManager
 from backend.exporters.excel_exporter import export_results_to_excel, export_results_to_csv
 
@@ -45,6 +46,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Permitir embebido en iframe desde TechFix Pro y orígenes locales (http, https y file:///)
+@app.middleware("http")
+async def add_iframe_headers(request, call_next):
+    response = await call_next(request)
+    if "x-frame-options" in response.headers:
+        del response.headers["x-frame-options"]
+    response.headers["Content-Security-Policy"] = "frame-ancestors 'self' * file: http: https:"
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
+
+
+
 # Rutas estáticas
 STATIC_DIR = BASE_DIR / "frontend" / "static"
 if not STATIC_DIR.exists():
@@ -54,12 +67,35 @@ if not STATIC_DIR.exists():
         pass
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+# Montaje de subcarpetas estáticas para soporte de rutas relativas directas
+for sub in ["js", "css", "assets"]:
+    sub_dir = STATIC_DIR / sub
+    if sub_dir.exists():
+        app.mount(f"/{sub}", StaticFiles(directory=str(sub_dir)), name=sub)
+
 @app.get("/")
 async def root():
     index_file = STATIC_DIR / "index.html"
     if index_file.exists():
         return FileResponse(str(index_file))
-    return {"message": "Servidor backend activo. El frontend está en /static/index.html"}
+    return {"message": "Servidor backend activo."}
+
+@app.get("/admin.html")
+@app.get("/admin")
+async def admin_page():
+    admin_file = STATIC_DIR / "admin.html"
+    if admin_file.exists():
+        return FileResponse(str(admin_file))
+    raise HTTPException(status_code=404, detail="Página admin.html no encontrada")
+
+@app.get("/comparador.html")
+@app.get("/comparador")
+async def comparador_page():
+    comp_file = STATIC_DIR / "comparador.html"
+    if comp_file.exists():
+        return FileResponse(str(comp_file))
+    raise HTTPException(status_code=404, detail="Página comparador.html no encontrada")
+
 
 # --- DISTRIBUIDORAS ---
 
@@ -152,6 +188,12 @@ async def set_dolar_blue_endpoint(payload: Dict[str, Any]):
     rate = payload.get("rate")
     CurrencyService.set_custom_rate(rate)
     return await CurrencyService.get_dolar_blue_info(force_refresh=True)
+
+# --- CONSULTA DE IMEI Y RECONOCIMIENTO DE DISPOSITIVOS ---
+
+@app.get("/api/imei/lookup")
+async def imei_lookup_endpoint(imei: str = Query(..., min_length=1, description="IMEI o TAC de 8 a 15 dígitos")):
+    return IMEIService.lookup_imei(imei)
 
 # --- BÚSQUEDA Y COMPARACIÓN ---
 

@@ -90,9 +90,9 @@ class SmartSupplyScraper(BaseDistributorScraper):
                     if not desc_text:
                         continue
 
-                    # Extraer precio: preferir precio de lista o categoría mayorista activa
+                    # Extraer precio: preferir precio de lista público/gremio activo (precio_final3/precio_final1)
                     price_val = 0.0
-                    for field in ["precio_final2", "precio_final1", "precio_final3"]:
+                    for field in ["precio_final3", "precio_final1", "precio_final2"]:
                         raw_field = p.get(field)
                         if raw_field:
                             try:
