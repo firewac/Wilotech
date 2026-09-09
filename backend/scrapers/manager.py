@@ -13,6 +13,7 @@ from backend.scrapers.generic_portal import GenericPortalScraper
 from backend.scrapers.smartsupply_scraper import SmartSupplyScraper
 from backend.scrapers.soulfix_scraper import SoulFixScraper
 from backend.scrapers.grupoarmar_scraper import GrupoArmarScraper
+from backend.scrapers.tecnoprices_scraper import TecnopricesScraper
 from backend.scrapers.excel_scraper import ExcelCatalogScraper
 from backend.services.currency_service import CurrencyService
 from backend.services.part_matcher import PartMatcher
@@ -29,6 +30,8 @@ def create_scraper_instance(dist_data: Dict[str, Any]) -> BaseDistributorScraper
         return SoulFixScraper(dist_data)
     elif dist_id == "grupoarmar" or scraper_type == "grupoarmar":
         return GrupoArmarScraper(dist_data)
+    elif dist_id == "tecnoprices" or scraper_type == "tecnoprices":
+        return TecnopricesScraper(dist_data)
     elif scraper_type == "mock":
         return MockDistributorScraper(dist_data)
     elif scraper_type in ["generic_http", "generic_web"]:

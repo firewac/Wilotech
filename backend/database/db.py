@@ -168,6 +168,31 @@ def init_db():
             datetime.now().isoformat()
         ))
 
+    # Asegurar que Tecnoprices siempre esté registrado
+    cursor.execute("SELECT COUNT(*) FROM distributors WHERE id = 'tecnoprices'")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("""
+        INSERT INTO distributors (
+            id, name, base_url, login_url, username, password_encrypted,
+            is_active, scraper_type, last_login_status, last_login_msg, custom_config, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            "tecnoprices",
+            "Tecnoprices",
+            "https://www.tecnoprices.com",
+            "https://www.tecnoprices.com/ingresar",
+            "",
+            "",
+            1,
+            "tecnoprices",
+            "UNTESTED",
+            "Portal oficial conectado. Ingresa tu usuario y contraseña para acceder a la lista de precios mayorista.",
+            json.dumps({}),
+            datetime.now().isoformat()
+        ))
+    else:
+        cursor.execute("UPDATE distributors SET scraper_type = 'tecnoprices' WHERE id = 'tecnoprices'")
+
     conn.commit()
     conn.close()
 

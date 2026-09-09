@@ -128,7 +128,7 @@ class PartMatcher:
         Evalúa si un repuesto es relevante para la búsqueda y calcula un puntaje de 0 a 100.
         Retorna (is_valid, score).
         """
-        if item.price <= 0:
+        if item.price < 0:
             return False, 0.0
 
         query_norm = normalize_text(query)
@@ -199,14 +199,14 @@ class PartMatcher:
         if not scored_parts and parts:
             tokens = [t for t in normalize_text(query).split() if len(t) > 1]
             for p in parts:
-                if p.price > 0:
+                if p.price >= 0:
                     d_norm = normalize_text(p.description)
                     if any(t in d_norm for t in tokens):
                         scored_parts.append((p, 30.0))
 
         # Ordenar:
         # 1. Disponibilidad de stock (has_stock = True primero)
-        # 2. Menor precio ascendente
-        scored_parts.sort(key=lambda x: (not x[0].has_stock, x[0].price, -x[1]))
+        # 2. Menor precio ascendente (precios mayor a 0 primero)
+        scored_parts.sort(key=lambda x: (not x[0].has_stock, x[0].price if x[0].price > 0 else 999999999.0, -x[1]))
 
         return [item[0] for item in scored_parts]
