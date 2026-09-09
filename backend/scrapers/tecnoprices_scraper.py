@@ -49,12 +49,13 @@ class TecnopricesScraper(BaseDistributorScraper):
             return False, f"Error al conectar con Tecnoprices: {str(e)}"
 
     async def fetch_item_price_from_detail(self, client: httpx.AsyncClient, item: PartResult):
-        """Obtiene el precio público oficial desde los metadatos JSON-LD de la página del producto."""
+        """Obtiene el precio público oficial desde los metadatos JSON-LD o HTML de la página del producto."""
         if item.price > 0 or not item.product_url:
             return
         try:
-            resp = await client.get(item.product_url, timeout=6.0)
+            resp = await client.get(item.product_url, timeout=7.0)
             if resp.status_code == 200:
+                # 1. JSON-LD
                 matches = re.findall(r'<script type="application/ld\+json">(.*?)</script>', resp.text, re.DOTALL)
                 for m in matches:
                     if '"@type":"Product"' in m or '"@type": "Product"' in m:
@@ -66,6 +67,41 @@ class TecnopricesScraper(BaseDistributorScraper):
                                 if price_val > 0:
                                     item.price = price_val
                                     return
+                        except Exception:
+                            pass
+
+                # 2. Meta tag product:price:amount
+                meta_p = re.findall(r'<meta\s+property=["\']product:price:amount["\']\s+content=["\']([\d\.,]+)["\']', resp.text, re.I)
+                if meta_p:
+                    try:
+                        item.price = float(meta_p[0])
+                        return
+                    except Exception:
+                        pass
+
+                # 3. Itemprop="price"
+                itemprop_p = re.findall(r'itemprop=["\']price["\']\s+content=["\']([\d\.,]+)["\']', resp.text, re.I)
+                if itemprop_p:
+                    try:
+                        item.price = float(itemprop_p[0])
+                        return
+                    except Exception:
+                        pass
+
+                # 4. Fallback search for HTML price element
+                soup_item = BeautifulSoup(resp.text, "html.parser")
+                price_els = soup_item.find_all(class_=re.compile(r"price", re.I))
+                for pe in price_els:
+                    ptext = pe.get_text()
+                    pmatches = re.findall(r"\$\s*([\d\.,]+)", ptext)
+                    if pmatches:
+                        raw_p = pmatches[0]
+                        clean_p = raw_p.replace(".", "").replace(",", ".") if "," in raw_p and "." in raw_p and raw_p.rfind(",") > raw_p.rfind(".") else raw_p.replace(",", "")
+                        try:
+                            pval = float(clean_p)
+                            if pval > 0:
+                                item.price = pval
+                                return
                         except Exception:
                             pass
         except Exception:
@@ -86,7 +122,7 @@ class TecnopricesScraper(BaseDistributorScraper):
             encoded = urllib.parse.quote_plus(clean_query)
             search_url = f"{self.base_url}/buscar.php?q={encoded}"
 
-            async with httpx.AsyncClient(headers=self.headers, cookies=cookies, timeout=12.0, follow_redirects=True) as client:
+            async with httpx.AsyncClient(headers=self.headers, cookies=cookies, timeout=14.0, follow_redirects=True) as client:
                 resp = await client.get(search_url)
                 if resp.status_code != 200:
                     return []
@@ -171,10 +207,10 @@ class TecnopricesScraper(BaseDistributorScraper):
                         scraped_at=now_str
                     ))
 
-                # Para los primeros 15 resultados cuyo precio sea 0, consultar los metadatos JSON-LD en paralelo
-                items_needing_price = [item for item in results[:15] if item.price <= 0]
+                # Consultar en paralelo la página de producto para TODOS los items sin precio de la lista (hasta 40)
+                items_needing_price = [item for item in results if item.price <= 0]
                 if items_needing_price:
-                    tasks = [self.fetch_item_price_from_detail(client, item) for item in items_needing_price]
+                    tasks = [self.fetch_item_price_from_detail(client, item) for item in items_needing_price[:40]]
                     await asyncio.gather(*tasks, return_exceptions=True)
 
         except Exception as e:
