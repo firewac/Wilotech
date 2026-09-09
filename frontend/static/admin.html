@@ -230,17 +230,17 @@
         </div>
 
         <!-- Tabla de Órdenes -->
-        <div class="overflow-x-auto border border-slate-800 rounded-xl">
-          <table class="w-full text-left border-collapse text-sm">
+        <div class="overflow-x-auto border border-slate-800 rounded-xl shadow-inner">
+          <table class="w-full min-w-[1050px] text-left border-collapse text-sm">
             <thead>
               <tr class="bg-[#05070d] text-[11px] font-brand font-bold text-[#00f5a0] uppercase tracking-wider border-b border-slate-800">
-                <th class="py-3 px-3.5">Ticket</th>
-                <th class="py-3 px-3.5">Cliente</th>
-                <th class="py-3 px-3.5">Dispositivo & Serial</th>
-                <th class="py-3 px-3.5">Falla Reportada</th>
-                <th class="py-3 px-3.5">Estado en Taller</th>
-                <th class="py-3 px-3.5">Costo</th>
-                <th class="py-3 px-3.5 text-right">Acciones Rápidas</th>
+                <th class="py-3 px-3.5 whitespace-nowrap min-w-[95px]">Ticket</th>
+                <th class="py-3 px-3.5 min-w-[160px]">Cliente</th>
+                <th class="py-3 px-3.5 min-w-[180px]">Dispositivo & Serial</th>
+                <th class="py-3 px-3.5 min-w-[150px]">Falla Reportada</th>
+                <th class="py-3 px-3.5 min-w-[140px]">Estado en Taller</th>
+                <th class="py-3 px-3.5 whitespace-nowrap min-w-[90px]">Costo</th>
+                <th class="py-3 px-3.5 text-right whitespace-nowrap min-w-[180px]">Acciones Rápidas</th>
               </tr>
             </thead>
             <tbody id="repairs-table-body">
@@ -916,10 +916,19 @@
             $${t.finalCost} USD
           </td>
           <td class="py-3 px-3.5 text-right whitespace-nowrap">
-            <div class="inline-flex items-center gap-1.5">
+            <div class="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
+              <button 
+                onclick="handleEditTicket('${t.id}')"
+                class="py-1.5 px-2.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500 hover:text-white transition-all flex items-center gap-1 text-[11px] font-brand font-bold"
+                title="Editar orden #${t.id}"
+              >
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                <span>Editar</span>
+              </button>
+
               <button 
                 onclick="TechAdmin.notifyClientWhatsApp('${t.id}')"
-                class="py-1.5 px-2.5 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1 text-[11px]"
+                class="py-1.5 px-2.5 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1 text-[11px] font-brand font-bold"
                 title="Enviar estado actual al cliente por WhatsApp"
               >
                 <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
@@ -927,16 +936,8 @@
               </button>
 
               <button 
-                onclick="handleEditTicket('${t.id}')"
-                class="py-1.5 px-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500 hover:text-white transition-colors"
-                title="Editar orden"
-              >
-                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-              </button>
-
-              <button 
                 onclick="TechAdmin.printTicketReceipt('${t.id}')"
-                class="py-1.5 px-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
+                class="py-1.5 px-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition-colors"
                 title="Imprimir Comprobante de Taller"
               >
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i>
@@ -1062,7 +1063,7 @@
         return;
       }
 
-      switchAdminTab("new-repair");
+      switchAdminTab("new-order");
 
       const form = document.getElementById("form-create-repair");
       if (!form) return;
