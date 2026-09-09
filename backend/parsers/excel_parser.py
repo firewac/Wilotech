@@ -46,6 +46,39 @@ def parse_price(val: Any) -> float:
     except Exception:
         return 0.0
 
+def ensure_string_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Garantiza que todas las columnas del DataFrame sean cadenas de texto únicas y limpias."""
+    clean_cols = []
+    seen = {}
+    for i, col in enumerate(df.columns):
+        if pd.isna(col) or str(col).strip().lower() in ["nan", "none", ""]:
+            c_str = f"Columna_{i+1}"
+        else:
+            c_str = str(col).strip()
+        
+        if c_str in seen:
+            seen[c_str] += 1
+            c_str = f"{c_str}_{seen[c_str]}"
+        else:
+            seen[c_str] = 1
+        clean_cols.append(c_str)
+    
+    df.columns = clean_cols
+    return df
+
+def safe_get_row_val(row: pd.Series, col_name: Optional[str]) -> Any:
+    """Acceso ultra-seguro a un valor de la fila sin lanzar KeyError si la clave varía de tipo."""
+    if not col_name:
+        return None
+    try:
+        return row[col_name]
+    except Exception:
+        col_str = str(col_name).strip()
+        for k in row.index:
+            if str(k).strip() == col_str:
+                return row[k]
+        return None
+
 def detect_columns(df: pd.DataFrame) -> Dict[str, Optional[str]]:
     """Detecta inteligentemente cuáles columnas corresponden a Descripción, Precio, SKU, Marca y Stock."""
     columns = [str(c) for c in df.columns]
@@ -136,6 +169,8 @@ def parse_price_list_file(file_content: bytes, filename: str, default_currency: 
         except Exception:
             df = pd.read_excel(io.BytesIO(file_content), engine="openpyxl", dtype=str)
 
+    df = ensure_string_columns(df)
+
     unnamed_count = sum(1 for c in df.columns if "unnamed" in str(c).lower())
     if len(df) > 0 and (unnamed_count > len(df.columns) / 2):
         for i in range(min(5, len(df))):
@@ -143,6 +178,7 @@ def parse_price_list_file(file_content: bytes, filename: str, default_currency: 
             if len(row_vals) >= 2 and any(clean_header(v) in ["descripcion", "producto", "precio", "codigo"] for v in row_vals):
                 df.columns = df.iloc[i]
                 df = df.iloc[i + 1:].reset_index(drop=True)
+                df = ensure_string_columns(df)
                 break
 
     df = df.loc[:, ~df.columns.duplicated()]
@@ -162,27 +198,31 @@ def parse_price_list_file(file_content: bytes, filename: str, default_currency: 
     known_brands = ["iphone", "apple", "samsung", "motorola", "moto", "xiaomi", "redmi", "huawei", "tcl", "zte", "lg", "alcatel", "nokia", "sony", "poco", "infinix", "tecno"]
 
     for idx, row in df.iterrows():
-        desc_val = str(row[desc_col]).strip() if pd.notna(row[desc_col]) else ""
+        raw_desc = safe_get_row_val(row, desc_col)
+        desc_val = str(raw_desc).strip() if raw_desc is not None and pd.notna(raw_desc) else ""
         if not desc_val or desc_val.lower() in ["nan", "none", "total", "subtotal"]:
             continue
 
         price_val = 0.0
-        if price_col and pd.notna(row[price_col]):
-            price_val = parse_price(row[price_col])
+        raw_price = safe_get_row_val(row, price_col)
+        if raw_price is not None and pd.notna(raw_price):
+            price_val = parse_price(raw_price)
 
         if price_val <= 0:
             continue
 
         sku_val = ""
-        if sku_col and pd.notna(row[sku_col]):
-            sku_val = str(row[sku_col]).strip()
-        if not sku_val:
+        raw_sku = safe_get_row_val(row, sku_col)
+        if raw_sku is not None and pd.notna(raw_sku):
+            sku_val = str(raw_sku).strip()
+        if not sku_val or sku_val.lower() in ["nan", "none"]:
             sku_val = f"EX-{abs(hash(desc_val)) % 1000000:06d}"
 
         brand_val = ""
-        if brand_col and pd.notna(row[brand_col]):
-            brand_val = str(row[brand_col]).strip().capitalize()
-        if not brand_val:
+        raw_brand = safe_get_row_val(row, brand_col)
+        if raw_brand is not None and pd.notna(raw_brand):
+            brand_val = str(raw_brand).strip().capitalize()
+        if not brand_val or brand_val.lower() in ["nan", "none"]:
             desc_lower = desc_val.lower()
             for b in known_brands:
                 if b in desc_lower:
@@ -193,8 +233,9 @@ def parse_price_list_file(file_content: bytes, filename: str, default_currency: 
 
         stock_val = "Disponible"
         has_stock = True
-        if stock_col and pd.notna(row[stock_col]):
-            s_raw = str(row[stock_col]).strip().lower()
+        raw_stock = safe_get_row_val(row, stock_col)
+        if raw_stock is not None and pd.notna(raw_stock):
+            s_raw = str(raw_stock).strip().lower()
             if s_raw in ["0", "no", "agotado", "sin stock", "false"]:
                 stock_val = "Sin stock"
                 has_stock = False
@@ -202,7 +243,7 @@ def parse_price_list_file(file_content: bytes, filename: str, default_currency: 
                 stock_val = "Disponible"
                 has_stock = True
             else:
-                stock_val = str(row[stock_col]).strip()
+                stock_val = str(raw_stock).strip()
                 has_stock = True
 
         items.append({
