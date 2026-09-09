@@ -274,9 +274,26 @@
             
             <!-- Paso 1: Tipo de Dispositivo -->
             <div>
-              <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
-                1. Tipo de Dispositivo
-              </label>
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  1. Tipo de Dispositivo
+                </label>
+                <select 
+                  id="calc-device-type-select" 
+                  class="bg-[#0a101c] border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-[#00f5a0] focus:outline-none focus:border-[#00f5a0] font-tech font-semibold"
+                >
+                  <option value="">-- Seleccionar Tipo de Equipo --</option>
+                  <option value="Celular / Smartphone">Celular / Smartphone</option>
+                  <option value="Tablet / iPad">Tablet / iPad</option>
+                  <option value="Notebook / Laptop Gamer">Notebook / Laptop Gamer</option>
+                  <option value="PC de Escritorio / Gaming">PC de Escritorio / Gaming</option>
+                  <option value="Consola de Videojuegos">Consola de Videojuegos</option>
+                  <option value="Smartwatch / Wearable">Smartwatch / Wearable</option>
+                  <option value="Otro Dispositivo">Otro Dispositivo (Especificar)</option>
+                </select>
+              </div>
+
+              <!-- Categorías visuales -->
               <div id="calc-category-tabs" class="grid grid-cols-1 sm:grid-cols-3 gap-3 font-tech text-base">
                 <!-- Inyectado dinámicamente por calculator.js -->
               </div>
@@ -310,11 +327,28 @@
               </div>
             </div>
 
+            <!-- Casilla de Entrada para Dispositivo / Modelo Exacto -->
+            <div>
+              <label for="calc-custom-device-input" class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>4. Casilla de Dispositivo / Equipo Exacto</span>
+                <span class="text-[11px] text-[#00d2ff] font-normal font-tech">Escribe o modifica el modelo exacto aquí</span>
+              </label>
+              <div class="relative">
+                <i data-lucide="smartphone" class="w-4 h-4 text-[#00f5a0] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                <input 
+                  type="text" 
+                  id="calc-custom-device-input" 
+                  placeholder="Ej: iPhone 16 Pro Max, Laptop Asus ROG, Nintendo Switch OLED..."
+                  class="w-full bg-[#0a101c] border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0] font-tech"
+                />
+              </div>
+            </div>
+
             <!-- Paso 3: Falla / Servicio Técnico -->
             <div>
               <div class="flex items-center justify-between mb-3">
                 <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  4. Selecciona el Síntoma o Falla Común
+                  5. Selecciona el Síntoma o Falla Común
                 </label>
                 <span class="text-xs text-[#00f5a0] font-mono">Mano de obra incluida</span>
               </div>

@@ -11,6 +11,8 @@ const TechCalculator = (function () {
 
   const elements = {
     categoryTabs: null,
+    deviceTypeSelect: null,
+    customDeviceInput: null,
     brandSelect: null,
     modelSelect: null,
     faultsContainer: null,
@@ -23,6 +25,8 @@ const TechCalculator = (function () {
 
   function init() {
     elements.categoryTabs = document.getElementById("calc-category-tabs");
+    elements.deviceTypeSelect = document.getElementById("calc-device-type-select");
+    elements.customDeviceInput = document.getElementById("calc-custom-device-input");
     elements.brandSelect = document.getElementById("calc-brand-select");
     elements.modelSelect = document.getElementById("calc-model-select");
     elements.faultsContainer = document.getElementById("calc-faults-container");
@@ -74,6 +78,16 @@ const TechCalculator = (function () {
       }
     });
 
+    // Selector directo de Tipo de Dispositivo
+    if (elements.deviceTypeSelect) {
+      elements.deviceTypeSelect.addEventListener("change", (e) => {
+        const val = e.target.value;
+        if (val && elements.customDeviceInput) {
+          elements.customDeviceInput.value = val;
+        }
+      });
+    }
+
     // Cambio de marca
     elements.brandSelect.addEventListener("change", (e) => {
       selectBrand(e.target.value);
@@ -83,6 +97,13 @@ const TechCalculator = (function () {
     elements.modelSelect.addEventListener("change", (e) => {
       selectModel(e.target.value);
     });
+
+    // Edición directa en la casilla de dispositivo
+    if (elements.customDeviceInput) {
+      elements.customDeviceInput.addEventListener("input", () => {
+        updateCalculation();
+      });
+    }
 
     // Toggle de servicio express
     if (elements.expressToggle) {
@@ -114,6 +135,15 @@ const TechCalculator = (function () {
         btn.classList.add("border-slate-700", "bg-[#0a101c]", "text-slate-300");
       }
     });
+
+    // Actualizar selector de tipo si corresponde
+    if (elements.deviceTypeSelect && selectedCategory) {
+      const typeOption = Array.from(elements.deviceTypeSelect.options).find(opt => 
+        opt.value.toLowerCase().includes(selectedCategory.id.toLowerCase()) || 
+        selectedCategory.name.toLowerCase().includes(opt.value.split('/')[0].trim().toLowerCase())
+      );
+      if (typeOption) elements.deviceTypeSelect.value = typeOption.value;
+    }
 
     // Cargar selector de marcas
     elements.brandSelect.innerHTML = `<option value="">-- Selecciona una marca o línea --</option>` +
@@ -152,6 +182,11 @@ const TechCalculator = (function () {
     elements.modelSelect.innerHTML = `<option value="">-- Selecciona el modelo exacto --</option>` +
       selectedBrand.models.map(m => `<option value="${m}">${m}</option>`).join("");
 
+    // Autocompletar la casilla de dispositivo con la marca seleccionada
+    if (elements.customDeviceInput && selectedBrand) {
+      elements.customDeviceInput.value = selectedBrand.name;
+    }
+
     elements.faultsContainer.innerHTML = `
       <div class="col-span-full py-8 text-center text-slate-400 text-sm font-tech">
         <i data-lucide="smartphone" class="w-8 h-8 mx-auto mb-2 text-[#00f5a0]/40"></i>
@@ -165,6 +200,10 @@ const TechCalculator = (function () {
   function selectModel(modelName) {
     selectedModel = modelName;
     selectedFault = null;
+
+    if (elements.customDeviceInput && selectedBrand && modelName) {
+      elements.customDeviceInput.value = `${selectedBrand.name} - ${modelName}`;
+    }
 
     if (!modelName) {
       elements.faultsContainer.innerHTML = `
@@ -259,10 +298,15 @@ const TechCalculator = (function () {
   function sendQuoteViaWhatsApp() {
     let message = "";
     
+    // Obtener información del dispositivo ingresada en la casilla o seleccionada
+    const customDevice = (elements.customDeviceInput && elements.customDeviceInput.value.trim()) 
+      ? elements.customDeviceInput.value.trim() 
+      : `${selectedBrand ? selectedBrand.name : ''} ${selectedModel || ''}`.trim();
+    
+    const deviceText = customDevice || "Dispositivo no especificado";
+
     if (selectedFault) {
       const catName = selectedCategory ? selectedCategory.name : "Equipo";
-      const brandName = selectedBrand ? selectedBrand.name : "";
-      const modelName = selectedModel || "Modelo no especificado";
       const faultName = selectedFault.name;
       const priceText = elements.estimatedPrice.textContent;
       const timeText = elements.estimatedTime.textContent;
@@ -270,19 +314,17 @@ const TechCalculator = (function () {
 
       message = `Hola WILOTECH! Estuve cotizando en su web y deseo coordinar la reparación de mi equipo:\n\n` +
         `📌 *Categoría:* ${catName}\n` +
-        `🏷️ *Dispositivo:* ${brandName} - ${modelName}\n` +
+        `🏷️ *Dispositivo:* ${deviceText}\n` +
         `🔧 *Falla / Servicio:* ${faultName}\n` +
         `⏱️ *Tiempo estimado:* ${timeText}\n` +
         `💵 *Presupuesto aprox.:* ${priceText} (${expressNote})\n\n` +
         `¿Tienen disponibilidad en el laboratorio para recibir el equipo? ¡Muchas gracias!`;
     } else {
       const catName = selectedCategory ? selectedCategory.name : "";
-      const brandName = selectedBrand ? selectedBrand.name : "";
-      const modelName = selectedModel || "";
 
       let deviceDetail = "";
-      if (catName || brandName || modelName) {
-        deviceDetail = ` para mi ${catName} ${brandName} ${modelName}`.replace(/\s+/g, ' ').trim();
+      if (deviceText && deviceText !== "Dispositivo no especificado") {
+        deviceDetail = ` para mi ${catName ? catName + ' ' : ''}${deviceText}`.replace(/\s+/g, ' ').trim();
       }
 
       message = `Hola WILOTECH! Quisiera solicitar una cotización y consulta técnica${deviceDetail ? ' ' + deviceDetail : ''} en su laboratorio. ¿Podrían asesorarme? ¡Muchas gracias!`;
