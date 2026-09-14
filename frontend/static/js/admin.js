@@ -225,6 +225,17 @@ const TechAdmin = (function () {
       serialOrImei: data.serialOrImei || "SN-" + Date.now().toString().slice(-6),
       deviceLockType: data.deviceLockType || "Sin Bloqueo",
       deviceLockCode: data.deviceLockCode || "",
+      deviceChecklist: data.deviceChecklist || {
+        display: "ok",
+        backCover: "ok",
+        battery: "ok",
+        cameras: "ok",
+        audio: "ok",
+        housing: "ok",
+        signal: "ok",
+        liquid: "ok"
+      },
+      deviceConditionNotes: data.deviceConditionNotes || "",
       issueDescription: data.issueDescription || "Ingreso general para diagnóstico",
       status: data.status || "received",
       statusStep: getStepNumber(data.status || "received"),
@@ -286,6 +297,8 @@ const TechAdmin = (function () {
     if (data.serialOrImei !== undefined) ticket.serialOrImei = data.serialOrImei;
     if (data.deviceLockType !== undefined) ticket.deviceLockType = data.deviceLockType;
     if (data.deviceLockCode !== undefined) ticket.deviceLockCode = data.deviceLockCode;
+    if (data.deviceChecklist !== undefined) ticket.deviceChecklist = data.deviceChecklist;
+    if (data.deviceConditionNotes !== undefined) ticket.deviceConditionNotes = data.deviceConditionNotes;
     if (data.issueDescription !== undefined) ticket.issueDescription = data.issueDescription;
     if (data.status !== undefined) {
       ticket.status = data.status;
@@ -385,6 +398,12 @@ const TechAdmin = (function () {
     const ticket = tickets.find(t => t.id === ticketId);
     if (!ticket) return;
 
+    function formatCheckStateLabel(st) {
+      if (st === 'damaged') return '<span style="color:#b91c1c; font-weight:bold;">⚠️ ROTO / DAÑADO</span>';
+      if (st === 'untested') return '<span style="color:#64748b;">❓ SIN PROBAR</span>';
+      return '<span style="color:#15803d; font-weight:bold;">✓ OK</span>';
+    }
+
     const printWindow = window.open("", "_blank", "width=800,height=900");
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -436,6 +455,21 @@ const TechAdmin = (function () {
           <div class="row"><span>Serial / IMEI:</span><span>${ticket.serialOrImei}</span></div>
           <div class="row"><span>Seguridad / Bloqueo:</span><strong>${ticket.deviceLockType || 'Sin Bloqueo'} ${ticket.deviceLockCode ? `[ ${ticket.deviceLockCode} ]` : ''}</strong></div>
           <div class="row"><span>Falla Declarada:</span><span>${ticket.issueDescription}</span></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Inspección de Recepción & Estado Físico Preexistente</div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; font-size: 11px; margin-bottom: 6px;">
+            <div>📱 Pantalla / Touch: ${formatCheckStateLabel(ticket.deviceChecklist?.display)}</div>
+            <div>🖼️ Tapa / Vidrio Trasero: ${formatCheckStateLabel(ticket.deviceChecklist?.backCover)}</div>
+            <div>🔋 Batería / Carga: ${formatCheckStateLabel(ticket.deviceChecklist?.battery)}</div>
+            <div>📷 Cámaras (Frontal/Trasera): ${formatCheckStateLabel(ticket.deviceChecklist?.cameras)}</div>
+            <div>🔊 Audio / Parlante / Mic: ${formatCheckStateLabel(ticket.deviceChecklist?.audio)}</div>
+            <div>🔲 Marco / Chasis / Botones: ${formatCheckStateLabel(ticket.deviceChecklist?.housing)}</div>
+            <div>📶 Wi-Fi / Bluetooth / Señal: ${formatCheckStateLabel(ticket.deviceChecklist?.signal)}</div>
+            <div>💧 Daño por Agua / Sulfato: ${formatCheckStateLabel(ticket.deviceChecklist?.liquid)}</div>
+          </div>
+          ${ticket.deviceConditionNotes ? `<div class="row" style="margin-top:4px;"><span>Observaciones / Daños Preexistentes:</span><strong style="color: #dc2626;">${ticket.deviceConditionNotes}</strong></div>` : ''}
         </div>
 
         <div class="section">

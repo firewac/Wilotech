@@ -599,6 +599,32 @@
             </div>
           </div>
 
+          <!-- Checklist de Recepción & Estado Físico Preexistente -->
+          <div class="p-4 sm:p-5 rounded-2xl bg-[#070b14]/90 border border-emerald-500/30 space-y-4 shadow-lg">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2">
+                <i data-lucide="clipboard-check" class="w-4.5 h-4.5 text-[#00f5a0]"></i>
+                <h3 class="font-brand text-xs sm:text-sm font-bold text-white uppercase tracking-wider">Checklist de Recepción & Inspección de Partes</h3>
+              </div>
+              <span class="text-[11px] text-slate-400">Inspección inicial para registro y firma en comprobante</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5" id="reception-checklist-container">
+              <!-- Renderizado dinámicamente con JavaScript -->
+            </div>
+
+            <div>
+              <label class="block font-brand text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">Detalles Estéticos y Daños Preexistentes (Aclaración para Cliente)</label>
+              <input 
+                type="text" 
+                id="repair-condition-notes" 
+                name="deviceConditionNotes" 
+                placeholder="Ej: Tapa trasera muy rota/astillada (Cliente solo solicita cambio de módulo, rechaza reparación de tapa)." 
+                class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#00f5a0] transition-all"
+              >
+            </div>
+          </div>
+
           <!-- Falla Manifestada -->
           <div>
             <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Falla Reportada por el Cliente *</label>
@@ -848,6 +874,7 @@
       renderCustomersTable();
       updateCustomerDatalists();
       initIMEIAutoDetection();
+      renderChecklistUI();
       if (window.lucide) lucide.createIcons();
     });
 
@@ -887,6 +914,26 @@
 
       const totalRevenue = tickets.reduce((acc, t) => acc + (t.finalCost || 0), 0);
       document.getElementById("stat-total-revenue").textContent = `$${totalRevenue} USD`;
+    }
+
+    function getChecklistSummaryBadge(t) {
+      if (!t || (!t.deviceChecklist && !t.deviceConditionNotes)) return '';
+      let damagedCount = 0;
+      if (t.deviceChecklist) {
+        Object.values(t.deviceChecklist).forEach(val => {
+          if (val === 'damaged') damagedCount++;
+        });
+      }
+      if (damagedCount > 0 || t.deviceConditionNotes) {
+        const titleText = t.deviceConditionNotes ? `Daños preexistentes: ${t.deviceConditionNotes}` : `${damagedCount} componentes con fallas/roturas`;
+        return `
+          <div class="mt-1 flex items-center gap-1 text-[10px] font-brand font-bold text-rose-400 bg-rose-950/70 px-2 py-0.5 rounded border border-rose-800/60 inline-flex max-w-[200px] truncate" title="${titleText}">
+            <i data-lucide="alert-triangle" class="w-3 h-3 text-rose-400 shrink-0"></i>
+            <span class="truncate">${damagedCount > 0 ? `${damagedCount} ${damagedCount === 1 ? 'parte rota' : 'partes rotas'}` : 'Daño preexistente'}</span>
+          </div>
+        `;
+      }
+      return '';
     }
 
     // 2. TABLA DE REPARACIONES
@@ -948,6 +995,7 @@
               <i data-lucide="${t.deviceLockType && t.deviceLockType !== 'Sin Bloqueo' ? 'lock' : 'unlock'}" class="w-3 h-3 ${t.deviceLockType && t.deviceLockType !== 'Sin Bloqueo' ? 'text-cyan-400' : 'text-slate-600'}"></i>
               <span>${t.deviceLockType || 'Sin Bloqueo'}${t.deviceLockCode ? `: <strong class="text-white font-mono">${t.deviceLockCode}</strong>` : ''}</span>
             </div>
+            ${getChecklistSummaryBadge(t)}
           </td>
           <td class="py-3 px-3.5 max-w-xs truncate text-slate-300" title="${t.issueDescription}">
             ${t.issueDescription}
@@ -1071,6 +1119,8 @@
         serialOrImei: formData.get("serialOrImei"),
         deviceLockType: formData.get("deviceLockType") || "Sin Bloqueo",
         deviceLockCode: formData.get("deviceLockCode") || "",
+        deviceChecklist: { ...currentChecklistState },
+        deviceConditionNotes: formData.get("deviceConditionNotes") || "",
         issueDescription: formData.get("issueDescription"),
         status: formData.get("status"),
         technician: formData.get("technician"),
@@ -1097,6 +1147,7 @@
         handleLockTypeChange();
         clearCustomerAutoFill();
         resetIMEIFeedback();
+        resetChecklistState();
         renderStats();
         updateCustomerDatalists();
         showToast(`¡Orden #${newOrder.id} registrada exitosamente!`, "success");
@@ -1146,6 +1197,7 @@
       if (form.elements["finalCost"]) form.elements["finalCost"].value = t.finalCost !== undefined ? t.finalCost : 65;
       if (form.elements["technicianNotes"]) form.elements["technicianNotes"].value = t.technicianNotes || "";
 
+      populateChecklistFromTicket(t);
       handleLockTypeChange();
 
       if (t.deviceLockType === "Patrón de Desbloqueo" && t.deviceLockCode) {
@@ -1189,6 +1241,7 @@
       handleLockTypeChange();
       clearCustomerAutoFill();
       resetIMEIFeedback();
+      resetChecklistState();
 
       const badge = document.getElementById("form-repair-badge");
       if (badge) {
@@ -1208,6 +1261,107 @@
       if (cancelBtn) cancelBtn.classList.add("hidden");
 
       if (window.lucide) lucide.createIcons();
+    }
+
+    // --- CHECKLIST DE RECEPCIÓN E INSPECCIÓN FÍSICA ---
+    const CHECKLIST_ITEMS_CONFIG = [
+      { id: 'display', label: '📱 Pantalla / Touch / OLED' },
+      { id: 'backCover', label: '🖼️ Tapa / Vidrio Trasero' },
+      { id: 'battery', label: '🔋 Batería / Puerto Carga' },
+      { id: 'cameras', label: '📷 Cámaras Frontal/Trasera' },
+      { id: 'audio', label: '🔊 Audio / Parlante / Mic' },
+      { id: 'housing', label: '🔲 Marco / Chasis / Botones' },
+      { id: 'signal', label: '📶 Wi-Fi / Bluetooth / Señal' },
+      { id: 'liquid', label: '💧 Daño por Agua / Sulfato' }
+    ];
+
+    let currentChecklistState = {
+      display: 'ok',
+      backCover: 'ok',
+      battery: 'ok',
+      cameras: 'ok',
+      audio: 'ok',
+      housing: 'ok',
+      signal: 'ok',
+      liquid: 'ok'
+    };
+
+    function renderChecklistUI() {
+      const container = document.getElementById("reception-checklist-container");
+      if (!container) return;
+
+      container.innerHTML = CHECKLIST_ITEMS_CONFIG.map(item => {
+        const state = currentChecklistState[item.id] || 'ok';
+        let badgeClass = "bg-emerald-950/80 text-[#00f5a0] border-emerald-500/40";
+        let badgeText = "✓ OK";
+
+        if (state === 'damaged') {
+          badgeClass = "bg-rose-950/90 text-rose-300 border-rose-500/50";
+          badgeText = "⚠️ Roto";
+        } else if (state === 'untested') {
+          badgeClass = "bg-cyan-950/80 text-cyan-300 border-cyan-500/40";
+          badgeText = "❓ S/Probar";
+        }
+
+        return `
+          <div class="p-2 rounded-xl bg-[#05070d] border border-slate-800 space-y-1.5 transition-all">
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-[11px] font-brand font-bold text-slate-200 truncate" title="${item.label}">${item.label}</span>
+              <span class="text-[9px] font-brand font-bold px-1.5 py-0.5 rounded border ${badgeClass} shrink-0">${badgeText}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1 text-[10px] font-brand font-bold">
+              <button 
+                type="button" 
+                onclick="setChecklistState('${item.id}', 'ok')" 
+                class="py-1 rounded transition-all ${state === 'ok' ? 'bg-[#00f5a0]/20 text-[#00f5a0] border border-[#00f5a0]/50 font-black' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800'}"
+              >
+                OK
+              </button>
+              <button 
+                type="button" 
+                onclick="setChecklistState('${item.id}', 'damaged')" 
+                class="py-1 rounded transition-all ${state === 'damaged' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/50 font-black' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800'}"
+              >
+                ROTO
+              </button>
+              <button 
+                type="button" 
+                onclick="setChecklistState('${item.id}', 'untested')" 
+                class="py-1 rounded transition-all ${state === 'untested' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-black' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800'}"
+              >
+                S/TEST
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function setChecklistState(itemId, state) {
+      currentChecklistState[itemId] = state;
+      renderChecklistUI();
+    }
+
+    function resetChecklistState() {
+      CHECKLIST_ITEMS_CONFIG.forEach(item => {
+        currentChecklistState[item.id] = 'ok';
+      });
+      const notes = document.getElementById("repair-condition-notes");
+      if (notes) notes.value = "";
+      renderChecklistUI();
+    }
+
+    function populateChecklistFromTicket(t) {
+      if (t && t.deviceChecklist) {
+        currentChecklistState = { ...currentChecklistState, ...t.deviceChecklist };
+      } else {
+        CHECKLIST_ITEMS_CONFIG.forEach(item => {
+          currentChecklistState[item.id] = 'ok';
+        });
+      }
+      const notes = document.getElementById("repair-condition-notes");
+      if (notes) notes.value = t && t.deviceConditionNotes ? t.deviceConditionNotes : "";
+      renderChecklistUI();
     }
 
     // --- AUTO-DETECCIÓN INTELIGENTE POR IMEI ---
