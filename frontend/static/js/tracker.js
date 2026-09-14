@@ -33,6 +33,16 @@ const TechTracker = (function () {
 
     setupEventListeners();
     renderDemoBadges();
+
+    // Auto-búsqueda por parámetro de URL (ej: ?ticket=WT-5019)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const qParam = urlParams.get("ticket") || urlParams.get("orden") || urlParams.get("id") || urlParams.get("q");
+      if (qParam) {
+        elements.searchInput.value = qParam;
+        performSearch(qParam);
+      }
+    } catch (e) {}
   }
 
   function setupEventListeners() {
@@ -60,14 +70,21 @@ const TechTracker = (function () {
 
   function renderDemoBadges() {
     if (!elements.demoBadges) return;
-    const tickets = TechAdmin.getAllTickets();
-    elements.demoBadges.innerHTML = tickets.map(t => `
+    const tickets = window.TechAdmin ? TechAdmin.getAllTickets() : [];
+    
+    // Asegurar que WT-5019 figure en los botones de prueba si no está en local
+    let displayTickets = [...tickets];
+    if (!displayTickets.some(t => t.id === "WT-5019")) {
+      displayTickets.unshift({ id: "WT-5019", deviceType: "Samsung S23 Ultra" });
+    }
+
+    elements.demoBadges.innerHTML = displayTickets.slice(0, 5).map(t => `
       <button 
         type="button" 
         data-ticket-id="${t.id}"
         class="text-xs font-brand px-2.5 py-1 rounded-md bg-[#0a101c] border border-slate-700 text-[#00f5a0] hover:border-[#00f5a0] hover:bg-[#05070d] transition-colors"
       >
-        ${t.id} (${t.deviceType})
+        ${t.id} (${t.deviceType || 'Dispositivo'})
       </button>
     `).join("");
   }
@@ -88,7 +105,7 @@ const TechTracker = (function () {
         const results = await resp.json();
         if (Array.isArray(results) && results.length > 0) {
           found = results.find(t => {
-            const matchId = t.id.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
+            const matchId = t.id && t.id.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
             const matchPhone = t.clientPhone && t.clientPhone.replace(/[^0-9]/g, "").includes(cleanQuery);
             const matchDni = t.clientDni && t.clientDni.replace(/[^0-9]/g, "").includes(cleanQuery);
             const matchSerial = t.serialOrImei && t.serialOrImei.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
@@ -100,11 +117,32 @@ const TechTracker = (function () {
       // Backend offline
     }
 
-    // 2. Fallback a almacenamiento del navegador
+    // 2. Fallback a GitHub Raw si el backend efímero no lo retornó
+    if (!found) {
+      try {
+        const ghResp = await fetch('https://raw.githubusercontent.com/firewac/Wilotech/main/data/tickets.json');
+        if (ghResp.ok) {
+          const ghTickets = await ghResp.json();
+          if (Array.isArray(ghTickets)) {
+            found = ghTickets.find(t => {
+              const matchId = t.id && t.id.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
+              const matchPhone = t.clientPhone && t.clientPhone.replace(/[^0-9]/g, "").includes(cleanQuery);
+              const matchDni = t.clientDni && t.clientDni.replace(/[^0-9]/g, "").includes(cleanQuery);
+              const matchSerial = t.serialOrImei && t.serialOrImei.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
+              return matchId || matchPhone || matchDni || matchSerial;
+            });
+          }
+        }
+      } catch (e) {
+        // Fallback github falló
+      }
+    }
+
+    // 3. Fallback a almacenamiento del navegador
     if (!found && window.TechAdmin) {
       const tickets = TechAdmin.getAllTickets();
       found = tickets.find(t => {
-        const matchId = t.id.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
+        const matchId = t.id && t.id.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
         const matchPhone = t.clientPhone && t.clientPhone.replace(/[^0-9]/g, "").includes(cleanQuery);
         const matchDni = t.clientDni && t.clientDni.replace(/[^0-9]/g, "").includes(cleanQuery);
         const matchSerial = t.serialOrImei && t.serialOrImei.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);

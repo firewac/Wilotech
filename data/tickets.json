@@ -1,5 +1,42 @@
 [
   {
+    "id": "WT-5019",
+    "clientName": "Cliente Taller WILOTECH",
+    "clientType": "Público",
+    "clientDni": "38.501.900",
+    "clientPhone": "+54 9 11 5019-0000",
+    "clientAddress": "Av. Corrientes 1450, CABA",
+    "deviceType": "Celular",
+    "deviceBrand": "Samsung",
+    "deviceModel": "Samsung Galaxy S23 Ultra",
+    "serialOrImei": "359482019501900",
+    "deviceLockType": "Sin Bloqueo",
+    "deviceLockCode": "",
+    "deviceChecklist": {
+      "display": "roto",
+      "backCover": "ok",
+      "battery": "ok",
+      "cameras": "ok",
+      "audio": "ok",
+      "housing": "ok",
+      "signal": "ok",
+      "liquid": "ok"
+    },
+    "deviceConditionNotes": "Ingresado con cristal roto por caída.",
+    "issueDescription": "Cambio de Módulo Display Dynamic AMOLED 2X de alta precisión.",
+    "status": "repairing",
+    "statusStep": 4,
+    "dateReceived": "2026-09-14 11:30",
+    "technician": "Laboratorio Microelectrónica WILOTECH",
+    "technicianNotes": "Equipo ingresado al banco de trabajo. Desmontaje térmico realizado. Instalación de módulo display genuino en proceso de calibración y sellado IP68.",
+    "partsUsed": [
+      "Módulo Display Samsung Galaxy S23 Ultra Original Dynamic AMOLED",
+      "Kit Adhesivo Pre-cortado de Estanqueidad IP68"
+    ],
+    "finalCost": 180,
+    "warranty": "90 días de garantía por escrito"
+  },
+  {
     "id": "TF-8492",
     "clientName": "Lucas Ferreira",
     "clientType": "Público",
