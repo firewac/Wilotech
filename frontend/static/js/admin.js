@@ -229,19 +229,41 @@ const TechAdmin = (function () {
       const resp = await fetch('/api/tickets');
       if (resp.ok) {
         const serverTickets = await resp.json();
-        if (Array.isArray(serverTickets) && serverTickets.length > 0) {
-          tickets = serverTickets;
-          localStorage.setItem(STORAGE_KEYS.TICKETS, JSON.stringify(tickets));
-          if (typeof renderRepairsTable === "function") renderRepairsTable();
-          if (typeof renderStats === "function") renderStats();
-          return tickets;
-        } else if (Array.isArray(tickets) && tickets.length > 0) {
+        const existingMap = new Map();
+
+        // 1. Cargar tickets locales guardados en LocalStorage (prioridad para este equipo)
+        if (Array.isArray(tickets) && tickets.length > 0) {
+          tickets.forEach(t => {
+            if (t && t.id) existingMap.set(t.id, t);
+          });
+        }
+
+        // 2. Fusionar con los tickets que provienen del servidor
+        if (Array.isArray(serverTickets)) {
+          serverTickets.forEach(st => {
+            if (st && st.id) {
+              if (!existingMap.has(st.id)) {
+                existingMap.set(st.id, st);
+              }
+            }
+          });
+        }
+
+        tickets = Array.from(existingMap.values());
+        saveTickets();
+
+        // 3. Sincronizar en lote al servidor para asegurar disponibilidad global
+        if (tickets.length > 0) {
           await fetch('/api/tickets/bulk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(tickets)
           });
         }
+
+        if (typeof renderRepairsTable === "function") renderRepairsTable();
+        if (typeof renderStats === "function") renderStats();
+        return tickets;
       }
     } catch (e) {
       // Backend offline o sin conexión
