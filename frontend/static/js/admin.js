@@ -7,12 +7,14 @@
 const TechAdmin = (function () {
   const STORAGE_KEYS = {
     TICKETS: "wilotech_tickets_v3",
+    DELETED_TICKETS: "wilotech_deleted_tickets_v1",
     CATALOG: "wilotech_catalog_v6",
     INVENTORY: "wilotech_inventory_v3",
     CUSTOMERS: "wilotech_customers_v1"
   };
 
   let tickets = [];
+  let deletedTicketIds = [];
   let catalog = null;
   let inventory = [];
   let customers = [];
@@ -182,17 +184,43 @@ const TechAdmin = (function () {
   // -------------------------------------------------------------
   // 2. GESTIÓN DE ÓRDENES Y TICKETS DE REPARACIÓN
   // -------------------------------------------------------------
+  function loadDeletedTickets() {
+    const saved = localStorage.getItem(STORAGE_KEYS.DELETED_TICKETS);
+    if (saved) {
+      try {
+        deletedTicketIds = JSON.parse(saved);
+        if (!Array.isArray(deletedTicketIds)) deletedTicketIds = [];
+      } catch (e) {
+        deletedTicketIds = [];
+      }
+    } else {
+      deletedTicketIds = [];
+    }
+    return deletedTicketIds;
+  }
+
+  function saveDeletedTickets() {
+    localStorage.setItem(STORAGE_KEYS.DELETED_TICKETS, JSON.stringify(deletedTicketIds));
+  }
+
   function loadTickets() {
+    loadDeletedTickets();
     const saved = localStorage.getItem(STORAGE_KEYS.TICKETS);
     if (saved) {
       try {
-        tickets = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        tickets = Array.isArray(parsed) ? parsed.filter(t => t && t.id && !deletedTicketIds.includes(t.id)) : [];
       } catch (e) {
-        tickets = [...TECH_CATALOG.sampleTickets];
+        tickets = [];
       }
     } else {
-      tickets = [...TECH_CATALOG.sampleTickets];
-      saveTickets();
+      if (deletedTicketIds.length === 0) {
+        tickets = [...TECH_CATALOG.sampleTickets];
+        saveTickets();
+      } else {
+        tickets = [];
+        saveTickets();
+      }
     }
     fetchTicketsFromBackend();
     return tickets;
@@ -231,18 +259,20 @@ const TechAdmin = (function () {
         const serverTickets = await resp.json();
         const existingMap = new Map();
 
-        // 1. Cargar tickets locales guardados en LocalStorage (prioridad para este equipo)
-        if (Array.isArray(tickets) && tickets.length > 0) {
+        // 1. Cargar tickets locales válidos que no hayan sido eliminados por el usuario
+        if (Array.isArray(tickets)) {
           tickets.forEach(t => {
-            if (t && t.id) existingMap.set(t.id, t);
+            if (t && t.id && !deletedTicketIds.includes(t.id)) {
+              existingMap.set(t.id, t);
+            }
           });
         }
 
-        // 2. Fusionar con los tickets que provienen del servidor
+        // 2. Fusionar tickets del servidor ignorando los eliminados expresamente por el usuario
         if (Array.isArray(serverTickets)) {
           serverTickets.forEach(st => {
             if (st && st.id) {
-              if (!existingMap.has(st.id)) {
+              if (!deletedTicketIds.includes(st.id) && !existingMap.has(st.id)) {
                 existingMap.set(st.id, st);
               }
             }
@@ -252,7 +282,7 @@ const TechAdmin = (function () {
         tickets = Array.from(existingMap.values());
         saveTickets();
 
-        // 3. Sincronizar en lote al servidor para asegurar disponibilidad global
+        // 3. Sincronizar en lote al servidor
         if (tickets.length > 0) {
           await fetch('/api/tickets/bulk', {
             method: 'POST',
@@ -411,9 +441,39 @@ const TechAdmin = (function () {
   }
 
   function deleteTicket(ticketId) {
+    if (!ticketId) return;
+    if (!deletedTicketIds.includes(ticketId)) {
+      deletedTicketIds.push(ticketId);
+      saveDeletedTickets();
+    }
     tickets = tickets.filter(t => t.id !== ticketId);
     saveTickets();
     syncDeleteTicketWithBackend(ticketId);
+  }
+
+  function deleteAllTickets() {
+    tickets.forEach(t => {
+      if (t && t.id && !deletedTicketIds.includes(t.id)) {
+        deletedTicketIds.push(t.id);
+      }
+    });
+    saveDeletedTickets();
+    tickets = [];
+    saveTickets();
+    fetch('/api/tickets/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([])
+    }).catch(() => {});
+  }
+
+  function restoreDefaultTickets() {
+    deletedTicketIds = [];
+    saveDeletedTickets();
+    tickets = [...TECH_CATALOG.sampleTickets];
+    saveTickets();
+    fetchTicketsFromBackend();
+    return tickets;
   }
 
   // -------------------------------------------------------------
@@ -702,6 +762,8 @@ const TechAdmin = (function () {
     updateTicket: updateTicket,
     updateTicketStatus: updateTicketStatus,
     deleteTicket: deleteTicket,
+    deleteAllTickets: deleteAllTickets,
+    restoreDefaultTickets: restoreDefaultTickets,
     notifyClientWhatsApp: notifyClientWhatsApp,
     printTicketReceipt: printTicketReceipt,
     getInventory: getInventory,

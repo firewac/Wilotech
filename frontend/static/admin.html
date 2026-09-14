@@ -257,6 +257,16 @@
               <option value="Gremio">Gremio</option>
               <option value="Gremio Mayorista">Gremio Mayorista</option>
             </select>
+
+            <button 
+              type="button" 
+              onclick="handleDeleteAllTickets()" 
+              title="Vaciar todas las órdenes del taller"
+              class="bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/60 text-rose-300 text-xs px-2.5 py-2 rounded-xl font-brand font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-400"></i>
+              <span>Vaciar Órdenes</span>
+            </button>
           </div>
         </div>
 
@@ -1089,6 +1099,24 @@
         renderStats();
         renderRepairsTable();
         showToast(`Orden #${ticketId} eliminada.`, "warning");
+      }
+    }
+
+    function handleDeleteAllTickets() {
+      if (confirm("¿Estás seguro de VACIAR TODAS las órdenes del taller? Las órdenes eliminadas no volverán a aparecer.")) {
+        TechAdmin.deleteAllTickets();
+        renderStats();
+        renderRepairsTable();
+        showToast("Todas las órdenes han sido eliminadas.", "warning");
+      }
+    }
+
+    function handleRestoreDefaultTickets() {
+      if (confirm("¿Restablecer las órdenes de muestra iniciales?")) {
+        TechAdmin.restoreDefaultTickets();
+        renderStats();
+        renderRepairsTable();
+        showToast("Órdenes de muestra restauradas.", "info");
       }
     }
 
