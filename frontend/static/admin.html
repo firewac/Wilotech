@@ -2207,6 +2207,90 @@
     // MODAL DE DIAGNÓSTICO, FOTOS Y PEGATINAS DE GARANTÍA
     let activeDiagTicketId = null;
 
+    function generateStickerCode(partName = "", dateObj = new Date()) {
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const year = String(dateObj.getFullYear()).slice(-2);
+      const dateStr = `${day}${month}${year}`;
+
+      const cleanPart = (partName || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .trim();
+
+      let codePrefix = "REP";
+
+      if (cleanPart) {
+        if (/MODULO|PANTALLA|DISPLAY|TOUCH/.test(cleanPart)) {
+          codePrefix = "MOD";
+        } else if (/BATERIA|BAT/.test(cleanPart)) {
+          codePrefix = "BAT";
+        } else if (/PIN|CARGA|PUERTO|CONECTOR/.test(cleanPart)) {
+          codePrefix = "PIN";
+        } else if (/CAMARA|LENTE/.test(cleanPart)) {
+          codePrefix = "CAM";
+        } else if (/TAPA|CHASIS|MARCO|CUBIERTA/.test(cleanPart)) {
+          codePrefix = "TAP";
+        } else if (/FLEX/.test(cleanPart)) {
+          codePrefix = "FLX";
+        } else if (/GLASS|VIDRIO/.test(cleanPart)) {
+          codePrefix = "GLS";
+        } else if (/PARLANTE|ALTAVOZ|AURICULAR/.test(cleanPart)) {
+          codePrefix = "SPK";
+        } else if (/MICROFONO|MIC/.test(cleanPart)) {
+          codePrefix = "MIC";
+        } else if (/PLACA|MOTHER|LOGICA|IC|REBALLING|CODEC/.test(cleanPart)) {
+          codePrefix = "PLC";
+        } else {
+          const words = cleanPart.replace(/[^A-Z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+          if (words.length >= 2) {
+            codePrefix = (words[0].slice(0, 3) + "-" + words[1].slice(0, 3)).toUpperCase();
+          } else if (words.length === 1) {
+            codePrefix = words[0].slice(0, 4).toUpperCase();
+          }
+        }
+      }
+
+      return `${codePrefix}-${dateStr}`;
+    }
+
+    function getUniqueStickerCode(partName = "") {
+      const baseCode = generateStickerCode(partName);
+      const existingInputs = document.querySelectorAll(".diag-sticker-code-input");
+      const existingCodes = Array.from(existingInputs).map(i => i.value.trim().toUpperCase());
+
+      if (!existingCodes.includes(baseCode.toUpperCase())) {
+        return baseCode;
+      }
+
+      let seq = 2;
+      while (existingCodes.includes(`${baseCode}-${String(seq).padStart(2, '0')}`)) {
+        seq++;
+      }
+      return `${baseCode}-${String(seq).padStart(2, '0')}`;
+    }
+
+    function handlePartNameInput(nameInput) {
+      const row = nameInput.closest(".diag-sticker-row");
+      if (!row) return;
+      const codeInput = row.querySelector(".diag-sticker-code-input");
+      if (!codeInput) return;
+
+      const newCode = getUniqueStickerCode(nameInput.value);
+      codeInput.value = newCode;
+    }
+
+    function regenerateRowCode(btn) {
+      const row = btn.closest(".diag-sticker-row");
+      if (!row) return;
+      const nameInput = row.querySelector(".diag-part-name-input");
+      const codeInput = row.querySelector(".diag-sticker-code-input");
+      if (nameInput && codeInput) {
+        codeInput.value = getUniqueStickerCode(nameInput.value);
+      }
+    }
+
     function openDiagnosticModal(ticketId) {
       activeDiagTicketId = ticketId;
       const ticket = TechAdmin.getTicketById(ticketId);
@@ -2247,12 +2331,12 @@
         });
       } else if (parts.length > 0) {
         parts.forEach(p => {
-          const defaultCode = `STK-${Math.floor(10000 + Math.random() * 90000)}`;
-          addModalStickerRow(p, defaultCode);
+          const autoCode = getUniqueStickerCode(p);
+          addModalStickerRow(p, autoCode);
         });
       } else {
-        const defaultCode = `STK-${Math.floor(10000 + Math.random() * 90000)}`;
-        addModalStickerRow("", defaultCode);
+        const autoCode = getUniqueStickerCode("Módulo OLED");
+        addModalStickerRow("Módulo OLED", autoCode);
       }
     }
 
@@ -2260,18 +2344,21 @@
       const stickersContainer = document.getElementById("modal-diag-stickers-container");
       if (!stickersContainer) return;
 
-      const codeToUse = stickerCode || `STK-${Math.floor(10000 + Math.random() * 90000)}`;
+      const codeToUse = stickerCode || getUniqueStickerCode(partName);
       const escapedPart = (partName || "").replace(/"/g, '&quot;');
 
       const rowHtml = `
         <div class="diag-sticker-row flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-[#0a101c] border border-slate-800 text-xs font-tech">
           <div class="flex-1 flex items-center gap-1.5">
             <i data-lucide="wrench" class="w-3.5 h-3.5 text-[#00f5a0] shrink-0"></i>
-            <input type="text" value="${escapedPart}" placeholder="Nombre del repuesto (Ej: Módulo OLED / Batería)" class="diag-part-name-input w-full bg-[#05070d] border border-slate-700 rounded px-2.5 py-1 text-xs text-white focus:border-[#00f5a0]">
+            <input type="text" value="${escapedPart}" oninput="handlePartNameInput(this)" placeholder="Nombre del repuesto (Ej: Módulo OLED / Batería)" class="diag-part-name-input w-full bg-[#05070d] border border-slate-700 rounded px-2.5 py-1 text-xs text-white focus:border-[#00f5a0]">
           </div>
           <div class="flex items-center gap-2">
             <label class="text-[10px] text-slate-400 font-brand uppercase shrink-0">Pegatina N°:</label>
-            <input type="text" value="${codeToUse}" placeholder="Ej: STK-84920" class="diag-sticker-code-input bg-[#05070d] border border-slate-700 rounded px-2.5 py-1 text-xs font-mono font-bold text-[#00f5a0] focus:border-[#00f5a0] w-32">
+            <input type="text" value="${codeToUse}" placeholder="Ej: MOD-140926" class="diag-sticker-code-input bg-[#05070d] border border-slate-700 rounded px-2.5 py-1 text-xs font-mono font-bold text-[#00f5a0] focus:border-[#00f5a0] w-36 uppercase">
+            <button type="button" onclick="regenerateRowCode(this)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[#00f5a0] border border-slate-700 transition-colors text-[10px] font-mono shrink-0 cursor-pointer" title="Auto-generar código por repuesto + fecha">
+              ⚡ Auto
+            </button>
             <button type="button" onclick="removeStickerRow(this)" class="p-1 rounded bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800 transition-colors cursor-pointer shrink-0" title="Eliminar pegatina">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
@@ -2302,9 +2389,11 @@
         const stickerCode = codeInput ? codeInput.value.trim() : "";
 
         if (partName || stickerCode) {
+          const finalPartName = partName || "Repuesto General";
+          const finalStickerCode = stickerCode || generateStickerCode(finalPartName);
           stickers.push({
-            partName: partName || "Repuesto General",
-            stickerCode: stickerCode || `STK-${Math.floor(10000 + Math.random() * 90000)}`,
+            partName: finalPartName,
+            stickerCode: finalStickerCode.toUpperCase(),
             date: new Date().toISOString().slice(0, 10)
           });
         }
