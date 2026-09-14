@@ -72,22 +72,45 @@ const TechTracker = (function () {
     `).join("");
   }
 
-  function performSearch(query) {
+  async function performSearch(query) {
     if (!query) {
-      showToast("Por favor ingresa un número de ticket, teléfono o serial.", "warning");
+      if (typeof showToast === "function") showToast("Por favor ingresa un número de ticket, teléfono o serial.", "warning");
       return;
     }
 
-    const tickets = TechAdmin.getAllTickets();
     const cleanQuery = query.toLowerCase().replace(/[^a-z0-9]/g, "");
+    let found = null;
 
-    const found = tickets.find(t => {
-      const matchId = t.id.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
-      const matchPhone = t.clientPhone && t.clientPhone.replace(/[^0-9]/g, "").includes(cleanQuery);
-      const matchDni = t.clientDni && t.clientDni.replace(/[^0-9]/g, "").includes(cleanQuery);
-      const matchSerial = t.serialOrImei && t.serialOrImei.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
-      return matchId || matchPhone || matchDni || matchSerial;
-    });
+    // 1. Intentar buscar en el servidor backend en tiempo real
+    try {
+      const resp = await fetch(`/api/tickets?q=${encodeURIComponent(query.trim())}`);
+      if (resp.ok) {
+        const results = await resp.json();
+        if (Array.isArray(results) && results.length > 0) {
+          found = results.find(t => {
+            const matchId = t.id.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
+            const matchPhone = t.clientPhone && t.clientPhone.replace(/[^0-9]/g, "").includes(cleanQuery);
+            const matchDni = t.clientDni && t.clientDni.replace(/[^0-9]/g, "").includes(cleanQuery);
+            const matchSerial = t.serialOrImei && t.serialOrImei.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
+            return matchId || matchPhone || matchDni || matchSerial;
+          }) || results[0];
+        }
+      }
+    } catch (e) {
+      // Backend offline
+    }
+
+    // 2. Fallback a almacenamiento del navegador
+    if (!found && window.TechAdmin) {
+      const tickets = TechAdmin.getAllTickets();
+      found = tickets.find(t => {
+        const matchId = t.id.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
+        const matchPhone = t.clientPhone && t.clientPhone.replace(/[^0-9]/g, "").includes(cleanQuery);
+        const matchDni = t.clientDni && t.clientDni.replace(/[^0-9]/g, "").includes(cleanQuery);
+        const matchSerial = t.serialOrImei && t.serialOrImei.toLowerCase().replace(/[^a-z0-9]/g, "").includes(cleanQuery);
+        return matchId || matchPhone || matchDni || matchSerial;
+      });
+    }
 
     if (found) {
       renderTicketDetails(found);

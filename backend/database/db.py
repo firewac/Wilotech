@@ -95,6 +95,41 @@ def init_db():
     """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_excel_items_desc ON excel_catalog_items(description)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_excel_items_cat ON excel_catalog_items(catalog_id)")
+
+    # Tabla de Órdenes de Servicio / Equipos de Taller
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS repair_tickets (
+        id TEXT PRIMARY KEY,
+        client_name TEXT,
+        client_type TEXT,
+        client_dni TEXT,
+        client_phone TEXT,
+        client_address TEXT,
+        device_type TEXT,
+        device_brand TEXT,
+        device_model TEXT,
+        device_color TEXT,
+        device_storage TEXT,
+        serial_or_imei TEXT,
+        device_lock_type TEXT,
+        device_lock_code TEXT,
+        device_checklist TEXT,
+        device_condition_notes TEXT,
+        issue_description TEXT,
+        status TEXT,
+        status_step INTEGER,
+        date_received TEXT,
+        technician TEXT,
+        technician_notes TEXT,
+        parts_used TEXT,
+        final_cost REAL,
+        warranty TEXT,
+        updated_at TEXT
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_tickets_phone ON repair_tickets(client_phone)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_tickets_dni ON repair_tickets(client_dni)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_tickets_imei ON repair_tickets(serial_or_imei)")
     
     # Limpiar cualquier distribuidora antigua automotriz de prueba
     cursor.execute("DELETE FROM distributors WHERE id IN ('dist_norte', 'repuestos_express', 'mayorista_autopartes')")
@@ -493,4 +528,174 @@ def search_excel_catalog_items(catalog_id: str, query: str, limit: int = 50) -> 
     rows = cursor.fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+# ==================== GESTIÓN DE ÓRDENES Y EQUIPOS DE TALLER ====================
+
+def ticket_row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
+    if not row:
+        return None
+    d = dict(row)
+    checklist = {}
+    if d.get("device_checklist"):
+        try:
+            checklist = json.loads(d["device_checklist"])
+        except Exception:
+            checklist = {}
+    parts = []
+    if d.get("parts_used"):
+        try:
+            parts = json.loads(d["parts_used"])
+        except Exception:
+            parts = [d["parts_used"]] if d.get("parts_used") else []
+
+    return {
+        "id": d.get("id"),
+        "clientName": d.get("client_name") or "Cliente Mostrador",
+        "clientType": d.get("client_type") or "Público",
+        "clientDni": d.get("client_dni") or "",
+        "clientPhone": d.get("client_phone") or "",
+        "clientAddress": d.get("client_address") or "",
+        "deviceType": d.get("device_type") or "Celular",
+        "deviceBrand": d.get("device_brand") or "",
+        "deviceModel": d.get("device_model") or "",
+        "deviceColor": d.get("device_color") or "",
+        "deviceStorage": d.get("device_storage") or "",
+        "serialOrImei": d.get("serial_or_imei") or "",
+        "deviceLockType": d.get("device_lock_type") or "Sin Bloqueo",
+        "deviceLockCode": d.get("device_lock_code") or "",
+        "deviceChecklist": checklist,
+        "deviceConditionNotes": d.get("device_condition_notes") or "",
+        "issueDescription": d.get("issue_description") or "",
+        "status": d.get("status") or "received",
+        "statusStep": d.get("status_step") or 1,
+        "dateReceived": d.get("date_received") or "",
+        "technician": d.get("technician") or "Laboratorio WILOTECH",
+        "technicianNotes": d.get("technician_notes") or "",
+        "partsUsed": parts,
+        "finalCost": d.get("final_cost") or 0.0,
+        "warranty": d.get("warranty") or "90 días de garantía por escrito"
+    }
+
+def upsert_repair_ticket(t: Dict[str, Any]) -> bool:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        checklist_str = json.dumps(t.get("deviceChecklist") or {})
+        parts_str = json.dumps(t.get("partsUsed") or [])
+        now_str = datetime.now().isoformat()
+
+        cursor.execute("""
+        INSERT INTO repair_tickets (
+            id, client_name, client_type, client_dni, client_phone, client_address,
+            device_type, device_brand, device_model, device_color, device_storage,
+            serial_or_imei, device_lock_type, device_lock_code, device_checklist,
+            device_condition_notes, issue_description, status, status_step,
+            date_received, technician, technician_notes, parts_used, final_cost,
+            warranty, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            client_name=excluded.client_name,
+            client_type=excluded.client_type,
+            client_dni=excluded.client_dni,
+            client_phone=excluded.client_phone,
+            client_address=excluded.client_address,
+            device_type=excluded.device_type,
+            device_brand=excluded.device_brand,
+            device_model=excluded.device_model,
+            device_color=excluded.device_color,
+            device_storage=excluded.device_storage,
+            serial_or_imei=excluded.serial_or_imei,
+            device_lock_type=excluded.device_lock_type,
+            device_lock_code=excluded.device_lock_code,
+            device_checklist=excluded.device_checklist,
+            device_condition_notes=excluded.device_condition_notes,
+            issue_description=excluded.issue_description,
+            status=excluded.status,
+            status_step=excluded.status_step,
+            date_received=excluded.date_received,
+            technician=excluded.technician,
+            technician_notes=excluded.technician_notes,
+            parts_used=excluded.parts_used,
+            final_cost=excluded.final_cost,
+            warranty=excluded.warranty,
+            updated_at=excluded.updated_at
+        """, (
+            t.get("id"),
+            t.get("clientName"),
+            t.get("clientType"),
+            t.get("clientDni"),
+            t.get("clientPhone"),
+            t.get("clientAddress"),
+            t.get("deviceType"),
+            t.get("deviceBrand"),
+            t.get("deviceModel"),
+            t.get("deviceColor"),
+            t.get("deviceStorage"),
+            t.get("serialOrImei"),
+            t.get("deviceLockType"),
+            t.get("deviceLockCode"),
+            checklist_str,
+            t.get("deviceConditionNotes"),
+            t.get("issueDescription"),
+            t.get("status"),
+            t.get("statusStep") or 1,
+            t.get("dateReceived"),
+            t.get("technician"),
+            t.get("technicianNotes"),
+            parts_str,
+            float(t.get("finalCost") or 0.0),
+            t.get("warranty"),
+            now_str
+        ))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"[db.py] Error upserting ticket: {e}")
+        return False
+    finally:
+        conn.close()
+
+def list_repair_tickets(query: Optional[str] = None) -> List[Dict[str, Any]]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        if query and query.strip():
+            q_clean = f"%{query.strip().lower()}%"
+            cursor.execute("""
+            SELECT * FROM repair_tickets
+            WHERE LOWER(id) LIKE ?
+               OR LOWER(client_name) LIKE ?
+               OR LOWER(client_phone) LIKE ?
+               OR LOWER(client_dni) LIKE ?
+               OR LOWER(serial_or_imei) LIKE ?
+               OR LOWER(device_model) LIKE ?
+            ORDER BY updated_at DESC, date_received DESC
+            """, (q_clean, q_clean, q_clean, q_clean, q_clean, q_clean))
+        else:
+            cursor.execute("SELECT * FROM repair_tickets ORDER BY updated_at DESC, date_received DESC")
+        rows = cursor.fetchall()
+        return [ticket_row_to_dict(r) for r in rows]
+    finally:
+        conn.close()
+
+def get_repair_ticket_by_id(ticket_id: str) -> Optional[Dict[str, Any]]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM repair_tickets WHERE id = ?", (ticket_id,))
+        row = cursor.fetchone()
+        return ticket_row_to_dict(row) if row else None
+    finally:
+        conn.close()
+
+def delete_repair_ticket_by_id(ticket_id: str) -> bool:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM repair_tickets WHERE id = ?", (ticket_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        conn.close()
+
 

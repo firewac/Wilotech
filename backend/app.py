@@ -15,7 +15,11 @@ from backend.database.db import (
     get_recent_history,
     create_or_update_excel_catalog,
     list_excel_catalogs,
-    delete_excel_catalog
+    delete_excel_catalog,
+    upsert_repair_ticket,
+    list_repair_tickets,
+    get_repair_ticket_by_id,
+    delete_repair_ticket_by_id
 )
 from backend.database.models import (
     DistributorConfig,
@@ -221,6 +225,35 @@ async def set_dolar_blue_endpoint(payload: Dict[str, Any]):
 @app.get("/api/imei/lookup")
 async def imei_lookup_endpoint(imei: str = Query(..., min_length=1, description="IMEI o TAC de 8 a 15 dígitos")):
     return IMEIService.lookup_imei(imei)
+
+# --- ÓRDENES Y EQUIPOS DE TALLER ---
+
+@app.get("/api/tickets")
+async def list_tickets_endpoint(q: Optional[str] = Query(None, description="Término de búsqueda: ID, cliente, IMEI, DNI o teléfono")):
+    return list_repair_tickets(query=q)
+
+@app.get("/api/tickets/{ticket_id}")
+async def get_ticket_endpoint(ticket_id: str):
+    t = get_repair_ticket_by_id(ticket_id)
+    if not t:
+        raise HTTPException(status_code=404, detail="Orden no encontrada")
+    return t
+
+@app.post("/api/tickets")
+async def save_ticket_endpoint(ticket: Dict[str, Any]):
+    if not ticket or not ticket.get("id"):
+        raise HTTPException(status_code=400, detail="ID de ticket requerido")
+    success = upsert_repair_ticket(ticket)
+    if not success:
+        raise HTTPException(status_code=500, detail="Error al guardar la orden en la base de datos")
+    return {"status": "ok", "message": f"Orden #{ticket.get('id')} guardada exitosamente.", "ticket": ticket}
+
+@app.delete("/api/tickets/{ticket_id}")
+async def delete_ticket_endpoint(ticket_id: str):
+    deleted = delete_repair_ticket_by_id(ticket_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Orden no encontrada")
+    return {"status": "ok", "message": f"Orden #{ticket_id} eliminada."}
 
 # --- BÚSQUEDA Y COMPARACIÓN ---
 

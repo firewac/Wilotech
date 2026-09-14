@@ -194,11 +194,53 @@ const TechAdmin = (function () {
       tickets = [...TECH_CATALOG.sampleTickets];
       saveTickets();
     }
+    fetchTicketsFromBackend();
     return tickets;
   }
 
   function saveTickets() {
     localStorage.setItem(STORAGE_KEYS.TICKETS, JSON.stringify(tickets));
+  }
+
+  async function syncTicketWithBackend(ticket) {
+    if (!ticket || !ticket.id) return;
+    try {
+      await fetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ticket)
+      });
+    } catch (e) {
+      console.warn('[TechAdmin] No se pudo sincronizar ticket con el servidor:', e);
+    }
+  }
+
+  async function syncDeleteTicketWithBackend(ticketId) {
+    if (!ticketId) return;
+    try {
+      await fetch(`/api/tickets/${encodeURIComponent(ticketId)}`, { method: 'DELETE' });
+    } catch (e) {
+      console.warn('[TechAdmin] No se pudo eliminar ticket en el servidor:', e);
+    }
+  }
+
+  async function fetchTicketsFromBackend() {
+    try {
+      const resp = await fetch('/api/tickets');
+      if (resp.ok) {
+        const serverTickets = await resp.json();
+        if (Array.isArray(serverTickets) && serverTickets.length > 0) {
+          tickets = serverTickets;
+          localStorage.setItem(STORAGE_KEYS.TICKETS, JSON.stringify(tickets));
+          if (typeof renderRepairsTable === "function") renderRepairsTable();
+          if (typeof renderStats === "function") renderStats();
+          return tickets;
+        }
+      }
+    } catch (e) {
+      // Backend offline o sin conexión
+    }
+    return tickets;
   }
 
   function getAllTickets() {
@@ -249,6 +291,7 @@ const TechAdmin = (function () {
 
     tickets.unshift(newTicket);
     saveTickets();
+    syncTicketWithBackend(newTicket);
 
     // Auto-guardar o actualizar cliente en la Base de Datos de Clientes
     upsertCustomer({
@@ -313,6 +356,7 @@ const TechAdmin = (function () {
     if (data.warranty !== undefined) ticket.warranty = data.warranty;
 
     saveTickets();
+    syncTicketWithBackend(ticket);
 
     upsertCustomer({
       name: ticket.clientName,
@@ -332,6 +376,7 @@ const TechAdmin = (function () {
       ticket.statusStep = getStepNumber(newStatus);
       if (newNotes) ticket.technicianNotes = newNotes;
       saveTickets();
+      syncTicketWithBackend(ticket);
       return true;
     }
     return false;
@@ -340,6 +385,7 @@ const TechAdmin = (function () {
   function deleteTicket(ticketId) {
     tickets = tickets.filter(t => t.id !== ticketId);
     saveTickets();
+    syncDeleteTicketWithBackend(ticketId);
   }
 
   // -------------------------------------------------------------
