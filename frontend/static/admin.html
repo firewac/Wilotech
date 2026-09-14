@@ -2429,6 +2429,32 @@
       showToast("Pegatinas de garantía guardadas correctamente.", "info");
     }
 
+    function renderModalPhotosGrid(ticket) {
+      const grid = document.getElementById("modal-diag-photos-grid");
+      if (!grid) return;
+
+      const photos = ticket.devicePhotos || [];
+      if (photos.length === 0) {
+        grid.innerHTML = `<div class="sm:col-span-2 py-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">No hay fotografías de evidencia adjuntas a esta orden. Adjunta una foto arriba para informar al cliente.</div>`;
+        return;
+      }
+
+      grid.innerHTML = photos.map(ph => `
+        <div class="glass-panel p-3 rounded-xl border border-slate-800 space-y-2 bg-[#05070d] relative group">
+          <div class="overflow-hidden rounded-lg aspect-video bg-[#0a101c] relative">
+            <img src="${ph.url}" alt="${ph.caption}" class="w-full h-full object-cover">
+            <button onclick="deleteModalDiagnosticPhoto('${ph.id}')" class="absolute top-2 right-2 p-1.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700 transition-colors cursor-pointer" title="Eliminar fotografía">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+          <p class="text-xs text-slate-200 font-tech leading-snug">${ph.caption || 'Foto de laboratorio'}</p>
+          <div class="text-[10px] font-mono text-slate-500">${ph.date || ''}</div>
+        </div>
+      `).join("");
+
+      if (window.lucide) lucide.createIcons();
+    }
+
     function uploadModalDiagnosticPhoto() {
       if (!activeDiagTicketId) return;
       const fileInput = document.getElementById("diag-photo-file-input");
