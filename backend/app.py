@@ -26,9 +26,9 @@ from backend.database.models import (
     DistributorResponse,
     SearchResponse
 )
-from backend.parsers.excel_parser import parse_price_list_file
 from backend.services.currency_service import CurrencyService
 from backend.services.imei_service import IMEIService
+from backend.services.ticket_store import TicketStore
 from backend.scrapers.manager import ScraperManager
 from backend.exporters.excel_exporter import export_results_to_excel, export_results_to_csv
 
@@ -230,11 +230,11 @@ async def imei_lookup_endpoint(imei: str = Query(..., min_length=1, description=
 
 @app.get("/api/tickets")
 async def list_tickets_endpoint(q: Optional[str] = Query(None, description="Término de búsqueda: ID, cliente, IMEI, DNI o teléfono")):
-    return list_repair_tickets(query=q)
+    return TicketStore.get_all(query=q)
 
 @app.get("/api/tickets/{ticket_id}")
 async def get_ticket_endpoint(ticket_id: str):
-    t = get_repair_ticket_by_id(ticket_id)
+    t = TicketStore.get_by_id(ticket_id)
     if not t:
         raise HTTPException(status_code=404, detail="Orden no encontrada")
     return t
@@ -243,14 +243,21 @@ async def get_ticket_endpoint(ticket_id: str):
 async def save_ticket_endpoint(ticket: Dict[str, Any]):
     if not ticket or not ticket.get("id"):
         raise HTTPException(status_code=400, detail="ID de ticket requerido")
-    success = upsert_repair_ticket(ticket)
+    success = TicketStore.save_ticket(ticket)
     if not success:
         raise HTTPException(status_code=500, detail="Error al guardar la orden en la base de datos")
     return {"status": "ok", "message": f"Orden #{ticket.get('id')} guardada exitosamente.", "ticket": ticket}
 
+@app.post("/api/tickets/bulk")
+async def save_bulk_tickets_endpoint(tickets: List[Dict[str, Any]]):
+    if not tickets or not isinstance(tickets, list):
+        return {"status": "ok", "count": 0}
+    count = TicketStore.save_bulk(tickets)
+    return {"status": "ok", "message": f"{count} órdenes sincronizadas con el servidor.", "count": count}
+
 @app.delete("/api/tickets/{ticket_id}")
 async def delete_ticket_endpoint(ticket_id: str):
-    deleted = delete_repair_ticket_by_id(ticket_id)
+    deleted = TicketStore.delete_ticket(ticket_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Orden no encontrada")
     return {"status": "ok", "message": f"Orden #{ticket_id} eliminada."}

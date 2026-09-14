@@ -235,6 +235,12 @@ const TechAdmin = (function () {
           if (typeof renderRepairsTable === "function") renderRepairsTable();
           if (typeof renderStats === "function") renderStats();
           return tickets;
+        } else if (Array.isArray(tickets) && tickets.length > 0) {
+          await fetch('/api/tickets/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tickets)
+          });
         }
       }
     } catch (e) {
