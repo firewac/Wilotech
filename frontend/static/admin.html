@@ -2215,35 +2215,11 @@
       const modal = document.getElementById("modal-diagnostic-photos");
       const ticketIdSpan = document.getElementById("modal-diag-ticket-id");
       const subtitle = document.getElementById("modal-diag-subtitle");
-      const stickersContainer = document.getElementById("modal-diag-stickers-container");
 
       if (ticketIdSpan) ticketIdSpan.textContent = `#${ticket.id}`;
       if (subtitle) subtitle.textContent = `${ticket.clientName} • ${ticket.deviceModel} (${ticket.serialOrImei})`;
 
-      const parts = ticket.partsUsed || [];
-      const stickers = ticket.warrantyStickers || [];
-
-      if (stickersContainer) {
-        if (parts.length === 0) {
-          stickersContainer.innerHTML = `<p class="text-xs text-slate-500">No hay repuestos registrados en esta orden aún.</p>`;
-        } else {
-          stickersContainer.innerHTML = parts.map((p, idx) => {
-            const existing = stickers.find(s => s.partName === p) || { stickerCode: `STK-${Math.floor(10000 + Math.random() * 90000)}` };
-            return `
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-[#0a101c] border border-slate-800 text-xs font-tech">
-                <span class="font-bold text-white flex items-center gap-1.5">
-                  <i data-lucide="wrench" class="w-3.5 h-3.5 text-[#00f5a0]"></i> ${p}
-                </span>
-                <div class="flex items-center gap-2">
-                  <label class="text-[10px] text-slate-400 font-brand uppercase">Pegatina N°:</label>
-                  <input type="text" data-part-name="${p.replace(/"/g, '&quot;')}" value="${existing.stickerCode || ''}" placeholder="Ej: STK-84920" class="diag-sticker-input bg-[#05070d] border border-slate-700 rounded px-2 py-1 text-xs font-mono font-bold text-[#00f5a0] focus:border-[#00f5a0]">
-                </div>
-              </div>
-            `;
-          }).join("");
-        }
-      }
-
+      renderModalStickersList(ticket);
       renderModalPhotosGrid(ticket);
 
       if (modal) modal.classList.remove("hidden");
@@ -2256,43 +2232,79 @@
       if (modal) modal.classList.add("hidden");
     }
 
-    function renderModalPhotosGrid(ticket) {
-      const grid = document.getElementById("modal-diag-photos-grid");
-      if (!grid) return;
+    function renderModalStickersList(ticket) {
+      const stickersContainer = document.getElementById("modal-diag-stickers-container");
+      if (!stickersContainer) return;
 
-      const photos = ticket.devicePhotos || [];
-      if (photos.length === 0) {
-        grid.innerHTML = `<div class="sm:col-span-2 py-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">No hay fotografías de evidencia adjuntas a esta orden. Adjunta una foto arriba para informar al cliente.</div>`;
-        return;
+      stickersContainer.innerHTML = "";
+
+      const existingStickers = ticket.warrantyStickers || [];
+      const parts = ticket.partsUsed || [];
+
+      if (existingStickers.length > 0) {
+        existingStickers.forEach(st => {
+          addModalStickerRow(st.partName, st.stickerCode);
+        });
+      } else if (parts.length > 0) {
+        parts.forEach(p => {
+          const defaultCode = `STK-${Math.floor(10000 + Math.random() * 90000)}`;
+          addModalStickerRow(p, defaultCode);
+        });
+      } else {
+        const defaultCode = `STK-${Math.floor(10000 + Math.random() * 90000)}`;
+        addModalStickerRow("", defaultCode);
       }
+    }
 
-      grid.innerHTML = photos.map(ph => `
-        <div class="glass-panel p-3 rounded-xl border border-slate-800 space-y-2 bg-[#05070d] relative group">
-          <div class="overflow-hidden rounded-lg aspect-video bg-[#0a101c] relative">
-            <img src="${ph.url}" alt="${ph.caption}" class="w-full h-full object-cover">
-            <button onclick="deleteModalDiagnosticPhoto('${ph.id}')" class="absolute top-2 right-2 p-1.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700 transition-colors cursor-pointer" title="Eliminar fotografía">
+    function addModalStickerRow(partName = "", stickerCode = "") {
+      const stickersContainer = document.getElementById("modal-diag-stickers-container");
+      if (!stickersContainer) return;
+
+      const codeToUse = stickerCode || `STK-${Math.floor(10000 + Math.random() * 90000)}`;
+      const escapedPart = (partName || "").replace(/"/g, '&quot;');
+
+      const rowHtml = `
+        <div class="diag-sticker-row flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-[#0a101c] border border-slate-800 text-xs font-tech">
+          <div class="flex-1 flex items-center gap-1.5">
+            <i data-lucide="wrench" class="w-3.5 h-3.5 text-[#00f5a0] shrink-0"></i>
+            <input type="text" value="${escapedPart}" placeholder="Nombre del repuesto (Ej: Módulo OLED / Batería)" class="diag-part-name-input w-full bg-[#05070d] border border-slate-700 rounded px-2.5 py-1 text-xs text-white focus:border-[#00f5a0]">
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-[10px] text-slate-400 font-brand uppercase shrink-0">Pegatina N°:</label>
+            <input type="text" value="${codeToUse}" placeholder="Ej: STK-84920" class="diag-sticker-code-input bg-[#05070d] border border-slate-700 rounded px-2.5 py-1 text-xs font-mono font-bold text-[#00f5a0] focus:border-[#00f5a0] w-32">
+            <button type="button" onclick="removeStickerRow(this)" class="p-1 rounded bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800 transition-colors cursor-pointer shrink-0" title="Eliminar pegatina">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
           </div>
-          <p class="text-xs text-slate-200 font-tech leading-snug">${ph.caption || 'Foto de laboratorio'}</p>
-          <div class="text-[10px] font-mono text-slate-500">${ph.date || ''}</div>
         </div>
-      `).join("");
+      `;
 
+      stickersContainer.insertAdjacentHTML("beforeend", rowHtml);
       if (window.lucide) lucide.createIcons();
+    }
+
+    function removeStickerRow(btn) {
+      const row = btn.closest(".diag-sticker-row");
+      if (row) {
+        row.remove();
+      }
     }
 
     function saveModalWarrantyStickers() {
       if (!activeDiagTicketId) return;
-      const inputs = document.querySelectorAll(".diag-sticker-input");
+      const rows = document.querySelectorAll("#modal-diag-stickers-container .diag-sticker-row");
       const stickers = [];
-      inputs.forEach(inp => {
-        const partName = inp.dataset.partName;
-        const code = inp.value.trim();
-        if (partName && code) {
+
+      rows.forEach(row => {
+        const nameInput = row.querySelector(".diag-part-name-input");
+        const codeInput = row.querySelector(".diag-sticker-code-input");
+        const partName = nameInput ? nameInput.value.trim() : "";
+        const stickerCode = codeInput ? codeInput.value.trim() : "";
+
+        if (partName || stickerCode) {
           stickers.push({
-            partName: partName,
-            stickerCode: code,
+            partName: partName || "Repuesto General",
+            stickerCode: stickerCode || `STK-${Math.floor(10000 + Math.random() * 90000)}`,
             date: new Date().toISOString().slice(0, 10)
           });
         }
@@ -2377,12 +2389,19 @@
 
       <!-- Sección 1: Pegatinas de Control de Garantía para Repuestos -->
       <div class="p-4 rounded-xl bg-[#05070d] border border-slate-800 space-y-3">
-        <div class="flex items-center justify-between">
-          <h4 class="font-brand text-xs font-bold text-[#00f5a0] uppercase tracking-wider flex items-center gap-2">
-            <i data-lucide="tag" class="w-4 h-4 text-[#00f5a0]"></i>
-            Control de Garantía & Pegatinas de Repuestos
-          </h4>
-          <span class="text-[10px] text-slate-400">Códigos de fajas inviolables asociadas</span>
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h4 class="font-brand text-xs font-bold text-[#00f5a0] uppercase tracking-wider flex items-center gap-2">
+              <i data-lucide="tag" class="w-4 h-4 text-[#00f5a0]"></i>
+              Control de Garantía & Pegatinas por Repuesto
+            </h4>
+            <p class="text-[10px] text-slate-400">Asocia múltiples pegatinas e insumos a la misma orden</p>
+          </div>
+
+          <button onclick="addModalStickerRow()" class="py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-[#00f5a0] border border-[#00f5a0]/30 text-xs font-brand font-bold flex items-center gap-1.5 transition-colors cursor-pointer">
+            <i data-lucide="plus" class="w-3.5 h-3.5 text-[#00f5a0]"></i>
+            <span>Agregar Otra Pegatina</span>
+          </button>
         </div>
 
         <div id="modal-diag-stickers-container" class="space-y-2">
