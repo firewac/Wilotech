@@ -2293,10 +2293,31 @@
 
     function openDiagnosticModal(ticketId) {
       activeDiagTicketId = ticketId;
-      const ticket = TechAdmin.getTicketById(ticketId);
-      if (!ticket) return;
+      let ticket = null;
+
+      if (window.TechAdmin && typeof TechAdmin.getTicketById === "function") {
+        ticket = TechAdmin.getTicketById(ticketId);
+      }
+      if (!ticket && window.TechAdmin && typeof TechAdmin.getAllTickets === "function") {
+        const all = TechAdmin.getAllTickets();
+        ticket = all.find(t => t.id === ticketId);
+      }
+
+      if (!ticket) {
+        if (typeof showToast === "function") {
+          showToast(`No se encontró la orden #${ticketId}.`, "warning");
+        } else {
+          alert(`No se encontró la orden #${ticketId}.`);
+        }
+        return;
+      }
 
       const modal = document.getElementById("modal-diagnostic-photos");
+      if (!modal) {
+        console.error("El elemento #modal-diagnostic-photos no existe en el DOM.");
+        return;
+      }
+
       const ticketIdSpan = document.getElementById("modal-diag-ticket-id");
       const subtitle = document.getElementById("modal-diag-subtitle");
 
@@ -2306,14 +2327,18 @@
       renderModalStickersList(ticket);
       renderModalPhotosGrid(ticket);
 
-      if (modal) modal.classList.remove("hidden");
+      modal.classList.remove("hidden");
+      modal.style.display = "flex";
       if (window.lucide) lucide.createIcons();
     }
 
     function closeDiagnosticModal() {
       activeDiagTicketId = null;
       const modal = document.getElementById("modal-diagnostic-photos");
-      if (modal) modal.classList.add("hidden");
+      if (modal) {
+        modal.classList.add("hidden");
+        modal.style.display = "none";
+      }
     }
 
     function renderModalStickersList(ticket) {

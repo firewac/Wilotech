@@ -306,6 +306,11 @@ const TechAdmin = (function () {
     return tickets;
   }
 
+  function getTicketById(id) {
+    if (!tickets || tickets.length === 0) loadTickets();
+    return tickets.find(t => t.id === id) || null;
+  }
+
   function createNewTicket(data) {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const newId = `WT-${randomNum}`;
