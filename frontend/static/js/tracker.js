@@ -277,15 +277,25 @@ const TechTracker = (function () {
           <div class="space-y-4">
             <div class="bg-[#0a101c]/80 rounded-xl p-4 border border-slate-800/80">
               <h4 class="text-xs font-brand font-bold text-[#00f5a0] uppercase tracking-wider mb-2 flex items-center gap-2">
-                <i data-lucide="package-check" class="w-4 h-4 text-[#00f5a0]"></i> Insumos & Repuestos OEM
-              </h4>
-              <ul class="space-y-1.5 text-xs text-slate-300 font-tech">
-                ${ticket.partsUsed.map(p => `
-                  <li class="flex items-center gap-2">
-                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-[#00f5a0] shrink-0"></i>
-                    <span>${p}</span>
-                  </li>
-                `).join("")}
+              <ul class="space-y-2 text-xs text-slate-300 font-tech">
+                ${ticket.partsUsed.map(p => {
+                  let stickerBadge = '';
+                  if (ticket.warrantyStickers && Array.isArray(ticket.warrantyStickers)) {
+                    const st = ticket.warrantyStickers.find(s => s.partName && (p.toLowerCase().includes(s.partName.toLowerCase()) || s.partName.toLowerCase().includes(p.toLowerCase())));
+                    if (st) {
+                      stickerBadge = `<span class="ml-2 font-mono text-[10px] bg-[#00f5a0]/15 text-[#00f5a0] border border-[#00f5a0]/30 px-1.5 py-0.5 rounded font-bold">🏷️ Pegatina: ${st.stickerCode}</span>`;
+                    }
+                  }
+                  return `
+                    <li class="flex items-center justify-between flex-wrap gap-1">
+                      <span class="flex items-center gap-2">
+                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-[#00f5a0] shrink-0"></i>
+                        <span>${p}</span>
+                      </span>
+                      ${stickerBadge}
+                    </li>
+                  `;
+                }).join("")}
               </ul>
             </div>
 
@@ -313,6 +323,27 @@ const TechTracker = (function () {
             </div>
           </div>
         </div>
+
+        <!-- Evidencia Fotográfica y Diagnóstico de Laboratorio -->
+        ${ticket.devicePhotos && ticket.devicePhotos.length > 0 ? `
+          <div class="mt-8 pt-6 border-t border-slate-800">
+            <h4 class="text-xs font-brand font-bold text-cyan-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <i data-lucide="camera" class="w-4 h-4 text-cyan-400"></i> Evidencia Fotográfica y Inspección de Laboratorio
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              ${ticket.devicePhotos.map(ph => `
+                <div class="glass-panel p-3 rounded-xl border border-slate-800 space-y-2 bg-[#05070d]/80 group">
+                  <div class="overflow-hidden rounded-lg aspect-video bg-[#0a101c] relative cursor-pointer" onclick="window.open('${ph.url}', '_blank')">
+                    <img src="${ph.url}" alt="${ph.caption || 'Foto de evidencia'}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute bottom-2 right-2 bg-slate-950/80 text-[10px] font-mono text-slate-300 px-2 py-0.5 rounded border border-slate-700">🔍 Ver Ampliada</div>
+                  </div>
+                  <p class="text-xs text-slate-200 font-tech leading-snug">${ph.caption || 'Foto de laboratorio'}</p>
+                  <div class="text-[10px] font-mono text-slate-500">${ph.date || ''}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
       </div>
     `;
 

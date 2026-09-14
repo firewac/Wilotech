@@ -33,6 +33,32 @@
       "Módulo Display Samsung Galaxy S23 Ultra Original Dynamic AMOLED",
       "Kit Adhesivo Pre-cortado de Estanqueidad IP68"
     ],
+    "warrantyStickers": [
+      {
+        "partName": "Módulo Display Samsung S23 Ultra Original",
+        "stickerCode": "STK-W23U-5019",
+        "date": "2026-09-14"
+      },
+      {
+        "partName": "Kit Adhesivo Estanqueidad IP68",
+        "stickerCode": "STK-IP68-9941",
+        "date": "2026-09-14"
+      }
+    ],
+    "devicePhotos": [
+      {
+        "id": "img-1",
+        "url": "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=600&q=80",
+        "caption": "Recepción: Inspección física de cristal y pantalla rota previa a la apertura.",
+        "date": "2026-09-14 11:35"
+      },
+      {
+        "id": "img-2",
+        "url": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
+        "caption": "Microscopio: Verificación de la placa madre y conector FPC de pantalla sin sulfato.",
+        "date": "2026-09-14 12:10"
+      }
+    ],
     "finalCost": 180,
     "warranty": "90 días de garantía por escrito"
   },
@@ -55,6 +81,21 @@
     "technician": "Ing. Martín Ramos (Microelectrónica)",
     "technicianNotes": "Se desoldó puerto dañado con estación de aire caliente a 380°C. Limpieza de pistas con malla desoldadora. Se instaló puerto HDMI original reforzado con aleación Sn-Pb para mayor resistencia mecánica. Prueba en 4K 120Hz con HDR durante 45 minutos superada con éxito.",
     "partsUsed": ["Puerto HDMI original OEM PS5 Rev. 3", "Estaño Mechanic 183°C", "Flux Amtech NC-559-ASM"],
+    "warrantyStickers": [
+      {
+        "partName": "Puerto HDMI original OEM PS5 Rev. 3",
+        "stickerCode": "STK-HDMI-8492",
+        "date": "2026-09-01"
+      }
+    ],
+    "devicePhotos": [
+      {
+        "id": "img-ps5-1",
+        "url": "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=600&q=80",
+        "caption": "Reemplazo de conector HDMI 2.1 completado bajo microscopio binocular.",
+        "date": "2026-09-01 11:45"
+      }
+    ],
     "finalCost": 65,
     "warranty": "90 días de garantía por escrito"
   },

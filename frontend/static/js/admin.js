@@ -343,6 +343,8 @@ const TechAdmin = (function () {
       technician: data.technician || "Laboratorio WILOTECH",
       technicianNotes: data.technicianNotes || "Equipo recepcionado. Pendiente de apertura e inspección en microscopio.",
       partsUsed: data.partsUsed ? (Array.isArray(data.partsUsed) ? data.partsUsed : data.partsUsed.split(",").map(s => s.trim())) : ["Diagnóstico inicial de laboratorio"],
+      warrantyStickers: data.warrantyStickers || [],
+      devicePhotos: data.devicePhotos || [],
       finalCost: parseFloat(data.finalCost) || 0,
       warranty: data.warranty || "90 días de garantía por escrito"
     };
@@ -410,6 +412,8 @@ const TechAdmin = (function () {
     if (data.partsUsed !== undefined) {
       ticket.partsUsed = Array.isArray(data.partsUsed) ? data.partsUsed : data.partsUsed.split(",").map(s => s.trim());
     }
+    if (data.warrantyStickers !== undefined) ticket.warrantyStickers = data.warrantyStickers;
+    if (data.devicePhotos !== undefined) ticket.devicePhotos = data.devicePhotos;
     if (data.finalCost !== undefined) ticket.finalCost = parseFloat(data.finalCost) || 0;
     if (data.warranty !== undefined) ticket.warranty = data.warranty;
 
@@ -425,6 +429,42 @@ const TechAdmin = (function () {
     });
 
     return ticket;
+  }
+
+  function addTicketPhoto(ticketId, photoData) {
+    const ticket = getTicketById(ticketId);
+    if (!ticket) return false;
+    if (!ticket.devicePhotos) ticket.devicePhotos = [];
+
+    const newPhoto = {
+      id: "photo_" + Date.now(),
+      url: photoData.url,
+      caption: photoData.caption || "Fotografía de diagnóstico de laboratorio",
+      date: new Date().toISOString().replace("T", " ").slice(0, 16)
+    };
+
+    ticket.devicePhotos.push(newPhoto);
+    saveTickets();
+    syncTicketWithBackend(ticket);
+    return newPhoto;
+  }
+
+  function deleteTicketPhoto(ticketId, photoId) {
+    const ticket = getTicketById(ticketId);
+    if (!ticket || !ticket.devicePhotos) return false;
+    ticket.devicePhotos = ticket.devicePhotos.filter(p => p.id !== photoId);
+    saveTickets();
+    syncTicketWithBackend(ticket);
+    return true;
+  }
+
+  function saveWarrantyStickers(ticketId, stickersList) {
+    const ticket = getTicketById(ticketId);
+    if (!ticket) return false;
+    ticket.warrantyStickers = stickersList || [];
+    saveTickets();
+    syncTicketWithBackend(ticket);
+    return true;
   }
 
   function updateTicketStatus(ticketId, newStatus, newNotes = null) {
@@ -613,6 +653,21 @@ const TechAdmin = (function () {
           <div class="row"><span>Garantía:</span><span>${ticket.warranty}</span></div>
         </div>
 
+        ${ticket.warrantyStickers && ticket.warrantyStickers.length > 0 ? `
+        <div class="section" style="border: 1px solid #333; padding: 8px; border-radius: 4px; background: #fafafa;">
+          <div class="section-title" style="border-bottom: 1px solid #333;">🏷️ Control de Garantía & Pegatinas de Seguridad</div>
+          ${ticket.warrantyStickers.map(st => `
+            <div class="row" style="margin-top: 4px;">
+              <span>🔧 ${st.partName}:</span>
+              <strong style="background: #e2e8f0; padding: 2px 6px; border-radius: 3px; font-family: monospace;">PEGATINA: ${st.stickerCode}</strong>
+            </div>
+          `).join('')}
+          <div style="font-size: 8.5px; color: #555; margin-top: 6px; font-style: italic;">
+            * Los componentes instalados cuentan con sellos / pegatinas de seguridad inviolables. Su remoción o daño anula la garantía.
+          </div>
+        </div>
+        ` : ''}
+
         <div class="terms">
           CONDICIONES GENERALES: El cliente declara conocer y aceptar que equipos con sulfato, daño por líquidos o golpes pueden presentar fallas ocultas preexistentes. Transcurridos 60 días desde la notificación de finalización, los equipos no retirados devengarán costos de guarda o pasarán a desarme de acuerdo a la legislación vigente. Garantía válida únicamente sobre componentes reparados.
         </div>
@@ -764,6 +819,9 @@ const TechAdmin = (function () {
     deleteTicket: deleteTicket,
     deleteAllTickets: deleteAllTickets,
     restoreDefaultTickets: restoreDefaultTickets,
+    addTicketPhoto: addTicketPhoto,
+    deleteTicketPhoto: deleteTicketPhoto,
+    saveWarrantyStickers: saveWarrantyStickers,
     notifyClientWhatsApp: notifyClientWhatsApp,
     printTicketReceipt: printTicketReceipt,
     getInventory: getInventory,

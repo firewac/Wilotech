@@ -270,9 +270,14 @@
           </div>
         </div>
 
+        <!-- Barra de Desplazamiento Horizontal Superior Sincronizada -->
+        <div id="top-scrollbar-wrapper" class="overflow-x-auto overflow-y-hidden border border-slate-800 rounded-t-xl bg-[#05070d] h-3.5 mb-[-1px] custom-scrollbar">
+          <div id="top-scrollbar-dummy" class="h-3.5 min-w-[1250px]"></div>
+        </div>
+
         <!-- Tabla de Órdenes -->
-        <div class="overflow-x-auto border border-slate-800 rounded-xl shadow-inner">
-          <table class="w-full min-w-[1050px] text-left border-collapse text-sm">
+        <div id="repairs-table-wrapper" class="overflow-x-auto border border-slate-800 rounded-b-xl shadow-inner custom-scrollbar">
+          <table id="repairs-table" class="w-full min-w-[1250px] text-left border-collapse text-sm">
             <thead>
               <tr class="bg-[#05070d] text-[11px] font-brand font-bold text-[#00f5a0] uppercase tracking-wider border-b border-slate-800">
                 <th class="py-3 px-3.5 whitespace-nowrap min-w-[95px]">Ticket</th>
@@ -1006,6 +1011,15 @@
               <span>${t.deviceLockType || 'Sin Bloqueo'}${t.deviceLockCode ? `: <strong class="text-white font-mono">${t.deviceLockCode}</strong>` : ''}</span>
             </div>
             ${getChecklistSummaryBadge(t)}
+            ${t.warrantyStickers && t.warrantyStickers.length > 0 ? `
+              <div class="mt-1 flex items-center gap-1 flex-wrap text-[9px] font-brand">
+                ${t.warrantyStickers.map(s => `
+                  <span class="bg-[#00f5a0]/10 text-[#00f5a0] border border-[#00f5a0]/30 px-1.5 py-0.5 rounded font-mono font-bold" title="${s.partName}">
+                    🏷️ ${s.stickerCode}
+                  </span>
+                `).join('')}
+              </div>
+            ` : ''}
           </td>
           <td class="py-3 px-3.5 max-w-xs truncate text-slate-300" title="${t.issueDescription}">
             ${t.issueDescription}
@@ -1029,8 +1043,17 @@
           <td class="py-3 px-3.5 text-right whitespace-nowrap">
             <div class="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
               <button 
+                onclick="openDiagnosticModal('${t.id}')"
+                class="py-1.5 px-2.5 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500 hover:text-slate-950 transition-all flex items-center gap-1 text-[11px] font-brand font-bold cursor-pointer"
+                title="Fotos de diagnóstico, evidencia y pegatinas de garantía"
+              >
+                <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                <span>Diagnóstico ${t.devicePhotos && t.devicePhotos.length ? `(${t.devicePhotos.length})` : ''}</span>
+              </button>
+
+              <button 
                 onclick="handleEditTicket('${t.id}')"
-                class="py-1.5 px-2.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500 hover:text-white transition-all flex items-center gap-1 text-[11px] font-brand font-bold"
+                class="py-1.5 px-2.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500 hover:text-white transition-all flex items-center gap-1 text-[11px] font-brand font-bold cursor-pointer"
                 title="Editar orden #${t.id}"
               >
                 <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
@@ -1039,7 +1062,7 @@
 
               <button 
                 onclick="TechAdmin.notifyClientWhatsApp('${t.id}')"
-                class="py-1.5 px-2.5 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1 text-[11px] font-brand font-bold"
+                class="py-1.5 px-2.5 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1 text-[11px] font-brand font-bold cursor-pointer"
                 title="Enviar estado actual al cliente por WhatsApp"
               >
                 <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
@@ -1048,7 +1071,7 @@
 
               <button 
                 onclick="TechAdmin.printTicketReceipt('${t.id}')"
-                class="py-1.5 px-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition-colors"
+                class="py-1.5 px-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition-colors cursor-pointer"
                 title="Imprimir Comprobante de Taller"
               >
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i>
@@ -1056,7 +1079,7 @@
 
               <button 
                 onclick="handleDeleteTicket('${t.id}')"
-                class="py-1.5 px-2 rounded-lg bg-rose-950/40 border border-rose-800/40 text-rose-400 hover:bg-rose-900 transition-colors"
+                class="py-1.5 px-2 rounded-lg bg-rose-950/40 border border-rose-800/40 text-rose-400 hover:bg-rose-900 transition-colors cursor-pointer"
                 title="Eliminar orden"
               >
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
@@ -1067,6 +1090,8 @@
       `).join("");
 
       if (window.lucide) lucide.createIcons();
+      setTimeout(syncRepairsScrollbars, 50);
+    }
     }
 
     function getClientTypeBadge(type = "Público") {
@@ -2149,9 +2174,264 @@
       }
     }
 
+    // DUAL SCROLLBAR SYNCHRONIZATION
+    function syncRepairsScrollbars() {
+      const topWrapper = document.getElementById("top-scrollbar-wrapper");
+      const tableWrapper = document.getElementById("repairs-table-wrapper");
+      const dummy = document.getElementById("top-scrollbar-dummy");
+      const table = document.getElementById("repairs-table");
+
+      if (!topWrapper || !tableWrapper || !dummy || !table) return;
+
+      dummy.style.width = table.scrollWidth + "px";
+
+      let syncingTop = false;
+      let syncingTable = false;
+
+      topWrapper.onscroll = function() {
+        if (!syncingTop) {
+          syncingTable = true;
+          tableWrapper.scrollLeft = topWrapper.scrollLeft;
+        }
+        syncingTop = false;
+      };
+
+      tableWrapper.onscroll = function() {
+        if (!syncingTable) {
+          syncingTop = true;
+          topWrapper.scrollLeft = tableWrapper.scrollLeft;
+        }
+        syncingTable = false;
+      };
+    }
+
+    // MODAL DE DIAGNÓSTICO, FOTOS Y PEGATINAS DE GARANTÍA
+    let activeDiagTicketId = null;
+
+    function openDiagnosticModal(ticketId) {
+      activeDiagTicketId = ticketId;
+      const ticket = TechAdmin.getTicketById(ticketId);
+      if (!ticket) return;
+
+      const modal = document.getElementById("modal-diagnostic-photos");
+      const ticketIdSpan = document.getElementById("modal-diag-ticket-id");
+      const subtitle = document.getElementById("modal-diag-subtitle");
+      const stickersContainer = document.getElementById("modal-diag-stickers-container");
+
+      if (ticketIdSpan) ticketIdSpan.textContent = `#${ticket.id}`;
+      if (subtitle) subtitle.textContent = `${ticket.clientName} • ${ticket.deviceModel} (${ticket.serialOrImei})`;
+
+      const parts = ticket.partsUsed || [];
+      const stickers = ticket.warrantyStickers || [];
+
+      if (stickersContainer) {
+        if (parts.length === 0) {
+          stickersContainer.innerHTML = `<p class="text-xs text-slate-500">No hay repuestos registrados en esta orden aún.</p>`;
+        } else {
+          stickersContainer.innerHTML = parts.map((p, idx) => {
+            const existing = stickers.find(s => s.partName === p) || { stickerCode: `STK-${Math.floor(10000 + Math.random() * 90000)}` };
+            return `
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-[#0a101c] border border-slate-800 text-xs font-tech">
+                <span class="font-bold text-white flex items-center gap-1.5">
+                  <i data-lucide="wrench" class="w-3.5 h-3.5 text-[#00f5a0]"></i> ${p}
+                </span>
+                <div class="flex items-center gap-2">
+                  <label class="text-[10px] text-slate-400 font-brand uppercase">Pegatina N°:</label>
+                  <input type="text" data-part-name="${p.replace(/"/g, '&quot;')}" value="${existing.stickerCode || ''}" placeholder="Ej: STK-84920" class="diag-sticker-input bg-[#05070d] border border-slate-700 rounded px-2 py-1 text-xs font-mono font-bold text-[#00f5a0] focus:border-[#00f5a0]">
+                </div>
+              </div>
+            `;
+          }).join("");
+        }
+      }
+
+      renderModalPhotosGrid(ticket);
+
+      if (modal) modal.classList.remove("hidden");
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeDiagnosticModal() {
+      activeDiagTicketId = null;
+      const modal = document.getElementById("modal-diagnostic-photos");
+      if (modal) modal.classList.add("hidden");
+    }
+
+    function renderModalPhotosGrid(ticket) {
+      const grid = document.getElementById("modal-diag-photos-grid");
+      if (!grid) return;
+
+      const photos = ticket.devicePhotos || [];
+      if (photos.length === 0) {
+        grid.innerHTML = `<div class="sm:col-span-2 py-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">No hay fotografías de evidencia adjuntas a esta orden. Adjunta una foto arriba para informar al cliente.</div>`;
+        return;
+      }
+
+      grid.innerHTML = photos.map(ph => `
+        <div class="glass-panel p-3 rounded-xl border border-slate-800 space-y-2 bg-[#05070d] relative group">
+          <div class="overflow-hidden rounded-lg aspect-video bg-[#0a101c] relative">
+            <img src="${ph.url}" alt="${ph.caption}" class="w-full h-full object-cover">
+            <button onclick="deleteModalDiagnosticPhoto('${ph.id}')" class="absolute top-2 right-2 p-1.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700 transition-colors cursor-pointer" title="Eliminar fotografía">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+          <p class="text-xs text-slate-200 font-tech leading-snug">${ph.caption || 'Foto de laboratorio'}</p>
+          <div class="text-[10px] font-mono text-slate-500">${ph.date || ''}</div>
+        </div>
+      `).join("");
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function saveModalWarrantyStickers() {
+      if (!activeDiagTicketId) return;
+      const inputs = document.querySelectorAll(".diag-sticker-input");
+      const stickers = [];
+      inputs.forEach(inp => {
+        const partName = inp.dataset.partName;
+        const code = inp.value.trim();
+        if (partName && code) {
+          stickers.push({
+            partName: partName,
+            stickerCode: code,
+            date: new Date().toISOString().slice(0, 10)
+          });
+        }
+      });
+
+      TechAdmin.saveWarrantyStickers(activeDiagTicketId, stickers);
+      renderRepairsTable();
+      showToast("Pegatinas de garantía guardadas correctamente.", "info");
+    }
+
+    function uploadModalDiagnosticPhoto() {
+      if (!activeDiagTicketId) return;
+      const fileInput = document.getElementById("diag-photo-file-input");
+      const captionInput = document.getElementById("diag-photo-caption-input");
+
+      if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        showToast("Por favor selecciona una imagen para adjuntar.", "warning");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const caption = captionInput ? captionInput.value.trim() : "Foto de diagnóstico";
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Data = e.target.result;
+        TechAdmin.addTicketPhoto(activeDiagTicketId, {
+          url: base64Data,
+          caption: caption
+        });
+
+        fileInput.value = "";
+        if (captionInput) captionInput.value = "";
+
+        const updatedTicket = TechAdmin.getTicketById(activeDiagTicketId);
+        if (updatedTicket) renderModalPhotosGrid(updatedTicket);
+        renderRepairsTable();
+        showToast("Fotografía de evidencia adjuntada a la orden.", "info");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function deleteModalDiagnosticPhoto(photoId) {
+      if (!activeDiagTicketId) return;
+      if (confirm("¿Eliminar esta fotografía de la evidencia?")) {
+        TechAdmin.deleteTicketPhoto(activeDiagTicketId, photoId);
+        const updatedTicket = TechAdmin.getTicketById(activeDiagTicketId);
+        if (updatedTicket) renderModalPhotosGrid(updatedTicket);
+        renderRepairsTable();
+        showToast("Fotografía eliminada.", "warning");
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       checkAuthStatus();
+      window.addEventListener("resize", syncRepairsScrollbars);
     });
   </script>
+
+  <!-- MODAL DE DIAGNÓSTICO, FOTOS DE EVIDENCIA Y PEGATINAS DE GARANTÍA -->
+  <div id="modal-diagnostic-photos" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel w-full max-w-3xl rounded-2xl border border-[#00f5a0]/30 bg-[#070c18] p-6 space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-9 h-9 rounded-xl bg-[#00f5a0]/10 border border-[#00f5a0]/30 flex items-center justify-center text-[#00f5a0]">
+            <i data-lucide="microscope" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-brand text-base font-bold text-white flex items-center gap-2">
+              <span>Diagnóstico & Evidencia Fotográfica</span>
+              <span id="modal-diag-ticket-id" class="text-xs text-[#00f5a0] font-mono px-2 py-0.5 rounded bg-[#00f5a0]/10 border border-[#00f5a0]/30">WT-0000</span>
+            </h3>
+            <p id="modal-diag-subtitle" class="text-xs text-slate-400 font-tech">Cliente • Equipo</p>
+          </div>
+        </div>
+        <button onclick="closeDiagnosticModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center border border-slate-700 transition-colors cursor-pointer">
+          ✕
+        </button>
+      </div>
+
+      <!-- Sección 1: Pegatinas de Control de Garantía para Repuestos -->
+      <div class="p-4 rounded-xl bg-[#05070d] border border-slate-800 space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="font-brand text-xs font-bold text-[#00f5a0] uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="tag" class="w-4 h-4 text-[#00f5a0]"></i>
+            Control de Garantía & Pegatinas de Repuestos
+          </h4>
+          <span class="text-[10px] text-slate-400">Códigos de fajas inviolables asociadas</span>
+        </div>
+
+        <div id="modal-diag-stickers-container" class="space-y-2">
+          <!-- Inyectado dinámicamente -->
+        </div>
+
+        <div class="flex justify-end pt-1">
+          <button onclick="saveModalWarrantyStickers()" class="btn-cyber py-1.5 px-4 rounded-lg text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="save" class="w-3.5 h-3.5 text-slate-950"></i>
+            <span>Guardar Pegatinas</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sección 2: Carga de Fotos de Evidencia -->
+      <div class="p-4 rounded-xl bg-[#05070d] border border-slate-800 space-y-3">
+        <h4 class="font-brand text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="camera" class="w-4 h-4 text-cyan-400"></i>
+          Subir Fotografía de Evidencia / Diagnóstico
+        </h4>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+          <div class="sm:col-span-2 space-y-2">
+            <label class="block text-[11px] font-brand text-slate-300">Seleccionar Imagen (JPG/PNG/WEBP)</label>
+            <input type="file" id="diag-photo-file-input" accept="image/*" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-brand file:bg-slate-800 file:text-[#00f5a0] hover:file:bg-slate-700">
+            <input type="text" id="diag-photo-caption-input" placeholder="Epígrafe de foto (Ej: Corto localizado con cámara térmica / Módulo reemplazado)" class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-400">
+          </div>
+
+          <button onclick="uploadModalDiagnosticPhoto()" class="py-2.5 px-4 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500 hover:text-slate-950 transition-all font-brand text-xs font-bold flex items-center justify-center gap-2 cursor-pointer">
+            <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+            <span>Adjuntar Foto</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sección 3: Galería de Fotografías de la Orden -->
+      <div class="space-y-2">
+        <h4 class="font-brand text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="image" class="w-4 h-4 text-[#00f5a0]"></i>
+          Fotos de Evidencia Guardadas en la Orden
+        </h4>
+
+        <div id="modal-diag-photos-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 min-h-[100px]">
+          <!-- Inyectado dinámicamente -->
+        </div>
+      </div>
+
+    </div>
+  </div>
 </body>
 </html>
