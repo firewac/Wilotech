@@ -130,7 +130,62 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tickets_phone ON repair_tickets(client_phone)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tickets_dni ON repair_tickets(client_dni)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tickets_imei ON repair_tickets(serial_or_imei)")
-    
+
+    # Tabla de Usuarios de Gremios
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS gremio_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        phone TEXT DEFAULT '',
+        password_hash TEXT NOT NULL,
+        status TEXT DEFAULT 'active',
+        created_at TEXT
+    )
+    """)
+
+    # Tabla de Lista de Precios Gremios
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS gremio_price_list (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT DEFAULT '',
+        title TEXT NOT NULL,
+        category TEXT DEFAULT 'General',
+        brand TEXT DEFAULT '',
+        price_gremio REAL NOT NULL,
+        price_retail REAL DEFAULT 0.0,
+        stock TEXT DEFAULT 'Disponible',
+        updated_at TEXT
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_gremio_price_title ON gremio_price_list(title)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_gremio_price_cat ON gremio_price_list(category)")
+
+    # Precargar ítems iniciales de gremio si la tabla está vacía
+    cursor.execute("SELECT COUNT(*) FROM gremio_price_list")
+    if cursor.fetchone()[0] == 0:
+        sample_items = [
+            ("MOD-IPH11-OLED", "Módulo Pantalla iPhone 11 (OLED High Quality)", "Módulos & Pantallas", "Apple", 28500.0, 42000.0, "Disponible"),
+            ("MOD-IPH12-OLED", "Módulo Pantalla iPhone 12 / 12 Pro (OLED Genuine)", "Módulos & Pantallas", "Apple", 45000.0, 68000.0, "Disponible"),
+            ("MOD-SAM-A32-INC", "Módulo Samsung Galaxy A32 (Incell Touch)", "Módulos & Pantallas", "Samsung", 19500.0, 29000.0, "Disponible"),
+            ("MOD-MOT-G60-ORIG", "Módulo Motorola Moto G60 (Original Service Pack)", "Módulos & Pantallas", "Motorola", 22000.0, 33000.0, "Disponible"),
+            ("BAT-IPH11-ORIG", "Batería iPhone 11 (Capacidad Original BTI)", "Baterías", "Apple", 14500.0, 24000.0, "Disponible"),
+            ("BAT-SAM-S20FE", "Batería Samsung S20 FE EB-BG781ABY", "Baterías", "Samsung", 12000.0, 19500.0, "Disponible"),
+            ("BAT-XIA-NOTE10", "Batería Xiaomi Redmi Note 10 BN59", "Baterías", "Xiaomi", 11500.0, 18000.0, "Disponible"),
+            ("PIN-TYPEC-UNIV", "Pin de Carga USB Type-C Reforzado (Pack 5u)", "Conectores y Pines", "Multimarca", 4500.0, 9000.0, "Disponible"),
+            ("FLX-IPH11-CHG", "Flex Pin de Carga y Micrófono iPhone 11 Negro", "Flex & Carga", "Apple", 9800.0, 16000.0, "Disponible"),
+            ("CAM-IPH12-BACK", "Cámara Trasera iPhone 12 Original Pull", "Cámaras", "Apple", 38000.0, 55000.0, "Poco Stock"),
+            ("GLS-IPH13-FRONT", "Cristal Glass Frontal iPhone 13 Pro Max", "Glass & Refurbish", "Apple", 6500.0, 14000.0, "Disponible"),
+            ("SRV-REBALL-CPU", "Servicio Reballing CPU / PMIC (Mano de obra gremio)", "Servicios de Laboratorio", "Multimarca", 35000.0, 60000.0, "Disponible"),
+            ("SRV-CAMBIO-GLASS", "Servicio Cambio de Glass LCD/OLED (Mano de obra gremio)", "Servicios de Laboratorio", "Multimarca", 18000.0, 32000.0, "Disponible"),
+            ("SRV-DESBLOQ-FRP", "Remoción de Cuenta Google FRP / Samsung Knox", "Software & Desbloqueos", "Multimarca", 12000.0, 22000.0, "Disponible")
+        ]
+        now_str = datetime.now().isoformat()
+        cursor.executemany("""
+        INSERT INTO gremio_price_list (code, title, category, brand, price_gremio, price_retail, stock, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, [(item[0], item[1], item[2], item[3], item[4], item[5], item[6], now_str) for item in sample_items])
+
     # Limpiar cualquier distribuidora antigua automotriz de prueba
     cursor.execute("DELETE FROM distributors WHERE id IN ('dist_norte', 'repuestos_express', 'mayorista_autopartes')")
 
@@ -697,5 +752,140 @@ def delete_repair_ticket_by_id(ticket_id: str) -> bool:
         return cursor.rowcount > 0
     finally:
         conn.close()
+
+
+# --- FUNCIONES DE GREMIOS ---
+
+def create_gremio_user(name: str, email: str, phone: str, password_plain: str) -> Optional[Dict[str, Any]]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        pw_hash = encrypt_password(password_plain)
+        now_str = datetime.now().isoformat()
+        cursor.execute("""
+        INSERT INTO gremio_users (name, email, phone, password_hash, status, created_at)
+        VALUES (?, ?, ?, ?, 'active', ?)
+        """, (name.strip(), email.strip().lower(), phone.strip() if phone else "", pw_hash, now_str))
+        conn.commit()
+        user_id = cursor.lastrowid
+        return {
+            "id": user_id,
+            "name": name.strip(),
+            "email": email.strip().lower(),
+            "phone": phone.strip() if phone else "",
+            "status": "active",
+            "created_at": now_str
+        }
+    except sqlite3.IntegrityError:
+        return None
+    finally:
+        conn.close()
+
+def get_gremio_user_by_email(email: str) -> Optional[Dict[str, Any]]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM gremio_users WHERE LOWER(email) = ?", (email.strip().lower(),))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        d = dict(row)
+        d["password_plain"] = decrypt_password(d.get("password_hash", ""))
+        return d
+    finally:
+        conn.close()
+
+def list_gremio_users() -> List[Dict[str, Any]]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id, name, email, phone, status, created_at FROM gremio_users ORDER BY created_at DESC")
+        rows = cursor.fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+def update_gremio_user_status(user_id: int, status: str) -> bool:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE gremio_users SET status = ? WHERE id = ?", (status, user_id))
+        conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        conn.close()
+
+def list_gremio_price_items(query: Optional[str] = None, category: Optional[str] = None) -> List[Dict[str, Any]]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        sql = "SELECT * FROM gremio_price_list WHERE 1=1"
+        params = []
+        if query and query.strip():
+            sql += " AND (LOWER(title) LIKE ? OR LOWER(code) LIKE ? OR LOWER(brand) LIKE ?)"
+            q_clean = f"%{query.strip().lower()}%"
+            params.extend([q_clean, q_clean, q_clean])
+        if category and category.strip() and category.lower() != "todas":
+            sql += " AND LOWER(category) = ?"
+            params.append(category.strip().lower())
+        sql += " ORDER BY category ASC, title ASC"
+        cursor.execute(sql, params)
+        rows = cursor.fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+def upsert_gremio_price_item(item_data: Dict[str, Any]) -> Dict[str, Any]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        item_id = item_data.get("id")
+        code = (item_data.get("code") or "").strip()
+        title = (item_data.get("title") or "").strip()
+        category = (item_data.get("category") or "General").strip() or "General"
+        brand = (item_data.get("brand") or "").strip()
+        price_gremio = float(item_data.get("price_gremio", 0))
+        price_retail = float(item_data.get("price_retail", 0))
+        stock = (item_data.get("stock") or "Disponible").strip() or "Disponible"
+        now_str = datetime.now().isoformat()
+
+        if item_id:
+            cursor.execute("""
+            UPDATE gremio_price_list
+            SET code = ?, title = ?, category = ?, brand = ?, price_gremio = ?, price_retail = ?, stock = ?, updated_at = ?
+            WHERE id = ?
+            """, (code, title, category, brand, price_gremio, price_retail, stock, now_str, item_id))
+        else:
+            cursor.execute("""
+            INSERT INTO gremio_price_list (code, title, category, brand, price_gremio, price_retail, stock, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (code, title, category, brand, price_gremio, price_retail, stock, now_str))
+            item_id = cursor.lastrowid
+
+        conn.commit()
+        return {
+            "id": item_id,
+            "code": code,
+            "title": title,
+            "category": category,
+            "brand": brand,
+            "price_gremio": price_gremio,
+            "price_retail": price_retail,
+            "stock": stock,
+            "updated_at": now_str
+        }
+    finally:
+        conn.close()
+
+def delete_gremio_price_item(item_id: int) -> bool:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM gremio_price_list WHERE id = ?", (item_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        conn.close()
+
 
 

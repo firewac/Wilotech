@@ -68,3 +68,35 @@ class LoginTestResponse(BaseModel):
     success: bool
     message: str
     cookies_saved: bool = False
+
+# --- MODELOS SECTOR GREMIOS ---
+
+class GremioRegisterRequest(BaseModel):
+    name: str
+    email: str
+    phone: Optional[str] = ""
+    password: str
+
+class GremioLoginRequest(BaseModel):
+    email: str
+    password: str
+
+class GremioUserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    phone: Optional[str] = ""
+    status: str = "active"
+    created_at: str
+
+class GremioPriceItem(BaseModel):
+    id: Optional[int] = None
+    code: Optional[str] = ""
+    title: str
+    category: Optional[str] = "General"
+    brand: Optional[str] = ""
+    price_gremio: float
+    price_retail: Optional[float] = 0.0
+    stock: Optional[str] = "Disponible"
+    updated_at: Optional[str] = ""
+

@@ -211,6 +211,15 @@
         <i data-lucide="users" class="w-4 h-4 flex-shrink-0"></i>
         <span>5. CLIENTES</span>
       </button>
+
+      <button 
+        id="tab-btn-gremios"
+        onclick="switchAdminTab('gremios')" 
+        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
+      >
+        <i data-lucide="shield-check" class="w-4 h-4 flex-shrink-0 text-[#00f5a0]"></i>
+        <span>6. GREMIOS & TARIFARIO</span>
+      </button>
     </div>
 
     <!-- PESTAÑA 1: LISTADO DE REPARACIONES Y CAMBIO DE ESTADOS -->
@@ -869,6 +878,175 @@
       </div>
     </section>
 
+    <!-- PESTAÑA 6: GESTIÓN DE GREMIOS Y LISTA DE PRECIOS -->
+    <section id="pane-gremios" class="admin-pane hidden space-y-6">
+      <!-- TARIFARIO GREMIOS -->
+      <div class="glass-panel p-6 rounded-2xl border border-[#00f5a0]/30 space-y-5 bg-[#05070d]/90">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#00f5a0] animate-pulse"></span>
+              <h3 class="font-brand text-lg font-black text-white">GESTIÓN DE LISTA DE PRECIOS PARA GREMIOS</h3>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Configura las tarifas exclusivas, precios sugeridos al público y stock que verán los gremios registrados.</p>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="openAddGremioItemModal()" class="py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#00f5a0] to-[#00d2ff] text-slate-950 font-brand font-black text-xs uppercase tracking-wider hover:opacity-95 transition-all shadow-lg shadow-[#00f5a0]/20 flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>NUEVO REPUESTO / SERVICIO</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- FILTRO ADMIN LISTA DE PRECIOS -->
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
+            <input type="text" id="admin-gremio-search" oninput="filterAdminGremioPriceTable()" placeholder="Buscar por código, título o marca..." class="w-full pl-9 pr-4 py-2 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00f5a0]">
+          </div>
+          <select id="admin-gremio-cat-filter" onchange="filterAdminGremioPriceTable()" class="py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+            <option value="todas">Todas las Categorías</option>
+            <option value="Módulos & Pantallas">Módulos & Pantallas</option>
+            <option value="Baterías">Baterías</option>
+            <option value="Conectores y Pines">Conectores y Pines</option>
+            <option value="Flex & Carga">Flex & Carga</option>
+            <option value="Cámaras">Cámaras</option>
+            <option value="Glass & Refurbish">Glass & Refurbish</option>
+            <option value="Servicios de Laboratorio">Servicios de Laboratorio</option>
+            <option value="Software & Desbloqueos">Software & Desbloqueos</option>
+          </select>
+        </div>
+
+        <!-- TABLA EDITABLE DE PRECIOS -->
+        <div class="overflow-x-auto border border-slate-800 rounded-xl bg-[#05070d]">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-[#0a101c] text-[11px] font-brand font-bold text-[#00f5a0] uppercase tracking-wider border-b border-slate-800">
+                <th class="py-3 px-3.5">SKU / Código</th>
+                <th class="py-3 px-3.5">Título / Repuesto / Servicio</th>
+                <th class="py-3 px-3.5">Categoría</th>
+                <th class="py-3 px-3.5">Marca</th>
+                <th class="py-3 px-3.5 text-right">Precio Gremio</th>
+                <th class="py-3 px-3.5 text-right">Precio Público Ref.</th>
+                <th class="py-3 px-3.5 text-center">Stock</th>
+                <th class="py-3 px-3.5 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="admin-gremio-price-tbody" class="divide-y divide-slate-800 text-slate-300">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CUENTAS REGISTRADAS DE GREMIOS -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-5 bg-[#05070d]/90">
+        <div>
+          <h3 class="font-brand text-lg font-black text-white flex items-center gap-2">
+            <i data-lucide="users" class="w-5 h-5 text-[#00d2ff]"></i>
+            <span>CUENTAS Y GREMIOS REGISTRADOS</span>
+          </h3>
+          <p class="text-xs text-slate-400 mt-1">Supervisa las cuentas que se han registrado con email y contraseña para acceder al portal.</p>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-800 rounded-xl bg-[#05070d]">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-[#0a101c] text-[11px] font-brand font-bold text-[#00d2ff] uppercase tracking-wider border-b border-slate-800">
+                <th class="py-3 px-3.5">ID</th>
+                <th class="py-3 px-3.5">Nombre / Taller</th>
+                <th class="py-3 px-3.5">Email de Acceso</th>
+                <th class="py-3 px-3.5">Teléfono / WhatsApp</th>
+                <th class="py-3 px-3.5">Fecha Registro</th>
+                <th class="py-3 px-3.5 text-center">Estado</th>
+                <th class="py-3 px-3.5 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="admin-gremio-users-tbody" class="divide-y divide-slate-800 text-slate-300">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODAL PARA AGREGAR / EDITAR ÍTEM DE LISTA DE GREMIO -->
+    <div id="gremio-item-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="glass-panel max-w-lg w-full p-6 rounded-2xl border border-[#00f5a0]/40 bg-[#05070d] space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 id="gremio-modal-title" class="font-brand font-bold text-base text-white">NUEVO ÍTEM DE GREMIO</h3>
+          <button onclick="closeGremioItemModal()" class="text-slate-400 hover:text-white p-1">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <form id="gremio-modal-form" onsubmit="saveGremioItemModal(event)" class="space-y-3">
+          <input type="hidden" id="gremio-modal-id">
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-brand font-bold text-slate-300 uppercase mb-1">SKU / Código</label>
+              <input type="text" id="gremio-modal-code" placeholder="Ej: MOD-IPH11" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+            </div>
+            <div>
+              <label class="block text-[10px] font-brand font-bold text-slate-300 uppercase mb-1">Marca</label>
+              <input type="text" id="gremio-modal-brand" placeholder="Ej: Apple / Samsung" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-brand font-bold text-slate-300 uppercase mb-1">Título / Nombre del Repuesto o Servicio *</label>
+            <input type="text" id="gremio-modal-item-title" required placeholder="Ej: Módulo Pantalla iPhone 11 Genuine OLED" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-brand font-bold text-slate-300 uppercase mb-1">Categoría</label>
+            <select id="gremio-modal-category" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+              <option value="Módulos & Pantallas">Módulos & Pantallas</option>
+              <option value="Baterías">Baterías</option>
+              <option value="Conectores y Pines">Conectores y Pines</option>
+              <option value="Flex & Carga">Flex & Carga</option>
+              <option value="Cámaras">Cámaras</option>
+              <option value="Glass & Refurbish">Glass & Refurbish</option>
+              <option value="Servicios de Laboratorio">Servicios de Laboratorio</option>
+              <option value="Software & Desbloqueos">Software & Desbloqueos</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-brand font-bold text-[#00f5a0] uppercase mb-1">Precio Gremio ($) *</label>
+              <input type="number" id="gremio-modal-price-gremio" required min="0" step="100" placeholder="28500" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+            </div>
+            <div>
+              <label class="block text-[10px] font-brand font-bold text-slate-400 uppercase mb-1">Precio Público Sugerido ($)</label>
+              <input type="number" id="gremio-modal-price-retail" min="0" step="100" placeholder="42000" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-brand font-bold text-slate-300 uppercase mb-1">Estado de Stock</label>
+            <select id="gremio-modal-stock" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+              <option value="Disponible">Disponible</option>
+              <option value="Poco Stock">Poco Stock</option>
+              <option value="Consultar">Consultar</option>
+              <option value="Sin Stock">Sin Stock</option>
+            </select>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+            <button type="button" onclick="closeGremioItemModal()" class="py-2 px-4 rounded-xl border border-slate-700 text-xs font-brand font-bold text-slate-300">
+              CANCELAR
+            </button>
+            <button type="submit" class="py-2 px-5 rounded-xl bg-[#00f5a0] text-slate-950 font-brand font-black text-xs uppercase hover:bg-[#00f5a0]/90">
+              GUARDAR ÍTEM
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
   </main>
 
   <!-- SCRIPTS -->
@@ -914,6 +1092,7 @@
       if (tabName === 'pricing') initPricingManager();
       if (tabName === 'stock') renderStockTable();
       if (tabName === 'customers') renderCustomersTable();
+      if (tabName === 'gremios') initGremiosAdmin();
     }
 
     // 1. MÉTRICAS
@@ -2591,5 +2770,227 @@
 
     </div>
   </div>
+
+  <!-- LÓGICA DE GESTIÓN DE GREMIOS Y TARIFARIO -->
+  <script>
+    let adminGremioItems = [];
+
+    async function initGremiosAdmin() {
+      await loadAdminGremioPriceList();
+      await loadAdminGremioUsers();
+    }
+
+    async function loadAdminGremioPriceList() {
+      const tbody = document.getElementById("admin-gremio-price-tbody");
+      if (!tbody) return;
+      tbody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-slate-500">Cargando tarifario de gremios...</td></tr>`;
+
+      try {
+        const resp = await fetch("/api/gremios/price-list");
+        const items = await resp.json();
+        adminGremioItems = Array.isArray(items) ? items : [];
+        renderAdminGremioPriceTable(adminGremioItems);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-rose-400">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    function filterAdminGremioPriceTable() {
+      const q = (document.getElementById("admin-gremio-search")?.value || "").trim().toLowerCase();
+      const cat = document.getElementById("admin-gremio-cat-filter")?.value || "todas";
+
+      const filtered = adminGremioItems.filter(item => {
+        const matchQ = !q ||
+          (item.title && item.title.toLowerCase().includes(q)) ||
+          (item.code && item.code.toLowerCase().includes(q)) ||
+          (item.brand && item.brand.toLowerCase().includes(q));
+
+        const matchCat = cat === "todas" || !cat || (item.category && item.category === cat);
+        return matchQ && matchCat;
+      });
+
+      renderAdminGremioPriceTable(filtered);
+    }
+
+    function renderAdminGremioPriceTable(items) {
+      const tbody = document.getElementById("admin-gremio-price-tbody");
+      if (!tbody) return;
+
+      if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-slate-500">No hay repuestos registrados en el tarifario.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => `
+        <tr class="hover:bg-[#0a101c]">
+          <td class="py-2.5 px-3.5 font-mono text-xs text-slate-400">${item.code || 'S/C'}</td>
+          <td class="py-2.5 px-3.5 font-bold text-white">${item.title}</td>
+          <td class="py-2.5 px-3.5 text-xs text-[#00d2ff]">${item.category || 'General'}</td>
+          <td class="py-2.5 px-3.5 text-xs text-slate-300">${item.brand || '-'}</td>
+          <td class="py-2.5 px-3.5 text-right font-brand font-black text-[#00f5a0] text-sm">
+            $${(item.price_gremio || 0).toLocaleString("es-AR")}
+          </td>
+          <td class="py-2.5 px-3.5 text-right font-brand text-slate-400 text-xs">
+            $${(item.price_retail || 0).toLocaleString("es-AR")}
+          </td>
+          <td class="py-2.5 px-3.5 text-center">
+            <span class="py-0.5 px-2 rounded-full text-[10px] font-bold ${item.stock === 'Disponible' ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30' : 'bg-amber-950/60 text-amber-400 border border-amber-500/30'}">
+              ${item.stock || 'Disponible'}
+            </span>
+          </td>
+          <td class="py-2.5 px-3.5 text-right space-x-1">
+            <button onclick="editGremioItemModal(${item.id})" class="py-1 px-2.5 rounded-lg border border-slate-700 hover:border-[#00f5a0] text-xs font-bold text-slate-300">
+              EDITAR
+            </button>
+            <button onclick="deleteGremioItem(${item.id})" class="py-1 px-2.5 rounded-lg border border-rose-500/40 hover:bg-rose-900/40 text-xs font-bold text-rose-300">
+              ELIMINAR
+            </button>
+          </td>
+        </tr>
+      `).join("");
+      if (window.lucide) lucide.createIcons();
+    }
+
+    async function loadAdminGremioUsers() {
+      const tbody = document.getElementById("admin-gremio-users-tbody");
+      if (!tbody) return;
+
+      tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">Cargando gremios registrados...</td></tr>`;
+
+      try {
+        const resp = await fetch("/api/gremios/users");
+        const users = await resp.json();
+
+        if (!Array.isArray(users) || users.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">No hay gremios registrados aún.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = users.map(u => `
+          <tr class="hover:bg-[#0a101c]">
+            <td class="py-2.5 px-3.5 font-mono text-xs text-slate-400">#${u.id}</td>
+            <td class="py-2.5 px-3.5 font-bold text-white">${u.name}</td>
+            <td class="py-2.5 px-3.5 text-xs text-[#00d2ff]">${u.email}</td>
+            <td class="py-2.5 px-3.5 text-xs text-slate-300">${u.phone || '-'}</td>
+            <td class="py-2.5 px-3.5 text-xs text-slate-400">${u.created_at ? new Date(u.created_at).toLocaleDateString("es-AR") : '-'}</td>
+            <td class="py-2.5 px-3.5 text-center">
+              <span class="py-0.5 px-2 rounded-full text-[10px] font-bold ${u.status === 'active' ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30' : 'bg-rose-950/60 text-rose-400 border border-rose-500/30'}">
+                ${u.status === 'active' ? 'ACTIVO' : 'SUSPENDIDO'}
+              </span>
+            </td>
+            <td class="py-2.5 px-3.5 text-right">
+              <button onclick="toggleGremioUserStatus(${u.id}, '${u.status}')" class="py-1 px-3 rounded-lg border text-xs font-bold ${u.status === 'active' ? 'border-amber-500/40 text-amber-300 hover:bg-amber-950/40' : 'border-emerald-500/40 text-emerald-300 hover:bg-emerald-950/40'}">
+                ${u.status === 'active' ? 'SUSPENDER' : 'ACTIVAR'}
+              </button>
+            </td>
+          </tr>
+        `).join("");
+        if (window.lucide) lucide.createIcons();
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-rose-400">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function toggleGremioUserStatus(userId, currentStatus) {
+      const nextStatus = currentStatus === 'active' ? 'disabled' : 'active';
+      try {
+        const resp = await fetch(`/api/gremios/users/${userId}/status`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: nextStatus })
+        });
+        if (resp.ok) {
+          if (typeof showToast === 'function') showToast(`Estado de cuenta actualizado a '${nextStatus}'`, "success");
+          loadAdminGremioUsers();
+        }
+      } catch (err) {
+        if (typeof showToast === 'function') showToast(`Error: ${err.message}`, "error");
+      }
+    }
+
+    function openAddGremioItemModal() {
+      document.getElementById("gremio-modal-id").value = "";
+      document.getElementById("gremio-modal-code").value = "";
+      document.getElementById("gremio-modal-item-title").value = "";
+      document.getElementById("gremio-modal-brand").value = "";
+      document.getElementById("gremio-modal-category").value = "Módulos & Pantallas";
+      document.getElementById("gremio-modal-price-gremio").value = "";
+      document.getElementById("gremio-modal-price-retail").value = "";
+      document.getElementById("gremio-modal-stock").value = "Disponible";
+      document.getElementById("gremio-modal-title").textContent = "NUEVO ÍTEM DE GREMIO";
+
+      document.getElementById("gremio-item-modal").classList.remove("hidden");
+    }
+
+    function editGremioItemModal(itemId) {
+      const item = adminGremioItems.find(i => i.id === itemId);
+      if (!item) return;
+
+      document.getElementById("gremio-modal-id").value = item.id;
+      document.getElementById("gremio-modal-code").value = item.code || "";
+      document.getElementById("gremio-modal-item-title").value = item.title || "";
+      document.getElementById("gremio-modal-brand").value = item.brand || "";
+      document.getElementById("gremio-modal-category").value = item.category || "Módulos & Pantallas";
+      document.getElementById("gremio-modal-price-gremio").value = item.price_gremio || 0;
+      document.getElementById("gremio-modal-price-retail").value = item.price_retail || 0;
+      document.getElementById("gremio-modal-stock").value = item.stock || "Disponible";
+      document.getElementById("gremio-modal-title").textContent = "EDITAR ÍTEM DE GREMIO";
+
+      document.getElementById("gremio-item-modal").classList.remove("hidden");
+    }
+
+    function closeGremioItemModal() {
+      document.getElementById("gremio-item-modal").classList.add("hidden");
+    }
+
+    async function saveGremioItemModal(event) {
+      event.preventDefault();
+      const itemId = document.getElementById("gremio-modal-id").value;
+      const code = document.getElementById("gremio-modal-code").value.trim();
+      const title = document.getElementById("gremio-modal-item-title").value.trim();
+      const brand = document.getElementById("gremio-modal-brand").value.trim();
+      const category = document.getElementById("gremio-modal-category").value;
+      const price_gremio = parseFloat(document.getElementById("gremio-modal-price-gremio").value) || 0;
+      const price_retail = parseFloat(document.getElementById("gremio-modal-price-retail").value) || 0;
+      const stock = document.getElementById("gremio-modal-stock").value;
+
+      const payload = { code, title, brand, category, price_gremio, price_retail, stock };
+      if (itemId) payload.id = parseInt(itemId);
+
+      try {
+        const url = itemId ? `/api/gremios/price-list/${itemId}` : `/api/gremios/price-list`;
+        const method = itemId ? "PUT" : "POST";
+
+        const resp = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || "Error al guardar ítem");
+
+        if (typeof showToast === 'function') showToast(data.message || "Ítem de gremio guardado", "success");
+        closeGremioItemModal();
+        loadAdminGremioPriceList();
+      } catch (err) {
+        if (typeof showToast === 'function') showToast(err.message, "error");
+      }
+    }
+
+    async function deleteGremioItem(itemId) {
+      if (!confirm("¿Seguro que deseas eliminar este ítem del tarifario de gremios?")) return;
+
+      try {
+        const resp = await fetch(`/api/gremios/price-list/${itemId}`, { method: "DELETE" });
+        if (resp.ok) {
+          if (typeof showToast === 'function') showToast("Ítem eliminado del tarifario", "success");
+          loadAdminGremioPriceList();
+        }
+      } catch (err) {
+        if (typeof showToast === 'function') showToast(err.message, "error");
+      }
+    }
+  </script>
 </body>
 </html>

@@ -19,12 +19,23 @@ from backend.database.db import (
     upsert_repair_ticket,
     list_repair_tickets,
     get_repair_ticket_by_id,
-    delete_repair_ticket_by_id
+    delete_repair_ticket_by_id,
+    create_gremio_user,
+    get_gremio_user_by_email,
+    list_gremio_users,
+    update_gremio_user_status,
+    list_gremio_price_items,
+    upsert_gremio_price_item,
+    delete_gremio_price_item
 )
 from backend.database.models import (
     DistributorConfig,
     DistributorResponse,
-    SearchResponse
+    SearchResponse,
+    GremioRegisterRequest,
+    GremioLoginRequest,
+    GremioUserResponse,
+    GremioPriceItem
 )
 from backend.services.currency_service import CurrencyService
 from backend.services.imei_service import IMEIService
@@ -101,6 +112,117 @@ async def comparador_page():
     if comp_file.exists():
         return FileResponse(str(comp_file))
     raise HTTPException(status_code=404, detail="Página comparador.html no encontrada")
+
+@app.get("/gremios.html")
+@app.get("/gremios")
+async def gremios_page():
+    gremios_file = STATIC_DIR / "gremios.html"
+    if gremios_file.exists():
+        return FileResponse(str(gremios_file))
+    raise HTTPException(status_code=404, detail="Página gremios.html no encontrada")
+
+
+# --- SECTOR GREMIOS & PRECIOS ---
+
+@app.post("/api/gremios/register")
+async def gremios_register_endpoint(req: GremioRegisterRequest):
+    if not req.email or not req.password or not req.name:
+        raise HTTPException(status_code=400, detail="Nombre, email y contraseña son obligatorios")
+    if len(req.password.strip()) < 4:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 4 caracteres")
+    
+    existing = get_gremio_user_by_email(req.email)
+    if existing:
+        raise HTTPException(status_code=400, detail="El correo electrónico ya se encuentra registrado.")
+    
+    user = create_gremio_user(
+        name=req.name,
+        email=req.email,
+        phone=req.phone or "",
+        password_plain=req.password
+    )
+    if not user:
+        raise HTTPException(status_code=500, detail="No se pudo crear la cuenta de gremio")
+    
+    return {
+        "status": "ok",
+        "message": "Registro exitoso. Ya puedes acceder al Sector de Gremios.",
+        "user": user
+    }
+
+@app.post("/api/gremios/login")
+async def gremios_login_endpoint(req: GremioLoginRequest):
+    if not req.email or not req.password:
+        raise HTTPException(status_code=400, detail="Email y contraseña son requeridos")
+    
+    user_data = get_gremio_user_by_email(req.email)
+    if not user_data:
+        raise HTTPException(status_code=401, detail="Correo electrónico o contraseña incorrectos")
+    
+    if user_data.get("password_plain") != req.password.strip():
+        raise HTTPException(status_code=401, detail="Correo electrónico o contraseña incorrectos")
+    
+    if user_data.get("status") == "disabled":
+        raise HTTPException(status_code=403, detail="Tu cuenta de gremio ha sido desactivada por la administración del taller")
+    
+    user_info = {
+        "id": user_data["id"],
+        "name": user_data["name"],
+        "email": user_data["email"],
+        "phone": user_data["phone"],
+        "status": user_data["status"],
+        "created_at": user_data["created_at"]
+    }
+    
+    return {
+        "status": "ok",
+        "message": f"Bienvenido/a {user_data['name']}",
+        "user": user_info
+    }
+
+@app.get("/api/gremios/users")
+async def gremios_list_users_endpoint():
+    return list_gremio_users()
+
+@app.put("/api/gremios/users/{user_id}/status")
+async def gremios_update_user_status_endpoint(user_id: int, payload: Dict[str, Any]):
+    new_status = payload.get("status", "active")
+    if new_status not in ["active", "disabled"]:
+        raise HTTPException(status_code=400, detail="Estado no válido")
+    success = update_gremio_user_status(user_id, new_status)
+    if not success:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return {"status": "ok", "message": f"Estado actualizado a '{new_status}'"}
+
+@app.get("/api/gremios/price-list")
+async def gremios_get_price_list_endpoint(
+    q: Optional[str] = Query(None, description="Búsqueda por código, título o marca"),
+    category: Optional[str] = Query(None, description="Categoría de repuesto/servicio")
+):
+    return list_gremio_price_items(query=q, category=category)
+
+@app.post("/api/gremios/price-list")
+async def gremios_save_price_item_endpoint(item: Dict[str, Any]):
+    if not item.get("title") or item.get("price_gremio") is None:
+        raise HTTPException(status_code=400, detail="Título y Precio Gremio son obligatorios")
+    saved = upsert_gremio_price_item(item)
+    return {"status": "ok", "message": f"Ítem '{saved['title']}' guardado.", "item": saved}
+
+@app.put("/api/gremios/price-list/{item_id}")
+async def gremios_update_price_item_endpoint(item_id: int, item: Dict[str, Any]):
+    item["id"] = item_id
+    if not item.get("title") or item.get("price_gremio") is None:
+        raise HTTPException(status_code=400, detail="Título y Precio Gremio son obligatorios")
+    saved = upsert_gremio_price_item(item)
+    return {"status": "ok", "message": f"Ítem '{saved['title']}' actualizado.", "item": saved}
+
+@app.delete("/api/gremios/price-list/{item_id}")
+async def gremios_delete_price_item_endpoint(item_id: int):
+    deleted = delete_gremio_price_item(item_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Ítem no encontrado")
+    return {"status": "ok", "message": "Ítem eliminado de la lista de gremios"}
+
 
 
 # --- DISTRIBUIDORAS ---

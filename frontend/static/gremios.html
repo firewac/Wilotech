@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sector Gremios | WILOTECH Laboratorio Técnico</title>
+  <meta name="description" content="Portal exclusivo para gremios, gremialistas y servicios técnicos asociados. Buscador de órdenes, comparador de repuestos y tarifario mayorista.">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              cyan: '#00d2ff',
+              green: '#00f5a0',
+              dark: '#05070d',
+              card: 'rgba(10, 16, 28, 0.85)'
+            }
+          },
+          fontFamily: {
+            brand: ['Orbitron', 'sans-serif'],
+            tech: ['Rajdhani', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- SheetJS para exportar Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="lab-grid-bg antialiased text-slate-200 min-h-screen flex flex-col font-tech selection:bg-[#00f5a0] selection:text-slate-950">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- ENCABEZADO PRINCIPAL -->
+  <header class="sticky top-0 z-40 w-full glass-panel border-b border-[#00f5a0]/25 bg-[#05070d]/95 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4">
+      
+      <!-- Marca WILOTECH -->
+      <a href="index.html" class="flex items-center gap-3.5 group">
+        <div class="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-[#00f5a0]/60 shadow-lg shadow-[#00f5a0]/25 group-hover:scale-105 transition-all duration-300 shrink-0">
+          <img src="assets/logo.png" alt="Logo WILOTECH" class="w-full h-full object-cover">
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="font-brand text-2xl font-black tracking-wider text-white">
+              WILO<span class="text-[#00f5a0]">TECH</span>
+            </span>
+            <span class="font-brand text-[9px] font-bold uppercase tracking-wider bg-[#00f5a0]/20 text-[#00f5a0] border border-[#00f5a0]/40 px-2 py-0.5 rounded shadow-sm">
+              PORTAL GREMIOS
+            </span>
+          </div>
+          <p class="font-brand text-[8px] tracking-[0.2em] text-[#00d2ff] uppercase">
+            ACCESO EXCLUSIVO PARA SERVICIOS TÉCNICOS & TALLERES
+          </p>
+        </div>
+      </a>
+
+      <!-- Botones de Navegación Rápida -->
+      <div class="flex items-center gap-2.5">
+        <a href="index.html" class="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl border border-slate-700 bg-[#0a101c] hover:border-[#00f5a0] hover:text-[#00f5a0] text-xs font-brand font-bold text-slate-300 transition-all">
+          <i data-lucide="home" class="w-4 h-4 text-[#00d2ff]"></i>
+          <span class="hidden sm:inline">WEB PÚBLICA</span>
+        </a>
+
+        <a href="admin.html" class="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl border border-[#00f5a0]/40 bg-[#0a101c] hover:border-[#00f5a0] text-xs font-brand font-bold text-slate-300 transition-all">
+          <i data-lucide="sliders" class="w-4 h-4 text-[#00f5a0]"></i>
+          <span class="hidden sm:inline">PANEL TALLER</span>
+        </a>
+
+        <div id="user-header-badge" class="hidden flex items-center gap-2 pl-2 border-l border-slate-800">
+          <span id="user-name-span" class="font-brand text-xs font-bold text-[#00f5a0]"></span>
+          <button onclick="logoutGremio()" class="py-1.5 px-3 rounded-lg border border-rose-500/40 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-xs font-bold transition-all flex items-center gap-1" title="Cerrar sesión">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            <span>SALIR</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- =========================================================================
+         1. VISTA DE AUTENTICACIÓN (LOGIN Y REGISTRO) - SE MUESTRA SI NO ESTÁ LOGUEADO
+         ========================================================================= -->
+    <section id="auth-section" class="max-w-md mx-auto my-8">
+      
+      <!-- CARD DE INICIO DE SESIÓN -->
+      <div id="login-card" class="glass-panel p-6 sm:p-8 rounded-2xl border border-[#00f5a0]/30 shadow-2xl shadow-[#00f5a0]/10 bg-[#05070d]/90">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 rounded-2xl bg-[#00f5a0]/10 border border-[#00f5a0]/40 flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[#00f5a0]/20">
+            <i data-lucide="lock" class="w-8 h-8 text-[#00f5a0]"></i>
+          </div>
+          <h1 class="font-brand text-2xl font-black text-white">ACCESO GREMIOS</h1>
+          <p class="text-sm text-slate-400 mt-1">Ingresá con tu correo electrónico y contraseña registrados.</p>
+        </div>
+
+        <form id="gremio-login-form" onsubmit="handleGremioLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold font-brand text-slate-300 uppercase tracking-wider mb-1.5">Correo Electrónico</label>
+            <div class="relative">
+              <i data-lucide="mail" class="w-5 h-5 absolute left-3 top-3 text-slate-500"></i>
+              <input type="email" id="login-email" required placeholder="tu-taller@ejemplo.com" class="w-full pl-10 pr-4 py-2.5 bg-[#0a101c] border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00f5a0] transition-colors">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold font-brand text-slate-300 uppercase tracking-wider mb-1.5">Contraseña</label>
+            <div class="relative">
+              <i data-lucide="key" class="w-5 h-5 absolute left-3 top-3 text-slate-500"></i>
+              <input type="password" id="login-password" required placeholder="••••••••" class="w-full pl-10 pr-4 py-2.5 bg-[#0a101c] border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00f5a0] transition-colors">
+            </div>
+          </div>
+
+          <button type="submit" id="btn-login-submit" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#00d2ff] to-[#00f5a0] hover:opacity-95 text-slate-950 font-brand font-black text-sm uppercase tracking-wider shadow-lg shadow-[#00f5a0]/25 transition-all hover:scale-[1.02] flex items-center justify-center gap-2">
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span>INGRESAR AL SECTOR GREMIOS</span>
+          </button>
+        </form>
+
+        <div class="mt-6 pt-6 border-t border-slate-800 text-center">
+          <p class="text-xs text-slate-400">¿Todavía no tenés cuenta de gremio o servicio técnico?</p>
+          <button onclick="toggleAuthView('register')" class="mt-2 text-xs font-brand font-bold text-[#00f5a0] hover:underline flex items-center justify-center gap-1 mx-auto">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span>CREAR CUENTA CON MAIL Y CONTRASEÑA</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- CARD DE REGISTRO DE CUENTA -->
+      <div id="register-card" class="hidden glass-panel p-6 sm:p-8 rounded-2xl border border-[#00d2ff]/40 shadow-2xl shadow-[#00d2ff]/10 bg-[#05070d]/90">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 rounded-2xl bg-[#00d2ff]/10 border border-[#00d2ff]/40 flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[#00d2ff]/20">
+            <i data-lucide="shield-check" class="w-8 h-8 text-[#00d2ff]"></i>
+          </div>
+          <h1 class="font-brand text-2xl font-black text-white">REGISTRO DE GREMIO</h1>
+          <p class="text-sm text-slate-400 mt-1">Completá tus datos para obtener acceso a la lista de precios mayorista.</p>
+        </div>
+
+        <form id="gremio-register-form" onsubmit="handleGremioRegister(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold font-brand text-slate-300 uppercase tracking-wider mb-1.5">Nombre de Taller o Técnico</label>
+            <div class="relative">
+              <i data-lucide="user" class="w-5 h-5 absolute left-3 top-3 text-slate-500"></i>
+              <input type="text" id="reg-name" required placeholder="Ej. Taller ElectroFix / Juan Pérez" class="w-full pl-10 pr-4 py-2.5 bg-[#0a101c] border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00d2ff] transition-colors">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold font-brand text-slate-300 uppercase tracking-wider mb-1.5">Teléfono / WhatsApp</label>
+            <div class="relative">
+              <i data-lucide="phone" class="w-5 h-5 absolute left-3 top-3 text-slate-500"></i>
+              <input type="tel" id="reg-phone" placeholder="Ej. 2235914163" class="w-full pl-10 pr-4 py-2.5 bg-[#0a101c] border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00d2ff] transition-colors">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold font-brand text-slate-300 uppercase tracking-wider mb-1.5">Correo Electrónico (Tu Mail de Acceso)</label>
+            <div class="relative">
+              <i data-lucide="mail" class="w-5 h-5 absolute left-3 top-3 text-slate-500"></i>
+              <input type="email" id="reg-email" required placeholder="gremio@ejemplo.com" class="w-full pl-10 pr-4 py-2.5 bg-[#0a101c] border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00d2ff] transition-colors">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold font-brand text-slate-300 uppercase tracking-wider mb-1.5">Contraseña</label>
+            <div class="relative">
+              <i data-lucide="key" class="w-5 h-5 absolute left-3 top-3 text-slate-500"></i>
+              <input type="password" id="reg-password" minlength="4" required placeholder="Crea una contraseña segura" class="w-full pl-10 pr-4 py-2.5 bg-[#0a101c] border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00d2ff] transition-colors">
+            </div>
+          </div>
+
+          <button type="submit" id="btn-reg-submit" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#00f5a0] to-[#00d2ff] hover:opacity-95 text-slate-950 font-brand font-black text-sm uppercase tracking-wider shadow-lg shadow-[#00d2ff]/25 transition-all hover:scale-[1.02] flex items-center justify-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>CREAR MI CUENTA DE GREMIO</span>
+          </button>
+        </form>
+
+        <div class="mt-6 pt-6 border-t border-slate-800 text-center">
+          <p class="text-xs text-slate-400">¿Ya tenés una cuenta registrada?</p>
+          <button onclick="toggleAuthView('login')" class="mt-2 text-xs font-brand font-bold text-[#00d2ff] hover:underline flex items-center justify-center gap-1 mx-auto">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>VOLVER AL INICIO DE SESIÓN</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         2. PANEL DE DASHBOARD PARA GREMIOS AUTENTICADOS (SE MUESTRA TRAS LOGUEARSE)
+         ========================================================================= -->
+    <section id="portal-section" class="hidden space-y-6">
+
+      <!-- HERO BANNER BIENVENIDA -->
+      <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-[#00f5a0]/30 bg-gradient-to-r from-[#05070d] via-[#0a101c] to-[#05070d] flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+        <div>
+          <div class="flex items-center gap-2 text-xs font-brand font-bold text-[#00f5a0] uppercase tracking-wider mb-1">
+            <span class="w-2 h-2 rounded-full bg-[#00f5a0] animate-pulse"></span>
+            <span>PORTAL GREMIAL ACTIVO</span>
+          </div>
+          <h2 class="font-brand text-xl sm:text-3xl font-black text-white">
+            ¡HOLA, <span id="portal-user-name" class="text-[#00f5a0]">GREMIO</span>!
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-300 mt-1">
+            Bienvenido al portal técnico de WILOTECH. Aquí tenés acceso al rastreador de órdenes, comparador mayorista y la lista de precios exclusiva.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="bg-[#0a101c] border border-slate-700 px-4 py-2 rounded-xl text-right">
+            <p class="text-[10px] font-brand text-slate-400 uppercase">Mail de Acceso</p>
+            <p id="portal-user-email" class="text-xs font-bold text-[#00d2ff]"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PESTAÑAS DEL PORTAL -->
+      <div class="flex items-center gap-2 border-b border-slate-800 overflow-x-auto pb-1 no-scrollbar">
+        <button id="gremio-tab-btn-orders" onclick="switchGremioTab('orders')" class="gremio-tab-btn py-3 px-5 border-b-2 border-[#00f5a0] text-[#00f5a0] font-brand font-bold text-xs uppercase tracking-wider flex items-center gap-2 whitespace-nowrap transition-all">
+          <i data-lucide="search" class="w-4 h-4"></i>
+          <span>1. BUSCADOR DE ÓRDENES</span>
+        </button>
+
+        <button id="gremio-tab-btn-comparator" onclick="switchGremioTab('comparator')" class="gremio-tab-btn py-3 px-5 border-b-2 border-transparent text-slate-400 hover:text-white font-brand font-bold text-xs uppercase tracking-wider flex items-center gap-2 whitespace-nowrap transition-all">
+          <i data-lucide="layers" class="w-4 h-4 text-[#00d2ff]"></i>
+          <span>2. COMPARADOR DE PRECIOS</span>
+        </button>
+
+        <button id="gremio-tab-btn-pricelist" onclick="switchGremioTab('pricelist')" class="gremio-tab-btn py-3 px-5 border-b-2 border-transparent text-slate-400 hover:text-white font-brand font-bold text-xs uppercase tracking-wider flex items-center gap-2 whitespace-nowrap transition-all">
+          <i data-lucide="tag" class="w-4 h-4 text-[#00f5a0]"></i>
+          <span>3. LISTA DE PRECIOS GREMIO</span>
+        </button>
+      </div>
+
+      <!-- CONTENIDO PESTAÑA 1: BUSCADOR DE ÓRDENES -->
+      <div id="gremio-pane-orders" class="gremio-pane space-y-6">
+        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-slate-800 bg-[#05070d]/90">
+          <h3 class="font-brand text-lg font-bold text-white mb-2 flex items-center gap-2">
+            <i data-lucide="file-search" class="w-5 h-5 text-[#00f5a0]"></i>
+            <span>Consultar Estado de Orden de Servicio / Reparación</span>
+          </h3>
+          <p class="text-xs text-slate-400 mb-4">Ingresá el Número de Orden (Ej: ORD-1001), DNI o Teléfono para consultar el diagnóstico y avance en vivo.</p>
+
+          <form onsubmit="searchGremioOrder(event)" class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+              <i data-lucide="hash" class="w-5 h-5 absolute left-3 top-3 text-slate-500"></i>
+              <input type="text" id="gremio-order-query" placeholder="Ej: ORD-1001 o DNI o Teléfono" required class="w-full pl-10 pr-4 py-2.5 bg-[#0a101c] border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00f5a0]">
+            </div>
+            <button type="submit" class="py-2.5 px-6 rounded-xl bg-[#00f5a0] text-slate-950 font-brand font-black text-xs uppercase tracking-wider hover:bg-[#00f5a0]/90 transition-all flex items-center justify-center gap-2">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              <span>BUSCAR ORDEN</span>
+            </button>
+          </form>
+        </div>
+
+        <div id="gremio-orders-results" class="space-y-4">
+          <div class="text-center py-10 border border-dashed border-slate-800 rounded-2xl bg-[#05070d]/50">
+            <i data-lucide="info" class="w-8 h-8 text-slate-600 mx-auto mb-2"></i>
+            <p class="text-xs text-slate-400">Ingresá un criterio de búsqueda arriba para consultar las órdenes ingresadas al taller.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENIDO PESTAÑA 2: COMPARADOR DE PRECIOS MAYORISTA -->
+      <div id="gremio-pane-comparator" class="gremio-pane hidden space-y-6">
+        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-slate-800 bg-[#05070d]/90">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 class="font-brand text-lg font-bold text-white flex items-center gap-2">
+                <i data-lucide="cpu" class="w-5 h-5 text-[#00d2ff]"></i>
+                <span>Buscador & Comparador de Repuestos Multidistribuidora</span>
+              </h3>
+              <p class="text-xs text-slate-400">Compara precios y stock en tiempo real entre Smart Supply, SoulFix, Grupo Armar, Tecnoprices y Catálogos Excel.</p>
+            </div>
+          </div>
+
+          <form onsubmit="searchGremioParts(event)" class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+              <i data-lucide="search" class="w-5 h-5 absolute left-3 top-3 text-slate-500"></i>
+              <input type="text" id="gremio-part-query" placeholder="Ej: Módulo iPhone 11, Batería A32, Display Moto G60" required class="w-full pl-10 pr-4 py-2.5 bg-[#0a101c] border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00d2ff]">
+            </div>
+            <button type="submit" id="btn-search-parts" class="py-2.5 px-6 rounded-xl bg-gradient-to-r from-[#00d2ff] to-[#00f5a0] text-slate-950 font-brand font-black text-xs uppercase tracking-wider hover:opacity-95 transition-all flex items-center justify-center gap-2">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              <span>COMPARAR PRECIOS</span>
+            </button>
+          </form>
+        </div>
+
+        <div id="gremio-comparator-results" class="space-y-4">
+          <div class="text-center py-10 border border-dashed border-slate-800 rounded-2xl bg-[#05070d]/50">
+            <i data-lucide="search" class="w-8 h-8 text-slate-600 mx-auto mb-2"></i>
+            <p class="text-xs text-slate-400">Ingresá el modelo o repuesto que buscás para comparar la mejor opción del mercado.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENIDO PESTAÑA 3: LISTA DE PRECIOS GREMIO -->
+      <div id="gremio-pane-pricelist" class="gremio-pane hidden space-y-6">
+        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-slate-800 bg-[#05070d]/90">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+            <div>
+              <h3 class="font-brand text-lg font-bold text-white flex items-center gap-2">
+                <i data-lucide="tag" class="w-5 h-5 text-[#00f5a0]"></i>
+                <span>Tarifario Exclusivo para Gremios y Servicios Técnicos</span>
+              </h3>
+              <p class="text-xs text-slate-400">Lista oficial de precios de repuestos y servicios fijada por WILOTECH Laboratorio.</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <button onclick="exportGremioPriceListExcel()" class="py-2 px-4 rounded-xl border border-[#00f5a0]/40 bg-[#00f5a0]/10 hover:bg-[#00f5a0]/20 text-[#00f5a0] font-brand font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>DESCARGAR EXCEL</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- FILTROS Y BÚSQUEDA EN LISTA -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="relative md:col-span-2">
+              <i data-lucide="filter" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
+              <input type="text" id="gremio-pricelist-search" oninput="filterGremioPriceTable()" placeholder="Filtrar en la lista (Ej: iPhone, Batería, Reballing)..." class="w-full pl-9 pr-4 py-2 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00f5a0]">
+            </div>
+
+            <select id="gremio-pricelist-category" onchange="filterGremioPriceTable()" class="py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+              <option value="todas">Todas las Categorías</option>
+              <option value="Módulos & Pantallas">Módulos & Pantallas</option>
+              <option value="Baterías">Baterías</option>
+              <option value="Conectores y Pines">Conectores y Pines</option>
+              <option value="Flex & Carga">Flex & Carga</option>
+              <option value="Cámaras">Cámaras</option>
+              <option value="Glass & Refurbish">Glass & Refurbish</option>
+              <option value="Servicios de Laboratorio">Servicios de Laboratorio</option>
+              <option value="Software & Desbloqueos">Software & Desbloqueos</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TABLA DE PRECIOS -->
+        <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl bg-[#05070d]">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr class="bg-[#0a101c] border-b border-slate-800 font-brand text-slate-400 text-[11px] uppercase tracking-wider">
+                  <th class="py-3 px-4">Código / SKU</th>
+                  <th class="py-3 px-4">Repuesto / Servicio</th>
+                  <th class="py-3 px-4">Categoría</th>
+                  <th class="py-3 px-4">Marca</th>
+                  <th class="py-3 px-4 text-right">Precio Gremio</th>
+                  <th class="py-3 px-4 text-right">Precio Público Ref.</th>
+                  <th class="py-3 px-4 text-center">Stock / Estado</th>
+                </tr>
+              </thead>
+              <tbody id="gremio-pricelist-tbody" class="divide-y divide-slate-800 text-slate-300">
+                <tr>
+                  <td colspan="7" class="py-8 text-center text-slate-500">Cargando lista de precios...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- PIE DE PÁGINA -->
+  <footer class="border-t border-slate-800 bg-[#05070d] py-6 mt-12">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 font-tech">
+      <p>© WILOTECH Laboratorio de Microelectrónica - Portal de Servicios para Gremios Técnicos.</p>
+    </div>
+  </footer>
+
+  <!-- SCRIPT LÓGICA DE GREMIOS -->
+  <script src="js/gremios.js"></script>
+</body>
+</html>
