@@ -26,7 +26,10 @@ from backend.database.db import (
     update_gremio_user_status,
     list_gremio_price_items,
     upsert_gremio_price_item,
-    delete_gremio_price_item
+    delete_gremio_price_item,
+    verify_admin_login,
+    reset_admin_password_by_email,
+    get_system_setting
 )
 from backend.database.models import (
     DistributorConfig,
@@ -222,6 +225,50 @@ async def gremios_delete_price_item_endpoint(item_id: int):
     if not deleted:
         raise HTTPException(status_code=404, detail="Ítem no encontrado")
     return {"status": "ok", "message": "Ítem eliminado de la lista de gremios"}
+
+
+# --- AUTENTICACIÓN Y RECUPERACIÓN DE PANEL DE TALLER ---
+
+@app.post("/api/admin/login")
+async def admin_login_endpoint(payload: Dict[str, Any]):
+    username = payload.get("username", "")
+    password = payload.get("password", "")
+    
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Usuario/email y contraseña son requeridos")
+        
+    if verify_admin_login(username, password):
+        return {"status": "ok", "message": "Inicio de sesión de taller correcto"}
+    raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+
+@app.post("/api/admin/recover-verify")
+async def admin_recover_verify_endpoint(payload: Dict[str, Any]):
+    email = (payload.get("email") or "").strip().lower()
+    admin_email = get_system_setting("admin_email", "wil_18_22@hotmail.com").lower()
+    
+    if email in [admin_email, "wil_18_22@hotmail.com"]:
+        return {
+            "status": "ok",
+            "message": "Correo electrónico verificado. Autorizado para restablecer la contraseña.",
+            "authorized_email": "wil_18_22@hotmail.com"
+        }
+    raise HTTPException(status_code=404, detail="El correo ingresado no coincide con el correo autorizado del taller (wil_18_22@hotmail.com).")
+
+@app.post("/api/admin/reset-password")
+async def admin_reset_password_endpoint(payload: Dict[str, Any]):
+    email = (payload.get("email") or "").strip().lower()
+    new_password = (payload.get("new_password") or "").strip()
+    
+    if not email or not new_password:
+        raise HTTPException(status_code=400, detail="Correo y nueva contraseña son obligatorios")
+    if len(new_password) < 4:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 4 caracteres")
+        
+    success = reset_admin_password_by_email(email, new_password)
+    if success:
+        return {"status": "ok", "message": "Contraseña del Panel de Taller actualizada exitosamente."}
+    raise HTTPException(status_code=403, detail="No autorizado para restablecer la contraseña del taller.")
+
 
 
 

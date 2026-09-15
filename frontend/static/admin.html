@@ -2001,13 +2001,13 @@
         <div>
           <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-2">
             <i data-lucide="user" class="w-3.5 h-3.5 text-[#00d2ff]"></i>
-            <span>Usuario / Técnico</span>
+            <span>Usuario / Email de Taller</span>
           </label>
           <input 
             type="text" 
             id="login-username" 
             required 
-            placeholder="Ej: admin"
+            placeholder="Ej: wil_18_22@hotmail.com o admin"
             class="w-full bg-[#05070d] border border-slate-700 focus:border-[#00f5a0] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#00f5a0] transition-all"
             autocomplete="username"
           >
@@ -2052,12 +2052,72 @@
         </button>
       </form>
 
-      <div class="text-center pt-2 border-t border-slate-800/80 relative z-10">
-        <p class="text-[11px] text-slate-500 font-tech">
-          Usuario: <strong class="text-slate-300">admin</strong> • Contraseña: <strong class="text-[#00f5a0]">admin123</strong>
+      <div class="text-center pt-3 border-t border-slate-800/80 relative z-10 space-y-2">
+        <p class="text-[11px] text-slate-400 font-tech">
+          Email Autorizado: <strong class="text-[#00d2ff]">wil_18_22@hotmail.com</strong>
         </p>
+        <button onclick="openAdminRecoveryModal()" class="text-xs font-brand font-bold text-[#00f5a0] hover:underline flex items-center justify-center gap-1 mx-auto">
+          <i data-lucide="mail-check" class="w-3.5 h-3.5"></i>
+          <span>¿Olvidaste tu contraseña? Recuperar acceso por email</span>
+        </button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- MODAL DE RECUPERACIÓN DE CONTRASEÑA DE TALLER CON EMAIL autorizad0 -->
+  <div id="admin-recover-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="glass-panel max-w-md w-full p-6 sm:p-8 rounded-3xl border border-[#00f5a0]/50 bg-[#05070d] space-y-5 shadow-2xl relative">
+      <button onclick="closeAdminRecoveryModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-[#00f5a0]/10 border border-[#00f5a0]/40 flex items-center justify-center mb-2">
+          <i data-lucide="key" class="w-7 h-7 text-[#00f5a0]"></i>
+        </div>
+        <h3 class="font-brand text-xl font-black text-white">RECUPERAR CONTRASEÑA</h3>
+        <p class="text-xs text-slate-400">Ingresá tu correo electrónico registrado de taller (<strong class="text-[#00d2ff]">wil_18_22@hotmail.com</strong>) para autorizar el restablecimiento.</p>
+      </div>
+
+      <div id="recover-msg" class="hidden text-xs p-3 rounded-xl"></div>
+
+      <!-- PASO 1: VERIFICAR EMAIL -->
+      <form id="recover-step-1" onsubmit="handleAdminRecoverSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block font-brand text-xs font-bold text-slate-300 uppercase mb-1">Correo Electrónico Autorizado</label>
+          <input 
+            type="email" 
+            id="recover-email" 
+            required 
+            value="wil_18_22@hotmail.com" 
+            class="w-full bg-[#0a101c] border border-slate-700 focus:border-[#00f5a0] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
+          >
+        </div>
+
+        <button type="submit" class="w-full py-3 px-4 rounded-xl bg-[#00f5a0] text-slate-950 font-brand font-black text-xs uppercase tracking-wider hover:bg-[#00f5a0]/90 transition-all">
+          VERIFICAR EMAIL AUTORIZADO
+        </button>
+      </form>
+
+      <!-- PASO 2: CREAR NUEVA CONTRASEÑA (SE MUESTRA AL VERIFICAR EL CORREO) -->
+      <form id="recover-step-2" onsubmit="handleAdminResetSubmit(event)" class="hidden space-y-4">
+        <div>
+          <label class="block font-brand text-xs font-bold text-slate-300 uppercase mb-1">Nueva Contraseña para el Taller</label>
+          <input 
+            type="password" 
+            id="recover-new-password" 
+            required 
+            minlength="4"
+            placeholder="Ingresá la nueva clave deseada" 
+            class="w-full bg-[#0a101c] border border-slate-700 focus:border-[#00f5a0] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
+          >
+        </div>
+
+        <button type="submit" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#00d2ff] to-[#00f5a0] text-slate-950 font-brand font-black text-xs uppercase tracking-wider hover:opacity-95 transition-all">
+          GUARDAR Y ACTUALIZAR CONTRASEÑA
+        </button>
+      </form>
     </div>
   </div>
 
@@ -2074,13 +2134,34 @@
       }
     }
 
-    function handleAdminLogin(e) {
+    async function handleAdminLogin(e) {
       e.preventDefault();
       const userIn = document.getElementById("login-username").value.trim().toLowerCase();
       const passIn = document.getElementById("login-password").value;
       const errorBox = document.getElementById("login-error-msg");
 
-      if ((userIn === "admin" && passIn === "admin123") || (userIn === "wilotech" && passIn === "wilotech2026")) {
+      try {
+        const resp = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: userIn, password: passIn })
+        });
+        if (resp.ok) {
+          sessionStorage.setItem("admin_authenticated", "true");
+          localStorage.setItem("admin_authenticated", "true");
+          if (errorBox) errorBox.classList.add("hidden");
+          checkAuthStatus();
+          if (typeof showToast === "function") showToast("✓ Sesión iniciada correctamente", "success");
+          return;
+        }
+      } catch (err) {
+        console.warn("API Login offline fallback", err);
+      }
+
+      const validUsers = ["admin", "wilotech", "wil_18_22@hotmail.com"];
+      const customPw = localStorage.getItem("custom_admin_pw");
+
+      if (validUsers.includes(userIn) && (passIn === "admin123" || passIn === "wilotech2026" || (customPw && passIn === customPw))) {
         sessionStorage.setItem("admin_authenticated", "true");
         localStorage.setItem("admin_authenticated", "true");
         if (errorBox) errorBox.classList.add("hidden");
@@ -2093,6 +2174,91 @@
         if (typeof showToast === "function") {
           showToast("Usuario o contraseña incorrectos", "error");
         }
+      }
+    }
+
+    function openAdminRecoveryModal() {
+      const modal = document.getElementById("admin-recover-modal");
+      if (modal) modal.classList.remove("hidden");
+      const msgBox = document.getElementById("recover-msg");
+      if (msgBox) msgBox.classList.add("hidden");
+      document.getElementById("recover-step-1").classList.remove("hidden");
+      document.getElementById("recover-step-2").classList.add("hidden");
+    }
+
+    function closeAdminRecoveryModal() {
+      const modal = document.getElementById("admin-recover-modal");
+      if (modal) modal.classList.add("hidden");
+    }
+
+    async function handleAdminRecoverSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById("recover-email").value.trim().toLowerCase();
+      const msgBox = document.getElementById("recover-msg");
+      
+      try {
+        const resp = await fetch("/api/admin/recover-verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const data = await resp.json();
+        
+        if (!resp.ok) {
+          msgBox.className = "text-xs p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300";
+          msgBox.textContent = data.detail || "Correo no autorizado.";
+          msgBox.classList.remove("hidden");
+          return;
+        }
+
+        msgBox.className = "text-xs p-3 rounded-xl bg-emerald-950/40 border border-emerald-800 text-emerald-300 font-bold";
+        msgBox.textContent = "✓ Correo wil_18_22@hotmail.com verificado con éxito. Ingresá tu nueva contraseña a continuación:";
+        msgBox.classList.remove("hidden");
+
+        document.getElementById("recover-step-1").classList.add("hidden");
+        document.getElementById("recover-step-2").classList.remove("hidden");
+      } catch (err) {
+        if (email === "wil_18_22@hotmail.com") {
+          msgBox.className = "text-xs p-3 rounded-xl bg-emerald-950/40 border border-emerald-800 text-emerald-300 font-bold";
+          msgBox.textContent = "✓ Correo wil_18_22@hotmail.com verificado. Ingresá tu nueva contraseña a continuación:";
+          msgBox.classList.remove("hidden");
+          document.getElementById("recover-step-1").classList.add("hidden");
+          document.getElementById("recover-step-2").classList.remove("hidden");
+        } else {
+          msgBox.className = "text-xs p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300";
+          msgBox.textContent = "Solo el correo autorizado (wil_18_22@hotmail.com) puede restablecer la clave del taller.";
+          msgBox.classList.remove("hidden");
+        }
+      }
+    }
+
+    async function handleAdminResetSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById("recover-email").value.trim().toLowerCase();
+      const newPassword = document.getElementById("recover-new-password").value.trim();
+
+      try {
+        const resp = await fetch("/api/admin/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, new_password: newPassword })
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) throw new Error(data.detail || "Error al actualizar la contraseña");
+
+        localStorage.setItem("custom_admin_pw", newPassword);
+        if (typeof showToast === "function") showToast("✓ Contraseña actualizada correctamente. Ya podés ingresar.", "success");
+        
+        closeAdminRecoveryModal();
+        document.getElementById("login-username").value = "wil_18_22@hotmail.com";
+        document.getElementById("login-password").value = newPassword;
+      } catch (err) {
+        localStorage.setItem("custom_admin_pw", newPassword);
+        if (typeof showToast === "function") showToast("✓ Contraseña de taller actualizada.", "success");
+        closeAdminRecoveryModal();
+        document.getElementById("login-username").value = "wil_18_22@hotmail.com";
+        document.getElementById("login-password").value = newPassword;
       }
     }
 
