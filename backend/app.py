@@ -22,6 +22,7 @@ from backend.database.db import (
     delete_repair_ticket_by_id,
     create_gremio_user,
     get_gremio_user_by_email,
+    verify_gremio_password,
     list_gremio_users,
     update_gremio_user_status,
     list_gremio_price_items,
@@ -162,7 +163,8 @@ async def gremios_login_endpoint(req: GremioLoginRequest):
     if not user_data:
         raise HTTPException(status_code=401, detail="Correo electrónico o contraseña incorrectos")
     
-    if user_data.get("password_plain") != req.password.strip():
+    stored_hash = user_data.get("password_hash", "")
+    if not verify_gremio_password(req.password.strip(), stored_hash):
         raise HTTPException(status_code=401, detail="Correo electrónico o contraseña incorrectos")
     
     if user_data.get("status") == "disabled":

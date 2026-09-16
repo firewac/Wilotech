@@ -211,6 +211,16 @@ def init_db():
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, [(item[0], item[1], item[2], item[3], item[4], item[5], item[6], now_str) for item in sample_items])
 
+    # Asegurar que el usuario demo de gremios (gremio@wilotech.com) esté siempre registrado
+    cursor.execute("SELECT COUNT(*) FROM gremio_users WHERE LOWER(email) = 'gremio@wilotech.com'")
+    if cursor.fetchone()[0] == 0:
+        pw_hash = hash_gremio_password("gremio123")
+        now_str = datetime.now().isoformat()
+        cursor.execute("""
+        INSERT INTO gremio_users (name, email, phone, password_hash, status, created_at)
+        VALUES ('Taller Gremio Demo', 'gremio@wilotech.com', '2235914163', ?, 'active', ?)
+        """, (pw_hash, now_str))
+
     # Limpiar cualquier distribuidora antigua automotriz de prueba
     cursor.execute("DELETE FROM distributors WHERE id IN ('dist_norte', 'repuestos_express', 'mayorista_autopartes')")
 
@@ -781,11 +791,35 @@ def delete_repair_ticket_by_id(ticket_id: str) -> bool:
 
 # --- FUNCIONES DE GREMIOS ---
 
+import hashlib
+
+def hash_gremio_password(plain_text: str) -> str:
+    if not plain_text:
+        return ""
+    return hashlib.sha256(f"wilotech_gremio_salt_2026_{plain_text}".encode()).hexdigest()
+
+def verify_gremio_password(plain_password: str, stored_hash: str) -> bool:
+    if not plain_password or not stored_hash:
+        return False
+    # 1. Verificación SHA256 determinista
+    if hash_gremio_password(plain_password) == stored_hash:
+        return True
+    # 2. Verificación Fernet fallback para usuarios creados anteriormente
+    try:
+        if decrypt_password(stored_hash) == plain_password:
+            return True
+    except Exception:
+        pass
+    # 3. Verificación plano fallback
+    if plain_password == stored_hash:
+        return True
+    return False
+
 def create_gremio_user(name: str, email: str, phone: str, password_plain: str) -> Optional[Dict[str, Any]]:
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        pw_hash = encrypt_password(password_plain)
+        pw_hash = hash_gremio_password(password_plain)
         now_str = datetime.now().isoformat()
         cursor.execute("""
         INSERT INTO gremio_users (name, email, phone, password_hash, status, created_at)
@@ -814,9 +848,7 @@ def get_gremio_user_by_email(email: str) -> Optional[Dict[str, Any]]:
         row = cursor.fetchone()
         if not row:
             return None
-        d = dict(row)
-        d["password_plain"] = decrypt_password(d.get("password_hash", ""))
-        return d
+        return dict(row)
     finally:
         conn.close()
 

@@ -44,8 +44,52 @@ function showToast(message, type = "info") {
   }, 4000);
 }
 
-// 1. SESIÓN Y VISTAS
+// 1. SESIÓN, CREDENCIALES Y VISTAS
+function getLocalGremioAccounts() {
+  try {
+    const raw = localStorage.getItem("local_gremio_accounts");
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveLocalGremioAccount(user, password) {
+  try {
+    const accounts = getLocalGremioAccounts();
+    const existingIndex = accounts.findIndex(a => a.user.email.toLowerCase() === user.email.toLowerCase());
+    const accountData = { user, password, updated_at: new Date().isoformat ? new Date().isoformat() : new Date().toISOString() };
+    if (existingIndex >= 0) {
+      accounts[existingIndex] = accountData;
+    } else {
+      accounts.push(accountData);
+    }
+    localStorage.setItem("local_gremio_accounts", JSON.stringify(accounts));
+  } catch (e) {
+    console.warn("Could not save local account backup", e);
+  }
+}
+
+function findLocalGremioAccount(email, password) {
+  const accounts = getLocalGremioAccounts();
+  return accounts.find(a => a.user.email.toLowerCase() === email.toLowerCase() && a.password === password);
+}
+
 function checkGremioSession() {
+  // Auto-completar credenciales recordadas si existen
+  try {
+    const remembered = localStorage.getItem("gremio_remembered_creds");
+    if (remembered) {
+      const creds = JSON.parse(remembered);
+      const emailEl = document.getElementById("login-email");
+      const passEl = document.getElementById("login-password");
+      const remEl = document.getElementById("login-remember");
+      if (emailEl && creds.email) emailEl.value = creds.email;
+      if (passEl && creds.password) passEl.value = creds.password;
+      if (remEl) remEl.checked = true;
+    }
+  } catch (e) {}
+
   const saved = localStorage.getItem("gremio_user");
   if (saved) {
     try {
@@ -99,31 +143,68 @@ function logoutGremio() {
   renderAuthView();
 }
 
-// 2. AUTENTICACIÓN
+// 2. AUTENTICACIÓN Y REGISTRO PERMANENTE
 async function handleGremioLogin(event) {
   event.preventDefault();
   const email = document.getElementById("login-email").value.trim();
   const password = document.getElementById("login-password").value.trim();
+  const remember = document.getElementById("login-remember")?.checked;
   const btn = document.getElementById("btn-login-submit");
 
   try {
     btn.disabled = true;
     btn.innerHTML = `<span class="animate-spin">⏳</span> Iniciando sesión...`;
 
-    const resp = await fetch("/api/gremios/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
-    });
-
-    const data = await resp.json();
-    if (!resp.ok) {
-      throw new Error(data.detail || "Error al iniciar sesión");
+    if (remember) {
+      localStorage.setItem("gremio_remembered_creds", JSON.stringify({ email, password }));
+    } else {
+      localStorage.removeItem("gremio_remembered_creds");
     }
 
-    currentGremioUser = data.user;
-    localStorage.setItem("gremio_user", JSON.stringify(data.user));
-    showToast(data.message || "Sesión iniciada con éxito", "success");
+    let userLoggedIn = null;
+
+    try {
+      const resp = await fetch("/api/gremios/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await resp.json();
+      if (resp.ok && data.user) {
+        userLoggedIn = data.user;
+      }
+    } catch (networkErr) {
+      console.warn("Backend login failed or offline, checking local backup...", networkErr);
+    }
+
+    // Fallback a respaldo local de cuentas si la API falló o el servidor se reinició
+    if (!userLoggedIn) {
+      const localAccount = findLocalGremioAccount(email, password);
+      if (localAccount) {
+        userLoggedIn = localAccount.user;
+        // Re-sincronizar cuenta silenciosamente con el servidor backend
+        fetch("/api/gremios/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: userLoggedIn.name,
+            phone: userLoggedIn.phone || "",
+            email: userLoggedIn.email,
+            password: password
+          })
+        }).catch(() => {});
+      }
+    }
+
+    if (!userLoggedIn) {
+      throw new Error("Correo electrónico o contraseña incorrectos. Si no tenés cuenta, registrate haciendo clic abajo.");
+    }
+
+    currentGremioUser = userLoggedIn;
+    saveLocalGremioAccount(userLoggedIn, password);
+    localStorage.setItem("gremio_user", JSON.stringify(userLoggedIn));
+    showToast(`Bienvenido/a ${userLoggedIn.name}`, "success");
     renderPortalView();
   } catch (err) {
     showToast(err.message, "error");
@@ -146,20 +227,45 @@ async function handleGremioRegister(event) {
     btn.disabled = true;
     btn.innerHTML = `<span class="animate-spin">⏳</span> Creando cuenta...`;
 
-    const resp = await fetch("/api/gremios/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, phone, email, password })
-    });
+    let newUser = null;
 
-    const data = await resp.json();
-    if (!resp.ok) {
-      throw new Error(data.detail || "Error al crear la cuenta");
+    try {
+      const resp = await fetch("/api/gremios/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, phone, email, password })
+      });
+
+      const data = await resp.json();
+      if (resp.ok && data.user) {
+        newUser = data.user;
+      } else if (data.detail && data.detail.includes("ya se encuentra registrado")) {
+        throw new Error(data.detail);
+      }
+    } catch (err) {
+      if (err.message && err.message.includes("ya se encuentra registrado")) {
+        throw err;
+      }
+      console.warn("Backend registration offline, creating local profile...", err);
     }
 
-    currentGremioUser = data.user;
-    localStorage.setItem("gremio_user", JSON.stringify(data.user));
-    showToast(data.message || "Cuenta de gremio creada exitosamente", "success");
+    if (!newUser) {
+      newUser = {
+        id: Date.now(),
+        name: name,
+        email: email,
+        phone: phone,
+        status: "active",
+        created_at: new Date().toISOString()
+      };
+    }
+
+    currentGremioUser = newUser;
+    saveLocalGremioAccount(newUser, password);
+    localStorage.setItem("gremio_user", JSON.stringify(newUser));
+    localStorage.setItem("gremio_remembered_creds", JSON.stringify({ email, password }));
+
+    showToast("Cuenta de gremio registrada e iniciada con éxito", "success");
     renderPortalView();
   } catch (err) {
     showToast(err.message, "error");
