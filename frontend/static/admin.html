@@ -878,7 +878,7 @@
       </div>
     </section>
 
-    <!-- PESTAÑA 6: GESTIÓN DE GREMIOS Y LISTA DE PRECIOS -->
+    <!-- PESTAÑA 6: GESTIÓN DE LISTA DE PRECIOS PARA GREMIOS (MANO DE OBRA) -->
     <section id="pane-gremios" class="admin-pane hidden space-y-6">
       <!-- TARIFARIO GREMIOS -->
       <div class="glass-panel p-6 rounded-2xl border border-[#00f5a0]/30 space-y-5 bg-[#05070d]/90">
@@ -888,13 +888,21 @@
               <span class="w-2.5 h-2.5 rounded-full bg-[#00f5a0] animate-pulse"></span>
               <h3 class="font-brand text-lg font-black text-white">GESTIÓN DE LISTA DE PRECIOS PARA GREMIOS</h3>
             </div>
-            <p class="text-xs text-slate-400 mt-1">Configura las tarifas exclusivas, precios sugeridos al público y stock que verán los gremios registrados.</p>
+            <p class="text-xs text-slate-400 mt-1">Configura las tarifas exclusivas de mano de obra, precios sugeridos al público y disponibilidad para los gremios registrados.</p>
           </div>
 
           <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="importIlabGremioPrices()" class="py-2.5 px-4 rounded-xl border border-[#00d2ff]/40 bg-[#00d2ff]/10 hover:bg-[#00d2ff]/20 text-[#00d2ff] font-brand font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2">
+              <i data-lucide="download-cloud" class="w-4 h-4"></i>
+              <span>IMPORTAR TARIFARIO iLAB</span>
+            </button>
+            <button onclick="seedIphoneGremioPrices()" class="py-2.5 px-4 rounded-xl border border-[#00f5a0]/40 bg-[#00f5a0]/10 hover:bg-[#00f5a0]/20 text-[#00f5a0] font-brand font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2">
+              <i data-lucide="smartphone" class="w-4 h-4"></i>
+              <span>CARGAR PRECIOS iPHONE (11 AL 17 PRO MAX)</span>
+            </button>
             <button onclick="openAddGremioItemModal()" class="py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#00f5a0] to-[#00d2ff] text-slate-950 font-brand font-black text-xs uppercase tracking-wider hover:opacity-95 transition-all shadow-lg shadow-[#00f5a0]/20 flex items-center gap-2">
               <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>NUEVO REPUESTO / SERVICIO</span>
+              <span>NUEVA MANO DE OBRA / SERVICIO</span>
             </button>
           </div>
         </div>
@@ -903,7 +911,7 @@
         <div class="flex flex-col sm:flex-row gap-3">
           <div class="relative flex-1">
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
-            <input type="text" id="admin-gremio-search" oninput="filterAdminGremioPriceTable()" placeholder="Buscar por código, título o marca..." class="w-full pl-9 pr-4 py-2 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00f5a0]">
+            <input type="text" id="admin-gremio-search" oninput="filterAdminGremioPriceTable()" placeholder="Buscar servicio de mano de obra por código, título o marca..." class="w-full pl-9 pr-4 py-2 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00f5a0]">
           </div>
           <select id="admin-gremio-cat-filter" onchange="filterAdminGremioPriceTable()" class="py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
             <option value="todas">Todas las Categorías</option>
@@ -918,18 +926,18 @@
           </select>
         </div>
 
-        <!-- TABLA EDITABLE DE PRECIOS -->
+        <!-- TABLA EDITABLE DE PRECIOS DE MANO DE OBRA -->
         <div class="overflow-x-auto border border-slate-800 rounded-xl bg-[#05070d]">
           <table class="w-full text-left border-collapse text-xs sm:text-sm">
             <thead>
               <tr class="bg-[#0a101c] text-[11px] font-brand font-bold text-[#00f5a0] uppercase tracking-wider border-b border-slate-800">
                 <th class="py-3 px-3.5">SKU / Código</th>
-                <th class="py-3 px-3.5">Título / Repuesto / Servicio</th>
+                <th class="py-3 px-3.5">Servicio / Mano de Obra</th>
                 <th class="py-3 px-3.5">Categoría</th>
-                <th class="py-3 px-3.5">Marca</th>
-                <th class="py-3 px-3.5 text-right">Precio Gremio</th>
-                <th class="py-3 px-3.5 text-right">Precio Público Ref.</th>
-                <th class="py-3 px-3.5 text-center">Stock</th>
+                <th class="py-3 px-3.5">Marca / Modelo</th>
+                <th class="py-3 px-3.5 text-right">Precio Mano de Obra Gremio</th>
+                <th class="py-3 px-3.5 text-right">Precio Mano de Obra Público Ref.</th>
+                <th class="py-3 px-3.5 text-center">Estado / Stock</th>
                 <th class="py-3 px-3.5 text-right">Acciones</th>
               </tr>
             </thead>
@@ -975,7 +983,7 @@
     <div id="gremio-item-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="glass-panel max-w-lg w-full p-6 rounded-2xl border border-[#00f5a0]/40 bg-[#05070d] space-y-4 shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 id="gremio-modal-title" class="font-brand font-bold text-base text-white">NUEVO ÍTEM DE GREMIO</h3>
+          <h3 id="gremio-modal-title" class="font-brand font-bold text-base text-white">NUEVO SERVICIO DE MANO DE OBRA DE GREMIO</h3>
           <button onclick="closeGremioItemModal()" class="text-slate-400 hover:text-white p-1">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -987,17 +995,17 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[10px] font-brand font-bold text-slate-300 uppercase mb-1">SKU / Código</label>
-              <input type="text" id="gremio-modal-code" placeholder="Ej: MOD-IPH11" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+              <input type="text" id="gremio-modal-code" placeholder="Ej: MO-IPH11" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
             </div>
             <div>
-              <label class="block text-[10px] font-brand font-bold text-slate-300 uppercase mb-1">Marca</label>
+              <label class="block text-[10px] font-brand font-bold text-slate-300 uppercase mb-1">Marca / Modelo Ref.</label>
               <input type="text" id="gremio-modal-brand" placeholder="Ej: Apple / Samsung" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
             </div>
           </div>
 
           <div>
-            <label class="block text-[10px] font-brand font-bold text-slate-300 uppercase mb-1">Título / Nombre del Repuesto o Servicio *</label>
-            <input type="text" id="gremio-modal-item-title" required placeholder="Ej: Módulo Pantalla iPhone 11 Genuine OLED" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+            <label class="block text-[10px] font-brand font-bold text-slate-300 uppercase mb-1">Servicio de Mano de Obra / Descripción *</label>
+            <input type="text" id="gremio-modal-item-title" required placeholder="Ej: Mano de Obra: Instalación Módulo iPhone 11 OLED" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
           </div>
 
           <div>
@@ -1016,12 +1024,12 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-[10px] font-brand font-bold text-[#00f5a0] uppercase mb-1">Precio Gremio ($) *</label>
-              <input type="number" id="gremio-modal-price-gremio" required min="0" step="100" placeholder="28500" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+              <label class="block text-[10px] font-brand font-bold text-[#00f5a0] uppercase mb-1">Precio Mano de Obra Gremio ($) *</label>
+              <input type="number" id="gremio-modal-price-gremio" required min="0" step="100" placeholder="12000" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
             </div>
             <div>
-              <label class="block text-[10px] font-brand font-bold text-slate-400 uppercase mb-1">Precio Público Sugerido ($)</label>
-              <input type="number" id="gremio-modal-price-retail" min="0" step="100" placeholder="42000" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
+              <label class="block text-[10px] font-brand font-bold text-slate-400 uppercase mb-1">Precio Mano de Obra Público Ref. ($)</label>
+              <input type="number" id="gremio-modal-price-retail" min="0" step="100" placeholder="22000" class="w-full py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
             </div>
           </div>
 
@@ -2983,7 +2991,7 @@
       if (!tbody) return;
 
       if (!items || items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-slate-500">No hay repuestos registrados en el tarifario.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-slate-500">No hay servicios de mano de obra registrados en el tarifario.</td></tr>`;
         return;
       }
 
@@ -3083,7 +3091,7 @@
       document.getElementById("gremio-modal-price-gremio").value = "";
       document.getElementById("gremio-modal-price-retail").value = "";
       document.getElementById("gremio-modal-stock").value = "Disponible";
-      document.getElementById("gremio-modal-title").textContent = "NUEVO ÍTEM DE GREMIO";
+      document.getElementById("gremio-modal-title").textContent = "NUEVO SERVICIO DE MANO DE OBRA DE GREMIO";
 
       document.getElementById("gremio-item-modal").classList.remove("hidden");
     }
@@ -3100,7 +3108,7 @@
       document.getElementById("gremio-modal-price-gremio").value = item.price_gremio || 0;
       document.getElementById("gremio-modal-price-retail").value = item.price_retail || 0;
       document.getElementById("gremio-modal-stock").value = item.stock || "Disponible";
-      document.getElementById("gremio-modal-title").textContent = "EDITAR ÍTEM DE GREMIO";
+      document.getElementById("gremio-modal-title").textContent = "EDITAR SERVICIO DE MANO DE OBRA DE GREMIO";
 
       document.getElementById("gremio-item-modal").classList.remove("hidden");
     }
@@ -3153,6 +3161,40 @@
           if (typeof showToast === 'function') showToast("Ítem eliminado del tarifario", "success");
           loadAdminGremioPriceList();
         }
+      } catch (err) {
+        if (typeof showToast === 'function') showToast(err.message, "error");
+      }
+    }
+
+    async function seedIphoneGremioPrices() {
+      try {
+        if (typeof showToast === 'function') showToast("Sincronizando tarifas de iPhone 11 al 17 Pro Max...", "info");
+        const resp = await fetch("/api/gremios/price-list/seed-iphone", { method: "POST" });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || "Error al sincronizar tarifas");
+        if (typeof showToast === 'function') showToast(data.message || "Tarifas cargadas con éxito", "success");
+        await loadAdminGremioPriceList();
+      } catch (err) {
+        if (typeof showToast === 'function') showToast(err.message, "error");
+      }
+    }
+
+    async function importIlabGremioPrices() {
+      const rateInput = prompt("Ingresá la cotización de referencia USD a ARS (Dólar Blue):", "1300");
+      if (rateInput === null) return;
+      const rate = parseFloat(rateInput) || 1300;
+
+      try {
+        if (typeof showToast === 'function') showToast(`Importando tarifas de iLab a $${rate} ARS/USD...`, "info");
+        const resp = await fetch("/api/gremios/price-list/import-ilab", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usd_rate: rate })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || "Error al importar iLab");
+        if (typeof showToast === 'function') showToast(data.message || "Tarifario iLab cargado", "success");
+        await loadAdminGremioPriceList();
       } catch (err) {
         if (typeof showToast === 'function') showToast(err.message, "error");
       }

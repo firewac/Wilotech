@@ -316,69 +316,97 @@
         </div>
       </div>
 
-      <!-- CONTENIDO PESTAÑA 3: LISTA DE PRECIOS GREMIO -->
+      <!-- CONTENIDO PESTAÑA 3: LISTA DE PRECIOS & BUSCADOR iLAB GREMIO -->
       <div id="gremio-pane-pricelist" class="gremio-pane hidden space-y-6">
-        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-slate-800 bg-[#05070d]/90">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
-            <div>
-              <h3 class="font-brand text-lg font-bold text-white flex items-center gap-2">
-                <i data-lucide="tag" class="w-5 h-5 text-[#00f5a0]"></i>
-                <span>Tarifario Exclusivo para Gremios y Servicios Técnicos</span>
-              </h3>
-              <p class="text-xs text-slate-400">Lista oficial de precios de repuestos y servicios fijada por WILOTECH Laboratorio.</p>
+        
+        <!-- CARD PRINCIPAL TIPO iLAB BUSCADOR DE PRECIOS -->
+        <div class="glass-panel p-5 sm:p-7 rounded-3xl border border-[#00f5a0]/30 bg-[#05070d]/95 space-y-5 shadow-2xl">
+          
+          <!-- TOP BAR WITH LOGO & BADGE -->
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#00f5a0] to-[#00d2ff] flex items-center justify-center text-slate-950 font-black text-lg font-brand shadow-md shadow-[#00f5a0]/20">
+                iL
+              </div>
+              <div>
+                <h3 class="font-brand text-xl font-black text-white flex items-center gap-2">
+                  <span>iLab / WILOTECH</span>
+                  <span class="text-xs px-2.5 py-0.5 rounded-full bg-[#00f5a0]/10 text-[#00f5a0] border border-[#00f5a0]/30 font-bold">Buscador de Precios</span>
+                </h3>
+                <p id="subTextIlab" class="text-xs text-slate-400 mt-0.5">Buscá por modelo y encontrá rápidamente el valor de reparación de placa, batería, módulo o tapa.</p>
+              </div>
             </div>
 
-            <div class="flex items-center gap-3">
-              <button onclick="exportGremioPriceListExcel()" class="py-2 px-4 rounded-xl border border-[#00f5a0]/40 bg-[#00f5a0]/10 hover:bg-[#00f5a0]/20 text-[#00f5a0] font-brand font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2">
-                <i data-lucide="download" class="w-4 h-4"></i>
-                <span>DESCARGAR EXCEL</span>
+            <div class="flex items-center gap-2">
+              <button onclick="exportGremioPriceListExcel()" class="py-2 px-3.5 rounded-xl border border-slate-700 bg-[#0a101c] hover:bg-slate-800 text-slate-300 font-brand font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2">
+                <i data-lucide="download" class="w-4 h-4 text-[#00f5a0]"></i>
+                <span class="hidden sm:inline">EXCEL</span>
               </button>
             </div>
           </div>
 
-          <!-- FILTROS Y BÚSQUEDA EN LISTA -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div class="relative md:col-span-2">
-              <i data-lucide="filter" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
-              <input type="text" id="gremio-pricelist-search" oninput="filterGremioPriceTable()" placeholder="Filtrar en la lista (Ej: iPhone, Batería, Reballing)..." class="w-full pl-9 pr-4 py-2 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00f5a0]">
+          <!-- SELECTOR DE MONEDA USD / ARS CON DÓLAR BLUE -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0a101c] p-3 rounded-2xl border border-slate-800">
+            <div class="flex items-center gap-2" id="currencyTabs">
+              <button id="btnUsd" onclick="setIlabCurrency('usd')" class="py-1.5 px-4 rounded-xl text-xs font-brand font-bold transition-all bg-[#00f5a0] text-slate-950 shadow-md">
+                🇺🇸 USD
+              </button>
+              <button id="btnArs" onclick="setIlabCurrency('ars')" class="py-1.5 px-4 rounded-xl text-xs font-brand font-bold transition-all border border-slate-700 text-slate-300 hover:text-white">
+                🇦🇷 Pesos (ARS)
+              </button>
             </div>
-
-            <select id="gremio-pricelist-category" onchange="filterGremioPriceTable()" class="py-2 px-3 bg-[#0a101c] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-[#00f5a0]">
-              <option value="todas">Todas las Categorías</option>
-              <option value="Módulos & Pantallas">Módulos & Pantallas</option>
-              <option value="Baterías">Baterías</option>
-              <option value="Conectores y Pines">Conectores y Pines</option>
-              <option value="Flex & Carga">Flex & Carga</option>
-              <option value="Cámaras">Cámaras</option>
-              <option value="Glass & Refurbish">Glass & Refurbish</option>
-              <option value="Servicios de Laboratorio">Servicios de Laboratorio</option>
-              <option value="Software & Desbloqueos">Software & Desbloqueos</option>
-            </select>
+            
+            <div id="cotizInfo" class="text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>Cargando cotización Dólar Blue...</span>
+            </div>
           </div>
-        </div>
 
-        <!-- TABLA DE PRECIOS -->
-        <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl bg-[#05070d]">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-xs sm:text-sm">
-              <thead>
-                <tr class="bg-[#0a101c] border-b border-slate-800 font-brand text-slate-400 text-[11px] uppercase tracking-wider">
-                  <th class="py-3 px-4">Código / SKU</th>
-                  <th class="py-3 px-4">Repuesto / Servicio</th>
-                  <th class="py-3 px-4">Categoría</th>
-                  <th class="py-3 px-4">Marca</th>
-                  <th class="py-3 px-4 text-right">Precio Gremio</th>
-                  <th class="py-3 px-4 text-right">Precio Público Ref.</th>
-                  <th class="py-3 px-4 text-center">Stock / Estado</th>
-                </tr>
-              </thead>
-              <tbody id="gremio-pricelist-tbody" class="divide-y divide-slate-800 text-slate-300">
-                <tr>
-                  <td colspan="7" class="py-8 text-center text-slate-500">Cargando lista de precios...</td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- PESTAÑAS DE CATEGORÍA iLAB -->
+          <div class="flex flex-wrap gap-2" id="ilabCategoryTabs">
+            <button onclick="setIlabCategory('placa')" data-cat="placa" class="ilab-tab py-2 px-4 rounded-xl text-xs font-brand font-bold border transition-all flex items-center gap-2 bg-[#00f5a0] text-slate-950 border-[#00f5a0]">
+              <i data-lucide="cpu" class="w-4 h-4"></i>
+              <span>Placa</span>
+            </button>
+            <button onclick="setIlabCategory('bateria')" data-cat="bateria" class="ilab-tab py-2 px-4 rounded-xl text-xs font-brand font-bold border transition-all flex items-center gap-2 bg-[#0a101c] text-slate-300 border-slate-800 hover:border-slate-700">
+              <i data-lucide="battery-charging" class="w-4 h-4"></i>
+              <span>Batería</span>
+            </button>
+            <button onclick="setIlabCategory('tapa')" data-cat="tapa" class="ilab-tab py-2 px-4 rounded-xl text-xs font-brand font-bold border transition-all flex items-center gap-2 bg-[#0a101c] text-slate-300 border-slate-800 hover:border-slate-700">
+              <i data-lucide="smartphone" class="w-4 h-4"></i>
+              <span>Tapa Trasera</span>
+            </button>
+            <button onclick="setIlabCategory('pantalla')" data-cat="pantalla" class="ilab-tab py-2 px-4 rounded-xl text-xs font-brand font-bold border transition-all flex items-center gap-2 bg-[#0a101c] text-slate-300 border-slate-800 hover:border-slate-700">
+              <i data-lucide="monitor" class="w-4 h-4"></i>
+              <span>Pantalla</span>
+            </button>
+            <button onclick="setIlabCategory('todas')" data-cat="todas" class="ilab-tab py-2 px-4 rounded-xl text-xs font-brand font-bold border transition-all flex items-center gap-2 bg-[#0a101c] text-slate-300 border-slate-800 hover:border-slate-700">
+              <i data-lucide="layers" class="w-4 h-4"></i>
+              <span>Ver Todo</span>
+            </button>
           </div>
+
+          <!-- INPUT BÚSQUEDA INTERACTIVA -->
+          <div class="relative">
+            <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-3.5 text-slate-500"></i>
+            <input type="text" id="gremio-pricelist-search" oninput="renderIlabPriceList()" placeholder="Ej.: iPhone 13 Pro, 12, OLED, IC, serie 15..." class="w-full pl-11 pr-4 py-3 bg-[#0a101c] border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#00f5a0] transition-colors">
+          </div>
+
+          <!-- STATS Y CONTADORES -->
+          <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3">
+            <div>Productos: <b id="statCount" class="text-white">0</b></div>
+            <div>Categoría: <b id="statCat" class="text-[#00f5a0]">Placa</b></div>
+          </div>
+
+          <!-- LISTA / CONTENEDOR DE TARJETAS TIPO iLAB -->
+          <div id="ilab-results-container" class="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
+            <!-- Renderizado dinámico tipo iLab -->
+          </div>
+
+          <p class="text-center text-[11px] text-slate-500 pt-2 border-t border-slate-800/60">
+            Precios en USD · cotización de referencia: Dólar Blue (Ámbito)
+          </p>
+
         </div>
       </div>
 

@@ -28,6 +28,8 @@ from backend.database.db import (
     list_gremio_price_items,
     upsert_gremio_price_item,
     delete_gremio_price_item,
+    seed_iphone_gremio_items_db,
+    seed_ilab_gremio_items_db,
     verify_admin_login,
     reset_admin_password_by_email,
     get_system_setting
@@ -227,6 +229,22 @@ async def gremios_delete_price_item_endpoint(item_id: int):
     if not deleted:
         raise HTTPException(status_code=404, detail="Ítem no encontrado")
     return {"status": "ok", "message": "Ítem eliminado de la lista de gremios"}
+
+@app.post("/api/gremios/price-list/seed-iphone")
+async def gremios_seed_iphone_endpoint():
+    inserted = seed_iphone_gremio_items_db(overwrite=False)
+    return {"status": "ok", "message": f"Se sincronizaron los precios de mano de obra para iPhone 11 a 17 Pro Max ({inserted} ítems nuevos agregados)."}
+
+@app.post("/api/gremios/price-list/import-ilab")
+async def gremios_import_ilab_endpoint(payload: Optional[Dict[str, Any]] = None):
+    rate = 1300.0
+    if payload and payload.get("usd_rate"):
+        try:
+            rate = float(payload["usd_rate"])
+        except ValueError:
+            rate = 1300.0
+    inserted = seed_ilab_gremio_items_db(usd_rate=rate, overwrite=False)
+    return {"status": "ok", "message": f"Se importaron {inserted} tarifas basadas en iLab (cotización ref. ${rate} ARS/USD)."}
 
 
 # --- AUTENTICACIÓN Y RECUPERACIÓN DE PANEL DE TALLER ---

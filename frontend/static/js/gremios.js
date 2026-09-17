@@ -468,76 +468,188 @@ function renderPartCard(p) {
   `;
 }
 
-// 6. TAB 3: LISTA DE PRECIOS GREMIO
+// 6. TAB 3: LISTA DE PRECIOS & BUSCADOR TIPO iLAB GREMIO
+let currentIlabCat = "placa";
+let currentIlabCurrency = "usd";
+let ilabBlueRate = 1300;
+let ilabBlueRateTime = null;
+
 async function loadGremioPriceList() {
-  const tbody = document.getElementById("gremio-pricelist-tbody");
+  const container = document.getElementById("ilab-results-container");
+  if (container) {
+    container.innerHTML = `<div class="py-12 text-center text-slate-400 text-xs">Cargando tarifario oficial de gremios...</div>`;
+  }
+
   try {
-    tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">Cargando tarifario oficial...</td></tr>`;
-    
     const resp = await fetch("/api/gremios/price-list");
     const items = await resp.json();
-    
     allGremioPriceItems = Array.isArray(items) ? items : [];
-    renderGremioPriceTable(allGremioPriceItems);
+
+    await loadIlabBlueRate();
+    renderIlabPriceList();
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-rose-400">Error al cargar la lista: ${err.message}</td></tr>`;
+    if (container) {
+      container.innerHTML = `<div class="py-12 text-center text-rose-400 text-xs">Error al cargar la lista: ${err.message}</div>`;
+    }
   }
 }
 
-function filterGremioPriceTable() {
-  const q = document.getElementById("gremio-pricelist-search").value.trim().toLowerCase();
-  const cat = document.getElementById("gremio-pricelist-category").value;
-
-  const filtered = allGremioPriceItems.filter(item => {
-    const matchQ = !q || 
-      (item.title && item.title.toLowerCase().includes(q)) ||
-      (item.code && item.code.toLowerCase().includes(q)) ||
-      (item.brand && item.brand.toLowerCase().includes(q));
-
-    const matchCat = cat === "todas" || !cat || (item.category && item.category === cat);
-    return matchQ && matchCat;
-  });
-
-  renderGremioPriceTable(filtered);
+async function loadIlabBlueRate() {
+  try {
+    const res = await fetch("https://dolarapi.com/v1/ambito/dolares/blue");
+    if (!res.ok) throw new Error("error dapi");
+    const data = await res.json();
+    ilabBlueRate = data.venta || 1300;
+    ilabBlueRateTime = new Date();
+    updateIlabCotizInfo();
+  } catch (e) {
+    ilabBlueRate = 1300;
+    updateIlabCotizInfo(true);
+  }
 }
 
-function renderGremioPriceTable(items) {
-  const tbody = document.getElementById("gremio-pricelist-tbody");
+function updateIlabCotizInfo(isCached = false) {
+  const cotizEl = document.getElementById("cotizInfo");
+  if (!cotizEl) return;
+  const hora = ilabBlueRateTime ? ilabBlueRateTime.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) : "guardada";
+  const tag = isCached ? " (ref. offline)" : "";
+  cotizEl.innerHTML = `
+    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+    <span>Dólar blue (Ámbito): $${ilabBlueRate.toLocaleString("es-AR")}${tag} · ${hora}</span>
+  `;
+}
 
-  if (!items || items.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" class="py-8 text-center text-slate-500 font-tech">
-          No se encontraron artículos en la lista con los filtros seleccionados.
-        </td>
-      </tr>
+function setIlabCurrency(currency) {
+  currentIlabCurrency = currency;
+  const btnUsd = document.getElementById("btnUsd");
+  const btnArs = document.getElementById("btnArs");
+
+  if (currency === "usd") {
+    btnUsd.className = "py-1.5 px-4 rounded-xl text-xs font-brand font-bold transition-all bg-[#00f5a0] text-slate-950 shadow-md";
+    btnArs.className = "py-1.5 px-4 rounded-xl text-xs font-brand font-bold transition-all border border-slate-700 text-slate-300 hover:text-white";
+  } else {
+    btnArs.className = "py-1.5 px-4 rounded-xl text-xs font-brand font-bold transition-all bg-[#00f5a0] text-slate-950 shadow-md";
+    btnUsd.className = "py-1.5 px-4 rounded-xl text-xs font-brand font-bold transition-all border border-slate-700 text-slate-300 hover:text-white";
+  }
+
+  renderIlabPriceList();
+}
+
+function setIlabCategory(catKey) {
+  currentIlabCat = catKey;
+  const buttons = document.querySelectorAll("#ilabCategoryTabs .ilab-tab");
+  buttons.forEach(btn => {
+    if (btn.dataset.cat === catKey) {
+      btn.className = "ilab-tab py-2 px-4 rounded-xl text-xs font-brand font-bold border transition-all flex items-center gap-2 bg-[#00f5a0] text-slate-950 border-[#00f5a0] shadow-md shadow-[#00f5a0]/10";
+    } else {
+      btn.className = "ilab-tab py-2 px-4 rounded-xl text-xs font-brand font-bold border transition-all flex items-center gap-2 bg-[#0a101c] text-slate-300 border-slate-800 hover:border-slate-700";
+    }
+  });
+
+  const subText = document.getElementById("subTextIlab");
+  const statCat = document.getElementById("statCat");
+  const descriptions = {
+    placa: "reparación de placa y microelectrónica",
+    bateria: "reemplazo de batería",
+    tapa: "reemplazo de tapa trasera / cristal",
+    pantalla: "reemplazo de pantalla / módulos",
+    todas: "tarifario general de mano de obra y servicios"
+  };
+  const labels = {
+    placa: "Placa",
+    bateria: "Batería",
+    tapa: "Tapa trasera",
+    pantalla: "Pantalla",
+    todas: "Ver Todo"
+  };
+
+  if (subText) subText.textContent = `Buscá por modelo y encontrá rápidamente el valor de ${descriptions[catKey] || 'servicio'}.`;
+  if (statCat) statCat.textContent = labels[catKey] || 'General';
+
+  renderIlabPriceList();
+}
+
+function renderIlabPriceList() {
+  const container = document.getElementById("ilab-results-container");
+  const searchInput = document.getElementById("gremio-pricelist-search");
+  const statCount = document.getElementById("statCount");
+  if (!container) return;
+
+  const query = (searchInput ? searchInput.value : "").trim().toLowerCase();
+
+  const filtered = allGremioPriceItems.filter(item => {
+    const title = (item.title || "").toLowerCase();
+    const code = (item.code || "").toLowerCase();
+    const cat = (item.category || "").toLowerCase();
+
+    let matchCat = true;
+    if (currentIlabCat === "placa") {
+      matchCat = cat.includes("laboratorio") || title.includes("placa") || title.includes("reballing") || code.includes("plc");
+    } else if (currentIlabCat === "bateria") {
+      matchCat = cat.includes("batería") || cat.includes("bateria") || title.includes("batería") || title.includes("bateria") || code.includes("bat");
+    } else if (currentIlabCat === "tapa") {
+      matchCat = cat.includes("glass") || title.includes("tapa") || title.includes("cristal") || code.includes("tap");
+    } else if (currentIlabCat === "pantalla") {
+      matchCat = cat.includes("módu") || cat.includes("pantalla") || title.includes("módulo") || title.includes("pantalla") || code.includes("mod") || code.includes("scr");
+    }
+
+    let matchQ = !query || title.includes(query) || code.includes(query);
+    return matchCat && matchQ;
+  });
+
+  if (statCount) statCount.textContent = filtered.length;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="py-12 text-center text-slate-500 text-xs bg-[#0a101c]/50 rounded-2xl border border-dashed border-slate-800">
+        Sin resultados con los criterios seleccionados.
+      </div>
     `;
     return;
   }
 
-  tbody.innerHTML = items.map(item => `
-    <tr class="hover:bg-[#0a101c]/80 transition-colors">
-      <td class="py-3 px-4 font-mono text-xs text-slate-400">${item.code || 'S/C'}</td>
-      <td class="py-3 px-4 font-bold text-white">${item.title}</td>
-      <td class="py-3 px-4 text-xs text-[#00d2ff]">
-        <span class="bg-[#00d2ff]/10 border border-[#00d2ff]/30 px-2 py-0.5 rounded">${item.category || 'General'}</span>
-      </td>
-      <td class="py-3 px-4 text-xs text-slate-300">${item.brand || '-'}</td>
-      <td class="py-3 px-4 text-right font-brand font-black text-[#00f5a0] text-base">
-        $${(item.price_gremio || 0).toLocaleString("es-AR")}
-      </td>
-      <td class="py-3 px-4 text-right font-brand font-semibold text-slate-400 text-xs">
-        $${(item.price_retail || 0).toLocaleString("es-AR")}
-      </td>
-      <td class="py-3 px-4 text-center">
-        <span class="py-0.5 px-2 rounded-full text-[10px] font-brand font-bold ${
-          item.stock === 'Disponible' ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30' : 'bg-amber-950/60 text-amber-400 border border-amber-500/30'
-        }">
-          ${item.stock || 'Disponible'}
-        </span>
-      </td>
-    </tr>
-  `).join("");
+  container.innerHTML = filtered.map(item => {
+    const rawPriceArs = item.price_gremio || 0;
+    const isUsd = currentIlabCurrency === "usd";
+    const priceRounded = isUsd
+      ? Math.ceil(rawPriceArs / ilabBlueRate)
+      : Math.ceil(rawPriceArs);
+
+    const priceText = isUsd
+      ? `USD ${priceRounded}`
+      : `$ ${priceRounded.toLocaleString("es-AR")}`;
+
+    const titleLower = item.title.toLowerCase();
+    const isIcChange = titleLower.includes("ic") || titleLower.includes("chip") || titleLower.includes("trasplante");
+
+    let modelName = item.title.replace(/^Mano de Obra:\s*/i, "").replace(/\(iLab\)/i, "").trim();
+    let detailTag = item.category || "General";
+
+    if (currentIlabCat === "pantalla" || item.category.includes("Módulos")) {
+      return `
+        <div class="flex items-center justify-between p-3.5 bg-[#0a101c] border border-slate-800 rounded-2xl hover:border-[#00f5a0]/50 transition-all">
+          <div class="flex flex-col gap-0.5">
+            <span class="font-brand font-bold text-sm text-white">${modelName}</span>
+            <span class="text-xs text-slate-300 font-medium">${detailTag}</span>
+            ${isIcChange ? `<span class="text-[10px] font-mono text-amber-400 italic">✓ Con cambio de IC</span>` : ''}
+          </div>
+          <span class="font-brand font-black text-base text-[#00f5a0] tabular-nums flex-shrink-0">${priceText}</span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="flex items-center justify-between p-3.5 bg-[#0a101c] border border-slate-800 rounded-2xl hover:border-[#00f5a0]/50 transition-all">
+        <div class="flex items-center gap-2.5">
+          <div class="w-2 h-2 rounded-full bg-[#00f5a0]"></div>
+          <span class="font-brand font-bold text-sm text-white">${modelName}</span>
+        </div>
+        <span class="font-brand font-black text-base text-[#00f5a0] tabular-nums flex-shrink-0">${priceText}</span>
+      </div>
+    `;
+  }).join("");
+
+  if (window.lucide) lucide.createIcons();
 }
 
 function exportGremioPriceListExcel() {
@@ -549,19 +661,19 @@ function exportGremioPriceListExcel() {
   try {
     const exportData = allGremioPriceItems.map(item => ({
       "Código": item.code || "",
-      "Repuesto / Servicio": item.title || "",
+      "Servicio / Mano de Obra": item.title || "",
       "Categoría": item.category || "General",
       "Marca": item.brand || "",
-      "Precio Gremio ($)": item.price_gremio || 0,
-      "Precio Lista Público Ref. ($)": item.price_retail || 0,
-      "Estado Stock": item.stock || "Disponible"
+      "Precio Mano de Obra Gremio ($)": item.price_gremio || 0,
+      "Precio Público Sugerido ($)": item.price_retail || 0,
+      "Estado / Disponibilidad": item.stock || "Disponible"
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Precios Gremio");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Tarifario iLab Gremios");
 
-    XLSX.writeFile(workbook, `Tarifario_Gremios_WILOTECH.xlsx`);
+    XLSX.writeFile(workbook, `Tarifario_iLab_Gremios_WILOTECH.xlsx`);
     showToast("Planilla Excel exportada con éxito", "success");
   } catch (err) {
     showToast(`Error al exportar: ${err.message}`, "error");

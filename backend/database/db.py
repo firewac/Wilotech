@@ -1,7 +1,7 @@
 import sqlite3
 import json
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from backend.config import DB_PATH, encrypt_password, decrypt_password
 from backend.database.models import DistributorConfig, DistributorResponse
 
@@ -186,30 +186,39 @@ def init_db():
         cursor.execute("INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES ('admin_email', 'wil_18_22@hotmail.com', ?)", (now_str,))
         cursor.execute("INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES ('admin_password', 'admin123', ?)", (now_str,))
 
-    # Precargar ítems iniciales de gremio si la tabla está vacía
+    # Precargar ítems iniciales de mano de obra de gremio si la tabla está vacía o faltan modelos
     cursor.execute("SELECT COUNT(*) FROM gremio_price_list")
     if cursor.fetchone()[0] == 0:
         sample_items = [
-            ("MOD-IPH11-OLED", "Módulo Pantalla iPhone 11 (OLED High Quality)", "Módulos & Pantallas", "Apple", 28500.0, 42000.0, "Disponible"),
-            ("MOD-IPH12-OLED", "Módulo Pantalla iPhone 12 / 12 Pro (OLED Genuine)", "Módulos & Pantallas", "Apple", 45000.0, 68000.0, "Disponible"),
-            ("MOD-SAM-A32-INC", "Módulo Samsung Galaxy A32 (Incell Touch)", "Módulos & Pantallas", "Samsung", 19500.0, 29000.0, "Disponible"),
-            ("MOD-MOT-G60-ORIG", "Módulo Motorola Moto G60 (Original Service Pack)", "Módulos & Pantallas", "Motorola", 22000.0, 33000.0, "Disponible"),
-            ("BAT-IPH11-ORIG", "Batería iPhone 11 (Capacidad Original BTI)", "Baterías", "Apple", 14500.0, 24000.0, "Disponible"),
-            ("BAT-SAM-S20FE", "Batería Samsung S20 FE EB-BG781ABY", "Baterías", "Samsung", 12000.0, 19500.0, "Disponible"),
-            ("BAT-XIA-NOTE10", "Batería Xiaomi Redmi Note 10 BN59", "Baterías", "Xiaomi", 11500.0, 18000.0, "Disponible"),
-            ("PIN-TYPEC-UNIV", "Pin de Carga USB Type-C Reforzado (Pack 5u)", "Conectores y Pines", "Multimarca", 4500.0, 9000.0, "Disponible"),
-            ("FLX-IPH11-CHG", "Flex Pin de Carga y Micrófono iPhone 11 Negro", "Flex & Carga", "Apple", 9800.0, 16000.0, "Disponible"),
-            ("CAM-IPH12-BACK", "Cámara Trasera iPhone 12 Original Pull", "Cámaras", "Apple", 38000.0, 55000.0, "Poco Stock"),
-            ("GLS-IPH13-FRONT", "Cristal Glass Frontal iPhone 13 Pro Max", "Glass & Refurbish", "Apple", 6500.0, 14000.0, "Disponible"),
-            ("SRV-REBALL-CPU", "Servicio Reballing CPU / PMIC (Mano de obra gremio)", "Servicios de Laboratorio", "Multimarca", 35000.0, 60000.0, "Disponible"),
-            ("SRV-CAMBIO-GLASS", "Servicio Cambio de Glass LCD/OLED (Mano de obra gremio)", "Servicios de Laboratorio", "Multimarca", 18000.0, 32000.0, "Disponible"),
-            ("SRV-DESBLOQ-FRP", "Remoción de Cuenta Google FRP / Samsung Knox", "Software & Desbloqueos", "Multimarca", 12000.0, 22000.0, "Disponible")
+            ("MO-MOD-SAM-A32", "Mano de Obra: Instalación Módulo Samsung A32", "Módulos & Pantallas", "Samsung", 10000.0, 18000.0, "Disponible"),
+            ("MO-MOD-MOT-G60", "Mano de Obra: Instalación Módulo Moto G60", "Módulos & Pantallas", "Motorola", 10000.0, 18000.0, "Disponible"),
+            ("MO-BAT-SAM-S20FE", "Mano de Obra: Cambio de Batería Samsung S20 FE", "Baterías", "Samsung", 7500.0, 14000.0, "Disponible"),
+            ("MO-PIN-TYPEC", "Mano de Obra: Soldadura / Cambio Pin de Carga Type-C", "Conectores y Pines", "Multimarca", 6000.0, 12000.0, "Disponible"),
+            ("MO-SRV-REBALL", "Mano de Obra: Reballing CPU / PMIC Laboratorio Gremio", "Servicios de Laboratorio", "Multimarca", 35000.0, 60000.0, "Disponible"),
+            ("MO-SRV-GLASS", "Mano de Obra: Cambio de Glass LCD/OLED General", "Servicios de Laboratorio", "Multimarca", 18000.0, 32000.0, "Disponible"),
+            ("MO-SRV-FRP", "Mano de Obra: Servicio Software FRP / Samsung Knox", "Software & Desbloqueos", "Multimarca", 12000.0, 22000.0, "Disponible")
         ]
         now_str = datetime.now().isoformat()
         cursor.executemany("""
         INSERT INTO gremio_price_list (code, title, category, brand, price_gremio, price_retail, stock, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, [(item[0], item[1], item[2], item[3], item[4], item[5], item[6], now_str) for item in sample_items])
+
+    # Precargar todos los ítems de iPhone de 11 al 17 Pro Max y catálogo iLab
+    cursor.execute("SELECT code FROM gremio_price_list")
+    existing_codes = set(row[0] for row in cursor.fetchall() if row[0])
+    
+    iphone_items = get_iphone_gremio_seed_items()
+    ilab_items = get_ilab_gremio_seed_items(usd_rate=1300.0)
+    all_seeds = iphone_items + ilab_items
+
+    to_insert = [item for item in all_seeds if item[0] not in existing_codes]
+    if to_insert:
+        now_str = datetime.now().isoformat()
+        cursor.executemany("""
+        INSERT INTO gremio_price_list (code, title, category, brand, price_gremio, price_retail, stock, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, [(item[0], item[1], item[2], item[3], item[4], item[5], item[6], now_str) for item in to_insert])
 
     # Asegurar que el usuario demo de gremios (gremio@wilotech.com) esté siempre registrado
     cursor.execute("SELECT COUNT(*) FROM gremio_users WHERE LOWER(email) = 'gremio@wilotech.com'")
@@ -941,6 +950,288 @@ def delete_gremio_price_item(item_id: int) -> bool:
         cursor.execute("DELETE FROM gremio_price_list WHERE id = ?", (item_id,))
         conn.commit()
         return cursor.rowcount > 0
+    finally:
+        conn.close()
+
+def get_iphone_gremio_seed_items() -> List[Tuple[str, str, str, str, float, float, str]]:
+    models_gen = [
+        # (Gen, Model Name, Code, Gen Mult, Level Adder)
+        # iPhone 11 Series
+        (11, "iPhone 11", "IPH11", 1.0, 0),
+        (11, "iPhone 11 Pro", "IPH11P", 1.0, 3000),
+        (11, "iPhone 11 Pro Max", "IPH11PM", 1.0, 5000),
+        # iPhone 12 Series
+        (12, "iPhone 12 mini", "IPH12M", 1.2, 0),
+        (12, "iPhone 12", "IPH12", 1.25, 0),
+        (12, "iPhone 12 Pro", "IPH12P", 1.25, 3500),
+        (12, "iPhone 12 Pro Max", "IPH12PM", 1.25, 6000),
+        # iPhone 13 Series
+        (13, "iPhone 13 mini", "IPH13M", 1.45, 0),
+        (13, "iPhone 13", "IPH13", 1.5, 0),
+        (13, "iPhone 13 Pro", "IPH13P", 1.5, 4000),
+        (13, "iPhone 13 Pro Max", "IPH13PM", 1.5, 7000),
+        # iPhone 14 Series
+        (14, "iPhone 14", "IPH14", 1.75, 0),
+        (14, "iPhone 14 Plus", "IPH14PL", 1.75, 2000),
+        (14, "iPhone 14 Pro", "IPH14P", 1.75, 4500),
+        (14, "iPhone 14 Pro Max", "IPH14PM", 1.75, 8000),
+        # iPhone 15 Series
+        (15, "iPhone 15", "IPH15", 2.1, 0),
+        (15, "iPhone 15 Plus", "IPH15PL", 2.1, 2500),
+        (15, "iPhone 15 Pro", "IPH15P", 2.1, 5500),
+        (15, "iPhone 15 Pro Max", "IPH15PM", 2.1, 9500),
+        # iPhone 16 Series
+        (16, "iPhone 16", "IPH16", 2.5, 0),
+        (16, "iPhone 16 Plus", "IPH16PL", 2.5, 3000),
+        (16, "iPhone 16 Pro", "IPH16P", 2.5, 6500),
+        (16, "iPhone 16 Pro Max", "IPH16PM", 2.5, 11000),
+        # iPhone 17 Series
+        (17, "iPhone 17", "IPH17", 3.0, 0),
+        (17, "iPhone 17 Plus", "IPH17PL", 3.0, 3500),
+        (17, "iPhone 17 Pro", "IPH17P", 3.0, 7500),
+        (17, "iPhone 17 Pro Max", "IPH17PM", 3.0, 13000),
+    ]
+
+    service_types = [
+        # (Prefix, Service Name, Category, Base Gremio, Base Retail)
+        ("BAT", "Cambio de Batería", "Baterías", 8000, 15000),
+        ("MOD", "Cambio de Módulo", "Módulos & Pantallas", 12000, 22000),
+        ("CAM", "Cambio de Cámara", "Cámaras", 9000, 16000),
+        ("FID", "Reparación Face ID", "Servicios de Laboratorio", 18000, 32000),
+        ("TAP", "Cambio de Tapa Trasera", "Glass & Refurbish", 12000, 22000),
+        ("FLX", "Cambio Flex Pin de Carga", "Flex & Carga", 7000, 13000),
+        ("SPK", "Cambio Buzzer y Speaker", "Conectores y Pines", 6000, 11000),
+    ]
+
+    items = []
+    for gen, model_name, model_code, mult, adder in models_gen:
+        for prefix, srv_name, cat, base_gremio, base_retail in service_types:
+            code = f"MO-{prefix}-{model_code}"
+            title = f"Mano de Obra: {srv_name} {model_name}"
+            price_g = round((base_gremio * mult + adder) / 500) * 500
+            price_r = round((base_retail * mult + adder * 1.6) / 500) * 500
+            items.append((code, title, cat, "Apple", float(price_g), float(price_r), "Disponible"))
+
+    return items
+
+def seed_iphone_gremio_items_db(overwrite: bool = False) -> int:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        if overwrite:
+            cursor.execute("DELETE FROM gremio_price_list WHERE code LIKE 'MO-%'")
+        
+        cursor.execute("SELECT code FROM gremio_price_list")
+        existing_codes = set(row[0] for row in cursor.fetchall() if row[0])
+
+        items = get_iphone_gremio_seed_items()
+        to_insert = [item for item in items if item[0] not in existing_codes]
+        if to_insert:
+            now_str = datetime.now().isoformat()
+            cursor.executemany("""
+            INSERT INTO gremio_price_list (code, title, category, brand, price_gremio, price_retail, stock, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, [(item[0], item[1], item[2], item[3], item[4], item[5], item[6], now_str) for item in to_insert])
+            conn.commit()
+            return cursor.rowcount
+        return 0
+    finally:
+        conn.close()
+
+def get_ilab_gremio_seed_items(usd_rate: float = 1300.0) -> List[Tuple[str, str, str, str, float, float, str]]:
+    usd_rate = float(usd_rate) if usd_rate else 1300.0
+    items = []
+
+    # 1. Placa
+    placa_list = [
+        ("iPhone 6", 22), ("iPhone 6 Plus", 22), ("iPhone 6s", 24), ("iPhone 6s Plus", 24),
+        ("iPhone 7", 39), ("iPhone 7 Plus", 39), ("iPhone 8", 45), ("iPhone 8 Plus", 45),
+        ("iPhone X", 60), ("iPhone XS", 65), ("iPhone XS Max", 65), ("iPhone SE 2020", 65),
+        ("iPhone XR", 60), ("iPhone 11", 80), ("iPhone 11 Pro", 80), ("iPhone 11 Pro Max", 80),
+        ("iPhone 12 Mini", 100), ("iPhone 12", 100), ("iPhone 12 Pro", 100), ("iPhone 12 Pro Max", 100),
+        ("iPhone 13 Mini", 140), ("iPhone 13", 140), ("iPhone 13 Pro", 140), ("iPhone 13 Pro Max", 140),
+        ("iPhone 14", 200), ("iPhone 14 Plus", 200), ("iPhone 14 Pro", 200), ("iPhone 14 Pro Max", 200),
+        ("iPhone 15", 240), ("iPhone 15 Plus", 240), ("iPhone 15 Pro", 240), ("iPhone 15 Pro Max", 240),
+        ("iPhone 16", 290), ("iPhone 16 Pro", 290), ("iPhone 16 Pro Max", 290)
+    ]
+    for model, usd in placa_list:
+        clean_code = model.upper().replace(" ", "").replace("IPHONE", "IPH")
+        code = f"MO-ILAB-PLC-{clean_code}"
+        title = f"Mano de Obra: Reparación de Placa {model} (iLab)"
+        price_g = round((usd * usd_rate) / 500) * 500
+        price_r = round((price_g * 1.6) / 500) * 500
+        items.append((code, title, "Servicios de Laboratorio", "Apple", float(price_g), float(price_r), "Disponible"))
+
+    # 2. Batería
+    bateria_list = [
+        ("iPhone 6", 19), ("iPhone 6 Plus", 19), ("iPhone 6s", 20), ("iPhone 6s Plus", 20),
+        ("iPhone 7", 20), ("iPhone 7 Plus", 21), ("iPhone 8", 20), ("iPhone 8 Plus", 21),
+        ("iPhone X", 24), ("iPhone XS", 26), ("iPhone XS Max", 29), ("iPhone SE 2020", 39),
+        ("iPhone XR", 30), ("iPhone 11", 40), ("iPhone 11 Pro", 45), ("iPhone 11 Pro Max", 45),
+        ("iPhone 12 Mini", 48), ("iPhone 12", 50), ("iPhone 12 Pro", 50), ("iPhone 12 Pro Max", 60),
+        ("iPhone 13 Mini", 55), ("iPhone 13", 60), ("iPhone 13 Pro", 62), ("iPhone 13 Pro Max", 62),
+        ("iPhone 14", 65), ("iPhone 14 Plus", 65), ("iPhone 14 Pro", 70), ("iPhone 14 Pro Max", 72),
+        ("iPhone 15", 75), ("iPhone 15 Pro", 80), ("iPhone 15 Pro Max", 90)
+    ]
+    for model, usd in bateria_list:
+        clean_code = model.upper().replace(" ", "").replace("IPHONE", "IPH")
+        code = f"MO-ILAB-BAT-{clean_code}"
+        title = f"Mano de Obra: Reemplazo de Batería {model} (iLab)"
+        price_g = round((usd * usd_rate) / 500) * 500
+        price_r = round((price_g * 1.6) / 500) * 500
+        items.append((code, title, "Baterías", "Apple", float(price_g), float(price_r), "Disponible"))
+
+    # 3. Tapa Trasera
+    tapa_list = [
+        ("iPhone 8", 30), ("iPhone 8 Plus", 30), ("iPhone X", 33), ("iPhone XS", 33), ("iPhone XS Max", 33),
+        ("iPhone SE 2020", 30), ("iPhone XR", 33), ("iPhone 11", 35), ("iPhone 11 Pro", 40), ("iPhone 11 Pro Max", 40),
+        ("iPhone 12 Mini", 40), ("iPhone 12", 40), ("iPhone 12 Pro", 40), ("iPhone 12 Pro Max", 40),
+        ("iPhone 13 Mini", 45), ("iPhone 13", 45), ("iPhone 13 Pro", 50), ("iPhone 13 Pro Max", 50),
+        ("iPhone 14", 50), ("iPhone 14 Plus", 50), ("iPhone 14 Pro", 55), ("iPhone 14 Pro Max", 55),
+        ("iPhone 15", 65), ("iPhone 15 Pro", 65), ("iPhone 15 Pro Max", 65), ("iPhone 15 Plus", 65),
+        ("iPhone 16", 90), ("iPhone 16 Pro", 90), ("iPhone 16 Pro Max", 90)
+    ]
+    for model, usd in tapa_list:
+        clean_code = model.upper().replace(" ", "").replace("IPHONE", "IPH")
+        code = f"MO-ILAB-TAP-{clean_code}"
+        title = f"Mano de Obra: Reemplazo Tapa Trasera {model} (iLab)"
+        price_g = round((usd * usd_rate) / 500) * 500
+        price_r = round((price_g * 1.6) / 500) * 500
+        items.append((code, title, "Glass & Refurbish", "Apple", float(price_g), float(price_r), "Disponible"))
+
+    # 4. Pantalla / Módulos
+    pantalla_list = [
+        {"modelo": "iPhone 11", "tipo": "Incell", "ic": False, "precio": 66},
+        {"modelo": "iPhone 11", "tipo": "Incell JK", "ic": True, "precio": 74.0},
+        {"modelo": "iPhone 11", "tipo": "Calidad Original", "ic": False, "precio": 79.04},
+        {"modelo": "iPhone 11 Pro", "tipo": "Incell", "ic": False, "precio": 70},
+        {"modelo": "iPhone 11 Pro", "tipo": "Incell JK", "ic": True, "precio": 75.6},
+        {"modelo": "iPhone 11 Pro", "tipo": "OLED", "ic": False, "precio": 95.76},
+        {"modelo": "iPhone 11 Pro", "tipo": "OLED", "ic": True, "precio": 96},
+        {"modelo": "iPhone 11 Pro Max", "tipo": "Incell Premium", "ic": False, "precio": 74.0},
+        {"modelo": "iPhone 11 Pro Max", "tipo": "Incell JK", "ic": True, "precio": 78.8},
+        {"modelo": "iPhone 11 Pro Max", "tipo": "OLED", "ic": True, "precio": 105},
+        {"modelo": "iPhone 11 Pro Max", "tipo": "AMOLED", "ic": False, "precio": 150.8},
+        {"modelo": "iPhone 12 Mini", "tipo": "Incell", "ic": True, "precio": 94.8},
+        {"modelo": "iPhone 12 Mini", "tipo": "OLED", "ic": False, "precio": 118.0},
+        {"modelo": "iPhone 12", "tipo": "Incell", "ic": False, "precio": 74.0},
+        {"modelo": "iPhone 12", "tipo": "Incell JK", "ic": True, "precio": 80.4},
+        {"modelo": "iPhone 12/12 Pro", "tipo": "OLED", "ic": False, "precio": 111.6},
+        {"modelo": "iPhone 12/12 Pro", "tipo": "OLED JK", "ic": True, "precio": 113.2},
+        {"modelo": "iPhone 12/12 Pro", "tipo": "Original", "ic": False, "precio": 157.2},
+        {"modelo": "iPhone 12/12 Pro", "tipo": "JCID Pre Programado", "ic": False, "precio": 138.0},
+        {"modelo": "iPhone 12 Pro Max", "tipo": "Incell", "ic": True, "precio": 90.0},
+        {"modelo": "iPhone 12 Pro Max", "tipo": "OLED", "ic": True, "precio": 146.0},
+        {"modelo": "iPhone 12 Pro Max", "tipo": "JCID Pre Programado", "ic": False, "precio": 158.0},
+        {"modelo": "iPhone 12 Pro Max", "tipo": "Original", "ic": False, "precio": 258.0},
+        {"modelo": "iPhone 13 Mini", "tipo": "Incell", "ic": False, "precio": 98.0},
+        {"modelo": "iPhone 13 Mini", "tipo": "Incell JK", "ic": True, "precio": 110.0},
+        {"modelo": "iPhone 13 Mini", "tipo": "OLED", "ic": True, "precio": 134.0},
+        {"modelo": "iPhone 13 Mini", "tipo": "Original", "ic": False, "precio": 202.0},
+        {"modelo": "iPhone 13", "tipo": "Incell GX", "ic": True, "precio": 85.2},
+        {"modelo": "iPhone 13", "tipo": "OLED", "ic": True, "precio": 110.0},
+        {"modelo": "iPhone 13", "tipo": "OLED GX", "ic": True, "precio": 118.0},
+        {"modelo": "iPhone 13", "tipo": "OLED Soft JK", "ic": True, "precio": 118.0},
+        {"modelo": "iPhone 13", "tipo": "JCID Pre Programado", "ic": False, "precio": 154.0},
+        {"modelo": "iPhone 13", "tipo": "Original", "ic": False, "precio": 250.0},
+        {"modelo": "iPhone 13 Pro", "tipo": "Incell", "ic": True, "precio": 98.0},
+        {"modelo": "iPhone 13 Pro", "tipo": "OLED", "ic": False, "precio": 130.0},
+        {"modelo": "iPhone 13 Pro", "tipo": "OLED", "ic": True, "precio": 154.0},
+        {"modelo": "iPhone 13 Pro", "tipo": "JCID Pre Programado", "ic": False, "precio": 162.0},
+        {"modelo": "iPhone 13 Pro", "tipo": "Original", "ic": False, "precio": 338.0},
+        {"modelo": "iPhone 13 Pro Max", "tipo": "Incell", "ic": False, "precio": 106.0},
+        {"modelo": "iPhone 13 Pro Max", "tipo": "Incell", "ic": True, "precio": 118.8},
+        {"modelo": "iPhone 13 Pro Max", "tipo": "OLED", "ic": True, "precio": 146.0},
+        {"modelo": "iPhone 13 Pro Max", "tipo": "OLED", "ic": False, "precio": 146.0},
+        {"modelo": "iPhone 13 Pro Max", "tipo": "JCID Pre Programado", "ic": False, "precio": 186.0},
+        {"modelo": "iPhone 13 Pro Max", "tipo": "Original", "ic": False, "precio": 386.0},
+        {"modelo": "iPhone 14", "tipo": "Incell", "ic": True, "precio": 98.0},
+        {"modelo": "iPhone 14", "tipo": "OLED", "ic": False, "precio": 122.0},
+        {"modelo": "iPhone 14", "tipo": "OLED", "ic": True, "precio": 122.0},
+        {"modelo": "iPhone 14", "tipo": "JCID Pre Programado", "ic": False, "precio": 150.0},
+        {"modelo": "iPhone 14", "tipo": "Original", "ic": False, "precio": 170.0},
+        {"modelo": "iPhone 14 Pro", "tipo": "Incell", "ic": True, "precio": 102.0},
+        {"modelo": "iPhone 14 Pro", "tipo": "OLED", "ic": False, "precio": 130.0},
+        {"modelo": "iPhone 14 Pro", "tipo": "OLED", "ic": True, "precio": 138.0},
+        {"modelo": "iPhone 14 Pro", "tipo": "JCID Pre Programado", "ic": False, "precio": 258.0},
+        {"modelo": "iPhone 14 Pro", "tipo": "Original", "ic": False, "precio": 306.0},
+        {"modelo": "iPhone 14 Plus", "tipo": "Incell", "ic": True, "precio": 90.0},
+        {"modelo": "iPhone 14 Plus", "tipo": "OLED", "ic": True, "precio": 132.4},
+        {"modelo": "iPhone 14 Plus", "tipo": "JCID Pre Programado", "ic": False, "precio": 178.0},
+        {"modelo": "iPhone 14 Plus", "tipo": "Original", "ic": False, "precio": 194.0},
+        {"modelo": "iPhone 14 Pro Max", "tipo": "Incell", "ic": True, "precio": 138.0},
+        {"modelo": "iPhone 14 Pro Max", "tipo": "OLED", "ic": False, "precio": 210.0},
+        {"modelo": "iPhone 14 Pro Max", "tipo": "OLED GX", "ic": True, "precio": 242.0},
+        {"modelo": "iPhone 14 Pro Max", "tipo": "JCID Pre Programado", "ic": False, "precio": 238.0},
+        {"modelo": "iPhone 14 Pro Max", "tipo": "Original", "ic": False, "precio": 330.0},
+        {"modelo": "iPhone 15", "tipo": "Incell", "ic": True, "precio": 114.0},
+        {"modelo": "iPhone 15", "tipo": "OLED", "ic": True, "precio": 183.6},
+        {"modelo": "iPhone 15", "tipo": "JCID Pre Programado", "ic": False, "precio": 270.0},
+        {"modelo": "iPhone 15", "tipo": "Original", "ic": False, "precio": 314.0},
+        {"modelo": "iPhone 15", "tipo": "Original Glass Cambiado", "ic": False, "precio": 290.0},
+        {"modelo": "iPhone 15 Plus", "tipo": "OLED", "ic": False, "precio": 170.24},
+        {"modelo": "iPhone 15 Pro", "tipo": "Incell MF", "ic": False, "precio": 118.0},
+        {"modelo": "iPhone 15 Pro", "tipo": "Incell", "ic": True, "precio": 126.0},
+        {"modelo": "iPhone 15 Pro", "tipo": "OLED", "ic": True, "precio": 162.0},
+        {"modelo": "iPhone 15 Pro", "tipo": "JCID Pre Programado", "ic": False, "precio": 290.0},
+        {"modelo": "iPhone 15 Pro", "tipo": "Original", "ic": False, "precio": 330.0},
+        {"modelo": "iPhone 15 Pro Max", "tipo": "Incell", "ic": False, "precio": 122.0},
+        {"modelo": "iPhone 15 Pro Max", "tipo": "Incell", "ic": True, "precio": 142.0},
+        {"modelo": "iPhone 15 Pro Max", "tipo": "JCID Pre Programado", "ic": False, "precio": 314.0},
+        {"modelo": "iPhone 15 Pro Max", "tipo": "OLED", "ic": True, "precio": 234.0},
+        {"modelo": "iPhone 15 Pro Max", "tipo": "Original", "ic": False, "precio": 370.0},
+        {"modelo": "iPhone 16", "tipo": "Incell", "ic": True, "precio": 122.0},
+        {"modelo": "iPhone 16", "tipo": "OLED", "ic": False, "precio": 170.0},
+        {"modelo": "iPhone 16e", "tipo": "OLED", "ic": False, "precio": 170.0},
+        {"modelo": "iPhone 16 Plus", "tipo": "OLED", "ic": False, "precio": 242.0},
+        {"modelo": "iPhone 16 Pro", "tipo": "Incell", "ic": True, "precio": 130.0},
+        {"modelo": "iPhone 16 Pro", "tipo": "OLED", "ic": False, "precio": 170.0},
+        {"modelo": "iPhone 16 Pro", "tipo": "OLED", "ic": True, "precio": 170.0},
+        {"modelo": "iPhone 16 Pro", "tipo": "Original", "ic": False, "precio": 370.0},
+        {"modelo": "iPhone 16 Pro Max", "tipo": "Incell", "ic": True, "precio": 146.0},
+        {"modelo": "iPhone 16 Pro Max", "tipo": "OLED", "ic": False, "precio": 234.0},
+        {"modelo": "iPhone 16 Pro Max", "tipo": "OLED", "ic": True, "precio": 242.0},
+        {"modelo": "iPhone 16 Pro Max", "tipo": "Original", "ic": False, "precio": 450.0},
+        {"modelo": "iPhone 17", "tipo": "OLED", "ic": False, "precio": 248.4},
+        {"modelo": "iPhone 17 Pro", "tipo": "OLED", "ic": False, "precio": 258.0},
+        {"modelo": "iPhone 17 Pro Max", "tipo": "OLED", "ic": False, "precio": 276.4}
+    ]
+
+    for idx, p in enumerate(pantalla_list):
+        model = p["modelo"]
+        tipo = p["tipo"]
+        ic_suffix = " (Con cambio de IC)" if p["ic"] else ""
+        usd = p["precio"]
+        clean_code = model.upper().replace(" ", "").replace("/", "").replace("IPHONE", "IPH")
+        code = f"MO-ILAB-SCR-{clean_code}-{idx+1}"
+        title = f"Mano de Obra: Reemplazo Módulo {model} {tipo}{ic_suffix} (iLab)"
+        price_g = round((usd * usd_rate) / 500) * 500
+        price_r = round((price_g * 1.6) / 500) * 500
+        items.append((code, title, "Módulos & Pantallas", "Apple", float(price_g), float(price_r), "Disponible"))
+
+    return items
+
+def seed_ilab_gremio_items_db(usd_rate: float = 1300.0, overwrite: bool = False) -> int:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        if overwrite:
+            cursor.execute("DELETE FROM gremio_price_list WHERE code LIKE 'MO-ILAB-%'")
+        
+        cursor.execute("SELECT code FROM gremio_price_list")
+        existing_codes = set(row[0] for row in cursor.fetchall() if row[0])
+
+        items = get_ilab_gremio_seed_items(usd_rate=usd_rate)
+        to_insert = [item for item in items if item[0] not in existing_codes]
+        if to_insert:
+            now_str = datetime.now().isoformat()
+            cursor.executemany("""
+            INSERT INTO gremio_price_list (code, title, category, brand, price_gremio, price_retail, stock, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, [(item[0], item[1], item[2], item[3], item[4], item[5], item[6], now_str) for item in to_insert])
+            conn.commit()
+            return cursor.rowcount
+        return 0
     finally:
         conn.close()
 
