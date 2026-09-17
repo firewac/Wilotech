@@ -220,6 +220,10 @@ def init_db():
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, [(item[0], item[1], item[2], item[3], item[4], item[5], item[6], now_str) for item in to_insert])
 
+    # Limpiar cualquier 'Mano de Obra: ' de los títulos existentes
+    cursor.execute("UPDATE gremio_price_list SET title = REPLACE(title, 'Mano de Obra: ', '') WHERE title LIKE 'Mano de Obra: %'")
+    cursor.execute("UPDATE gremio_price_list SET title = REPLACE(title, 'Mano de Obra ', '') WHERE title LIKE 'Mano de Obra %'")
+
     # Asegurar que el usuario demo de gremios (gremio@wilotech.com) esté siempre registrado
     cursor.execute("SELECT COUNT(*) FROM gremio_users WHERE LOWER(email) = 'gremio@wilotech.com'")
     if cursor.fetchone()[0] == 0:
@@ -1007,7 +1011,7 @@ def get_iphone_gremio_seed_items() -> List[Tuple[str, str, str, str, float, floa
     for gen, model_name, model_code, mult, adder in models_gen:
         for prefix, srv_name, cat, base_gremio, base_retail in service_types:
             code = f"MO-{prefix}-{model_code}"
-            title = f"Mano de Obra: {srv_name} {model_name}"
+            title = f"{srv_name} {model_name}"
             price_g = round((base_gremio * mult + adder) / 500) * 500
             price_r = round((base_retail * mult + adder * 1.6) / 500) * 500
             items.append((code, title, cat, "Apple", float(price_g), float(price_r), "Disponible"))
@@ -1057,7 +1061,7 @@ def get_ilab_gremio_seed_items(usd_rate: float = 1300.0) -> List[Tuple[str, str,
     for model, usd in placa_list:
         clean_code = model.upper().replace(" ", "").replace("IPHONE", "IPH")
         code = f"MO-ILAB-PLC-{clean_code}"
-        title = f"Mano de Obra: Reparación de Placa {model} (iLab)"
+        title = f"Reparación de Placa {model} (iLab)"
         price_g = round((usd * usd_rate) / 500) * 500
         price_r = round((price_g * 1.6) / 500) * 500
         items.append((code, title, "Servicios de Laboratorio", "Apple", float(price_g), float(price_r), "Disponible"))
@@ -1076,7 +1080,7 @@ def get_ilab_gremio_seed_items(usd_rate: float = 1300.0) -> List[Tuple[str, str,
     for model, usd in bateria_list:
         clean_code = model.upper().replace(" ", "").replace("IPHONE", "IPH")
         code = f"MO-ILAB-BAT-{clean_code}"
-        title = f"Mano de Obra: Reemplazo de Batería {model} (iLab)"
+        title = f"Reemplazo de Batería {model} (iLab)"
         price_g = round((usd * usd_rate) / 500) * 500
         price_r = round((price_g * 1.6) / 500) * 500
         items.append((code, title, "Baterías", "Apple", float(price_g), float(price_r), "Disponible"))
@@ -1094,7 +1098,7 @@ def get_ilab_gremio_seed_items(usd_rate: float = 1300.0) -> List[Tuple[str, str,
     for model, usd in tapa_list:
         clean_code = model.upper().replace(" ", "").replace("IPHONE", "IPH")
         code = f"MO-ILAB-TAP-{clean_code}"
-        title = f"Mano de Obra: Reemplazo Tapa Trasera {model} (iLab)"
+        title = f"Reemplazo Tapa Trasera {model} (iLab)"
         price_g = round((usd * usd_rate) / 500) * 500
         price_r = round((price_g * 1.6) / 500) * 500
         items.append((code, title, "Glass & Refurbish", "Apple", float(price_g), float(price_r), "Disponible"))
@@ -1204,7 +1208,7 @@ def get_ilab_gremio_seed_items(usd_rate: float = 1300.0) -> List[Tuple[str, str,
         usd = p["precio"]
         clean_code = model.upper().replace(" ", "").replace("/", "").replace("IPHONE", "IPH")
         code = f"MO-ILAB-SCR-{clean_code}-{idx+1}"
-        title = f"Mano de Obra: Reemplazo Módulo {model} {tipo}{ic_suffix} (iLab)"
+        title = f"Reemplazo Módulo {model} {tipo}{ic_suffix} (iLab)"
         price_g = round((usd * usd_rate) / 500) * 500
         price_r = round((price_g * 1.6) / 500) * 500
         items.append((code, title, "Módulos & Pantallas", "Apple", float(price_g), float(price_r), "Disponible"))
