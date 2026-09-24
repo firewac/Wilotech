@@ -93,6 +93,15 @@
       </div>
 
       <div class="flex items-center gap-2 sm:gap-3 flex-wrap w-full md:w-auto">
+        <!-- BOTÓN RÁPIDO PROBADOR DE JOYSTICK -->
+        <button 
+          onclick="switchAdminTab('joystick')" 
+          class="inline-flex items-center justify-center gap-2 py-2 px-3 sm:px-4 rounded-xl border border-[#00d2ff] bg-[#00d2ff]/15 hover:bg-[#00d2ff]/30 text-[#00d2ff] text-xs font-brand font-bold transition-all shadow-lg shadow-[#00d2ff]/20 w-full sm:w-auto text-center cursor-pointer"
+        >
+          <i data-lucide="gamepad-2" class="w-4 h-4 text-[#00d2ff] shrink-0"></i>
+          <span>PROBADOR JOYSTICK</span>
+        </button>
+
         <!-- BOTÓN DESTACADO AL COMPARADOR DE REPUESTOS -->
         <a 
           href="comparador.html" 
@@ -219,6 +228,15 @@
       >
         <i data-lucide="shield-check" class="w-4 h-4 flex-shrink-0 text-[#00f5a0]"></i>
         <span>6. GREMIOS & TARIFARIO</span>
+      </button>
+
+      <button 
+        id="tab-btn-joystick"
+        onclick="switchAdminTab('joystick')" 
+        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
+      >
+        <i data-lucide="gamepad-2" class="w-4 h-4 flex-shrink-0 text-[#00d2ff]"></i>
+        <span>7. PROBADOR JOYSTICK</span>
       </button>
     </div>
 
@@ -1043,17 +1061,278 @@
             </select>
           </div>
 
-          <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-            <button type="button" onclick="closeGremioItemModal()" class="py-2 px-4 rounded-xl border border-slate-700 text-xs font-brand font-bold text-slate-300">
-              CANCELAR
+    <!-- PESTAÑA 7: PROBADOR Y CALIBRADOR DE JOYSTICK EN BANCO DE TALLER -->
+    <section id="pane-joystick" class="admin-pane space-y-6 hidden">
+      
+      <!-- HEADER DEL BANCO DE PRUEBAS DE JOYSTICK -->
+      <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-[#00d2ff]/30 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <i data-lucide="gamepad-2" class="w-6 h-6 text-[#00d2ff]"></i>
+              <h2 class="font-brand text-xl font-bold text-white">Probador & Calibrador de Joystick</h2>
+              <span class="font-brand text-[10px] bg-[#00d2ff]/20 text-[#00d2ff] border border-[#00d2ff]/40 px-2 py-0.5 rounded font-bold uppercase">BANCO TALLER</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Diagnóstico en tiempo real, test de circularidad, deriva de potenciómetro/Hall, zonas muertas y calibración háptica</p>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <select 
+              id="js-gamepad-select" 
+              onchange="window.joystickTester.onSelectGamepad(this.value)"
+              class="bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2 text-xs font-brand text-slate-200 focus:border-[#00d2ff] max-w-xs cursor-pointer"
+            >
+              <option value="">Detectando Mandos...</option>
+            </select>
+
+            <button 
+              onclick="window.joystickTester.calibrateZero()"
+              class="px-3 py-2 rounded-xl bg-[#00d2ff]/15 hover:bg-[#00d2ff]/30 border border-[#00d2ff]/40 text-[#00d2ff] text-xs font-brand font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Guardar posición actual en reposo como centro"
+            >
+              <i data-lucide="crosshair" class="w-4 h-4"></i>
+              <span>Calibrar Cero</span>
             </button>
-            <button type="submit" class="py-2 px-5 rounded-xl bg-[#00f5a0] text-slate-950 font-brand font-black text-xs uppercase hover:bg-[#00f5a0]/90">
-              GUARDAR ÍTEM
+
+            <button 
+              onclick="window.joystickTester.resetCircularityTest()"
+              class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-brand font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Borrar trazado de prueba de circularidad"
+            >
+              <i data-lucide="rotate-ccw" class="w-4 h-4 text-amber-400"></i>
+              <span>Reset Traza</span>
+            </button>
+
+            <button 
+              onclick="window.joystickTester.testVibration(0.6, 1.0, 600)"
+              class="px-3 py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 text-xs font-brand font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Probar motores de vibración (Rumble)"
+            >
+              <i data-lucide="zap" class="w-4 h-4 text-purple-400"></i>
+              <span>Vibración</span>
+            </button>
+
+            <button 
+              onclick="window.joystickTester.copyReportToClipboard()"
+              class="px-3.5 py-2 rounded-xl bg-[#00f5a0] hover:bg-[#00f5a0]/90 text-slate-950 text-xs font-brand font-black flex items-center gap-1.5 transition-all shadow-lg shadow-[#00f5a0]/20 cursor-pointer"
+              title="Copiar diagnóstico para pegar en notas de taller"
+            >
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              <span>Copiar Informe</span>
             </button>
           </div>
-        </form>
+        </div>
+
+        <!-- Banner de Estado del Joystick -->
+        <div id="js-status-banner" class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+          <div id="js-status-text">
+            <span class="text-xs text-slate-400">Cargando estado de mandos...</span>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <!-- GRID PRINCIPAL DE PRUEBAS DE STICKS (CIRCULARIDAD & COORDENADAS) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- STICK IZQUIERDO (LS) -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-[#00d2ff] shadow-[0_0_8px_#00d2ff]"></div>
+              <h3 class="font-brand text-sm font-bold text-white uppercase tracking-wider">Stick Izquierdo (L-Stick)</h3>
+            </div>
+            <span id="js-left-drift-badge" class="px-2 py-0.5 rounded text-[10px] font-brand font-bold bg-[#00f5a0]/20 text-[#00f5a0] border border-[#00f5a0]/40">
+              CENTRO EXACTO ✓
+            </span>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center gap-6 justify-center">
+            <!-- Canvas 2D Target Stick Izquierdo -->
+            <div class="relative shrink-0">
+              <canvas id="js-left-stick-canvas" class="rounded-2xl border border-slate-700 bg-[#05070d] shadow-inner"></canvas>
+              <div class="absolute bottom-2 left-2 text-[9px] font-mono text-slate-500 bg-[#05070d]/80 px-1.5 py-0.5 rounded border border-slate-800">
+                Radio: 1.0 (Target Circle)
+              </div>
+            </div>
+
+            <!-- Valores en tiempo real -->
+            <div class="space-y-2.5 w-full">
+              <div class="p-2.5 rounded-xl bg-[#0a101c] border border-slate-800 flex justify-between items-center text-xs font-mono">
+                <span class="text-slate-400 font-brand">Eje X (Horizontal):</span>
+                <span id="js-lx-val" class="text-[#00d2ff] font-bold">0.0000</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-[#0a101c] border border-slate-800 flex justify-between items-center text-xs font-mono">
+                <span class="text-slate-400 font-brand">Eje Y (Vertical):</span>
+                <span id="js-ly-val" class="text-[#00d2ff] font-bold">0.0000</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-[#0a101c] border border-slate-800 flex justify-between items-center text-xs font-mono">
+                <span class="text-slate-400 font-brand">Magnitud Vector (R):</span>
+                <span id="js-lr-val" class="text-emerald-400 font-bold">0.0000</span>
+              </div>
+
+              <!-- Test de Circularidad Izquierdo -->
+              <div class="p-3 rounded-xl bg-[#05070d] border border-[#00d2ff]/20 space-y-1">
+                <div class="flex items-center justify-between text-xs font-brand">
+                  <span class="text-slate-300">Error Circularidad:</span>
+                  <span id="js-left-circularity-val" class="text-[#00f5a0] font-black text-sm">0.0%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] text-slate-500">Girá el stick 360° para medir deformación</span>
+                  <span id="js-left-circularity-badge" class="px-1.5 py-0.5 rounded text-[9px] font-brand font-bold bg-[#00f5a0]/20 text-[#00f5a0]">ÓPTIMO</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STICK DERECHO (RS) -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-[#00f5a0] shadow-[0_0_8px_#00f5a0]"></div>
+              <h3 class="font-brand text-sm font-bold text-white uppercase tracking-wider">Stick Derecho (R-Stick)</h3>
+            </div>
+            <span id="js-right-drift-badge" class="px-2 py-0.5 rounded text-[10px] font-brand font-bold bg-[#00f5a0]/20 text-[#00f5a0] border border-[#00f5a0]/40">
+              CENTRO EXACTO ✓
+            </span>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center gap-6 justify-center">
+            <!-- Canvas 2D Target Stick Derecho -->
+            <div class="relative shrink-0">
+              <canvas id="js-right-stick-canvas" class="rounded-2xl border border-slate-700 bg-[#05070d] shadow-inner"></canvas>
+              <div class="absolute bottom-2 left-2 text-[9px] font-mono text-slate-500 bg-[#05070d]/80 px-1.5 py-0.5 rounded border border-slate-800">
+                Radio: 1.0 (Target Circle)
+              </div>
+            </div>
+
+            <!-- Valores en tiempo real -->
+            <div class="space-y-2.5 w-full">
+              <div class="p-2.5 rounded-xl bg-[#0a101c] border border-slate-800 flex justify-between items-center text-xs font-mono">
+                <span class="text-slate-400 font-brand">Eje X (Horizontal):</span>
+                <span id="js-rx-val" class="text-[#00f5a0] font-bold">0.0000</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-[#0a101c] border border-slate-800 flex justify-between items-center text-xs font-mono">
+                <span class="text-slate-400 font-brand">Eje Y (Vertical):</span>
+                <span id="js-ry-val" class="text-[#00f5a0] font-bold">0.0000</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-[#0a101c] border border-slate-800 flex justify-between items-center text-xs font-mono">
+                <span class="text-slate-400 font-brand">Magnitud Vector (R):</span>
+                <span id="js-rr-val" class="text-emerald-400 font-bold">0.0000</span>
+              </div>
+
+              <!-- Test de Circularidad Derecho -->
+              <div class="p-3 rounded-xl bg-[#05070d] border border-[#00f5a0]/20 space-y-1">
+                <div class="flex items-center justify-between text-xs font-brand">
+                  <span class="text-slate-300">Error Circularidad:</span>
+                  <span id="js-right-circularity-val" class="text-[#00f5a0] font-black text-sm">0.0%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] text-slate-500">Girá el stick 360° para medir deformación</span>
+                  <span id="js-right-circularity-badge" class="px-1.5 py-0.5 rounded text-[9px] font-brand font-bold bg-[#00f5a0]/20 text-[#00f5a0]">ÓPTIMO</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SECCIÓN INTERACTIVA DE GATILLOS Y BOTONES DIGITALES -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- BARRAS DE PROFUNDIDAD DE GATILLOS (L2/R2 ANALÓGICOS) -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+          <h3 class="font-brand text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="sliders" class="w-4 h-4 text-[#00d2ff]"></i>
+            Gatillos Analógicos (L2 / R2)
+          </h3>
+
+          <!-- Gatillo L2 Bar -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs font-brand">
+              <span id="js-l2-text" class="text-slate-300">GATILLO L2: 0%</span>
+              <span class="text-slate-500 font-mono">B6</span>
+            </div>
+            <div class="w-full bg-[#05070d] h-4 rounded-xl border border-slate-800 overflow-hidden p-0.5">
+              <div id="js-l2-bar" class="bg-gradient-to-r from-[#00d2ff] to-[#00f5a0] h-full rounded-lg transition-all duration-75 w-0"></div>
+            </div>
+          </div>
+
+          <!-- Gatillo R2 Bar -->
+          <div class="space-y-1.5 pt-2">
+            <div class="flex justify-between text-xs font-brand">
+              <span id="js-r2-text" class="text-slate-300">GATILLO R2: 0%</span>
+              <span class="text-slate-500 font-mono">B7</span>
+            </div>
+            <div class="w-full bg-[#05070d] h-4 rounded-xl border border-slate-800 overflow-hidden p-0.5">
+              <div id="js-r2-bar" class="bg-gradient-to-r from-[#00d2ff] to-[#00f5a0] h-full rounded-lg transition-all duration-75 w-0"></div>
+            </div>
+          </div>
+
+          <!-- AJUSTE DE ZONA MUERTA (DEADZONE SOFTWARE) -->
+          <div class="border-t border-slate-800 pt-4 space-y-3">
+            <h4 class="font-brand text-xs font-bold text-slate-300 uppercase">Ajuste de Zona Muerta (Deadzone)</h4>
+            
+            <div class="space-y-1">
+              <div class="flex justify-between text-[11px] font-brand text-slate-400">
+                <span>Zona Muerta Interna:</span>
+                <span id="js-inner-deadzone-val" class="text-[#00d2ff] font-bold">5%</span>
+              </div>
+              <input type="range" id="js-inner-deadzone" min="0" max="30" value="5" class="w-full accent-[#00d2ff] cursor-pointer">
+            </div>
+
+            <div class="space-y-1">
+              <div class="flex justify-between text-[11px] font-brand text-slate-400">
+                <span>Límite Muerto Externo:</span>
+                <span id="js-outer-deadzone-val" class="text-[#00d2ff] font-bold">98%</span>
+              </div>
+              <input type="range" id="js-outer-deadzone" min="70" max="100" value="98" class="w-full accent-[#00d2ff] cursor-pointer">
+            </div>
+          </div>
+        </div>
+
+        <!-- REJILLA DE ESTADO DE TODOS LOS BOTONES -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 lg:col-span-2 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-brand text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <i data-lucide="activity" class="w-4 h-4 text-[#00f5a0]"></i>
+              Matriz de Botones & Switcheo Táctil
+            </h3>
+            <span class="text-[10px] text-slate-500 font-brand uppercase">HTML5 Gamepad API Standard</span>
+          </div>
+
+          <div id="js-buttons-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+            <!-- Se llena dinámicamente -->
+            <div class="col-span-full text-center py-8 text-slate-500 font-brand text-xs">
+              Conectá un joystick para verificar la presión de todos los botones y sensores.
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- HISTORIAL Y CONSOLA DE DIAGNÓSTICO EN TIEMPO REAL -->
+      <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-brand text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i>
+            Consola de Eventos & Registro de Diagnóstico
+          </h3>
+          <button 
+            onclick="document.getElementById('js-diagnostic-logs').innerHTML = '';" 
+            class="text-[10px] font-brand text-slate-500 hover:text-slate-300 cursor-pointer"
+          >
+            LIMPIAR CONSOLA
+          </button>
+        </div>
+
+        <div id="js-diagnostic-logs" class="space-y-1.5 max-h-40 overflow-y-auto font-mono text-xs pr-1">
+          <!-- Logs dinámicos -->
+        </div>
+      </div>
+
+    </section>
 
   </main>
 
@@ -1061,6 +1340,7 @@
   <script src="js/data.js"></script>
   <script src="js/imei-service.js"></script>
   <script src="js/admin.js"></script>
+  <script src="js/joystick-tester.js"></script>
   <script src="js/app.js"></script>
 
   <!-- LÓGICA DE INTERFAZ DEL DASHBOARD -->
@@ -1076,6 +1356,14 @@
       updateCustomerDatalists();
       initIMEIAutoDetection();
       renderChecklistUI();
+
+      // Detectar si se requiere abrir una pestaña por URL (?tab=joystick o #joystick)
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab') || window.location.hash.replace('#', '');
+      if (tabParam && ['repairs', 'new-order', 'pricing', 'stock', 'customers', 'gremios', 'joystick'].includes(tabParam)) {
+        switchAdminTab(tabParam);
+      }
+
       if (window.lucide) lucide.createIcons();
     });
 
@@ -1101,6 +1389,7 @@
       if (tabName === 'stock') renderStockTable();
       if (tabName === 'customers') renderCustomersTable();
       if (tabName === 'gremios') initGremiosAdmin();
+      if (tabName === 'joystick') initJoystickTester();
     }
 
     // 1. MÉTRICAS
