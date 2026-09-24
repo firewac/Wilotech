@@ -1,5 +1,58 @@
 [
   {
+    "id": "WT-1789161602",
+    "clientName": "Carlos Gardel",
+    "clientType": "Público",
+    "clientDni": "",
+    "clientPhone": "1155556666",
+    "clientAddress": "",
+    "deviceType": "Dispositivo",
+    "deviceBrand": "Apple",
+    "deviceModel": "iPhone 12",
+    "deviceColor": "",
+    "deviceStorage": "",
+    "serialOrImei": "",
+    "deviceLockType": "Sin Bloqueo",
+    "deviceLockCode": "",
+    "deviceChecklist": {},
+    "deviceConditionNotes": "",
+    "issueDescription": "Pantalla rota",
+    "status": "received",
+    "statusStep": 1,
+    "dateReceived": "2026-09-11T18:20",
+    "technician": "Laboratorio WILOTECH",
+    "technicianNotes": "",
+    "partsUsed": [],
+    "finalCost": 0,
+    "warranty": "90 días de garantía por escrito"
+  },
+  {
+    "id": "TF-7310",
+    "clientName": "Valeria Gómez",
+    "clientType": "Gremio",
+    "clientDni": "41.205.882",
+    "clientPhone": "+54 9 11 6321-7744",
+    "clientAddress": "Calle Florida 890, 4º B, CABA",
+    "deviceType": "Celular",
+    "deviceModel": "Apple iPhone 14 Pro",
+    "serialOrImei": "359482019847123",
+    "deviceLockType": "PIN",
+    "deviceLockCode": "1472",
+    "issueDescription": "Equipo no enciende luego de conectar a cargador de auto genérico. Consumo fijo de 1.8A en fuente de laboratorio.",
+    "status": "repairing",
+    "statusStep": 4,
+    "dateReceived": "2026-09-02 14:15",
+    "technician": "Federico Ruiz (Laboratorio Celulares)",
+    "technicianNotes": "Se separaron las placas tipo sándwich en precalentadora a 185°C. Mediante cámara térmica se localizó capacitor cerámico C3201 en la línea VDD_MAIN en cortocircuito total a tierra (0.00 Ohms). Se reemplazó componente y se realizó reballing de interposer para unir placas nuevamente.",
+    "partsUsed": [
+      "Capacitor SMD 0201 10uF 6.3V",
+      "Esferas de soldadura 0.2mm Relife",
+      "Stencil mecánico QianLi iPhone 14 Pro"
+    ],
+    "finalCost": 95,
+    "warranty": "180 días en reparación de placa madre"
+  },
+  {
     "id": "WT-5019",
     "clientName": "Cliente Taller WILOTECH",
     "clientType": "Público",
@@ -80,46 +133,13 @@
     "dateReceived": "2026-09-01 10:30",
     "technician": "Ing. Martín Ramos (Microelectrónica)",
     "technicianNotes": "Se desoldó puerto dañado con estación de aire caliente a 380°C. Limpieza de pistas con malla desoldadora. Se instaló puerto HDMI original reforzado con aleación Sn-Pb para mayor resistencia mecánica. Prueba en 4K 120Hz con HDR durante 45 minutos superada con éxito.",
-    "partsUsed": ["Puerto HDMI original OEM PS5 Rev. 3", "Estaño Mechanic 183°C", "Flux Amtech NC-559-ASM"],
-    "warrantyStickers": [
-      {
-        "partName": "Puerto HDMI original OEM PS5 Rev. 3",
-        "stickerCode": "STK-HDMI-8492",
-        "date": "2026-09-01"
-      }
-    ],
-    "devicePhotos": [
-      {
-        "id": "img-ps5-1",
-        "url": "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=600&q=80",
-        "caption": "Reemplazo de conector HDMI 2.1 completado bajo microscopio binocular.",
-        "date": "2026-09-01 11:45"
-      }
+    "partsUsed": [
+      "Puerto HDMI original OEM PS5 Rev. 3",
+      "Estaño Mechanic 183°C",
+      "Flux Amtech NC-559-ASM"
     ],
     "finalCost": 65,
     "warranty": "90 días de garantía por escrito"
-  },
-  {
-    "id": "TF-7310",
-    "clientName": "Valeria Gómez",
-    "clientType": "Gremio",
-    "clientDni": "41.205.882",
-    "clientPhone": "+54 9 11 6321-7744",
-    "clientAddress": "Calle Florida 890, 4º B, CABA",
-    "deviceType": "Celular",
-    "deviceModel": "Apple iPhone 14 Pro",
-    "serialOrImei": "359482019847123",
-    "deviceLockType": "PIN",
-    "deviceLockCode": "1472",
-    "issueDescription": "Equipo no enciende luego de conectar a cargador de auto genérico. Consumo fijo de 1.8A en fuente de laboratorio.",
-    "status": "repairing",
-    "statusStep": 4,
-    "dateReceived": "2026-09-02 14:15",
-    "technician": "Federico Ruiz (Laboratorio Celulares)",
-    "technicianNotes": "Se separaron las placas tipo sándwich en precalentadora a 185°C. Mediante cámara térmica se localizó capacitor cerámico C3201 en la línea VDD_MAIN en cortocircuito total a tierra (0.00 Ohms). Se reemplazó componente y se realizó reballing de interposer para unir placas nuevamente.",
-    "partsUsed": ["Capacitor SMD 0201 10uF 6.3V", "Esferas de soldadura 0.2mm Relife", "Stencil mecánico QianLi iPhone 14 Pro"],
-    "finalCost": 95,
-    "warranty": "180 días en reparación de placa madre"
   },
   {
     "id": "TF-6194",
@@ -139,7 +159,11 @@
     "dateReceived": "2026-09-03 09:00",
     "technician": "Ing. Martín Ramos",
     "technicianNotes": "Se constata que la pasta térmica original se encuentra totalmente cristalizada y las toberas de cobre del disipador están obstruidas por pelusa compactada. Se procederá a baño ultrasónico de disipadores y aplicación de almohadilla de cambio de fase Honeywell PTM7950.",
-    "partsUsed": ["Almohadilla térmica Honeywell PTM7950 40x80mm", "Thermal Putty K5 Pro para VRM/VRAM", "Alcohol isopropílico 99.9%"],
+    "partsUsed": [
+      "Almohadilla térmica Honeywell PTM7950 40x80mm",
+      "Thermal Putty K5 Pro para VRM/VRAM",
+      "Alcohol isopropílico 99.9%"
+    ],
     "finalCost": 40,
     "warranty": "6 meses de garantía térmica"
   },
@@ -159,7 +183,9 @@
     "dateReceived": "2026-09-02 18:20",
     "technician": "Federico Ruiz",
     "technicianNotes": "Se midieron los capacitores perimetrales del integrado M92T36 (Gestor de Power Delivery). Dos líneas de 3.3V y VDDIO se encuentran a tierra. Se aguarda arribo de integrado original Rohm M92T36 para sustitución por soldadura BGA.",
-    "partsUsed": ["Circuito Integrado Rohm M92T36 Original"],
+    "partsUsed": [
+      "Circuito Integrado Rohm M92T36 Original"
+    ],
     "finalCost": 60,
     "warranty": "90 días de garantía"
   }
