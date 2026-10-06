@@ -174,59 +174,59 @@
       </div>
     </div>
 
-    <!-- 2. NAVEGACIÓN POR PESTAÑAS DEL DASHBOARD -->
-    <div class="flex items-center overflow-x-auto no-scrollbar border-b border-slate-800 bg-[#0a101c]/90 rounded-t-2xl px-1 sm:px-3 font-brand text-xs sm:text-sm font-bold w-full whitespace-nowrap scroll-smooth">
+    <!-- 2. NAVEGACIÓN POR PESTAÑAS DEL DASHBOARD (SEGMENTED PILLS GRID) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 p-2 bg-[#0a101c]/90 border border-slate-800 rounded-2xl w-full font-brand text-xs font-bold">
       <button 
         id="tab-btn-repairs"
         onclick="switchAdminTab('repairs')" 
-        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-[#00f5a0] text-[#00f5a0] flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
+        class="admin-nav-tab flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-[#00f5a0]/50 text-[#00f5a0] bg-[#00f5a0]/15 shadow-md shadow-[#00f5a0]/10 transition-all font-bold cursor-pointer text-center whitespace-nowrap"
       >
-        <i data-lucide="wrench" class="w-4 h-4 flex-shrink-0"></i>
+        <i data-lucide="wrench" class="w-4 h-4 shrink-0"></i>
         <span>1. REPARACIONES</span>
       </button>
 
       <button 
         id="tab-btn-new-order"
         onclick="switchAdminTab('new-order')" 
-        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
+        class="admin-nav-tab flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-transparent text-slate-400 bg-transparent hover:text-slate-200 hover:bg-slate-800/50 transition-all font-bold cursor-pointer text-center whitespace-nowrap"
       >
-        <i data-lucide="plus-circle" class="w-4 h-4 flex-shrink-0"></i>
+        <i data-lucide="plus-circle" class="w-4 h-4 shrink-0"></i>
         <span>2. NUEVO EQUIPO</span>
       </button>
 
       <button 
         id="tab-btn-pricing"
         onclick="switchAdminTab('pricing')" 
-        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
+        class="admin-nav-tab flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-transparent text-slate-400 bg-transparent hover:text-slate-200 hover:bg-slate-800/50 transition-all font-bold cursor-pointer text-center whitespace-nowrap"
       >
-        <i data-lucide="tag" class="w-4 h-4 flex-shrink-0"></i>
+        <i data-lucide="tag" class="w-4 h-4 shrink-0"></i>
         <span>3. PRECIOS & MODELOS</span>
       </button>
 
       <button 
         id="tab-btn-stock"
         onclick="switchAdminTab('stock')" 
-        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
+        class="admin-nav-tab flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-transparent text-slate-400 bg-transparent hover:text-slate-200 hover:bg-slate-800/50 transition-all font-bold cursor-pointer text-center whitespace-nowrap"
       >
-        <i data-lucide="package" class="w-4 h-4 flex-shrink-0"></i>
+        <i data-lucide="package" class="w-4 h-4 shrink-0"></i>
         <span>4. INVENTARIO</span>
       </button>
 
       <button 
         id="tab-btn-customers"
         onclick="switchAdminTab('customers')" 
-        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
+        class="admin-nav-tab flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-transparent text-slate-400 bg-transparent hover:text-slate-200 hover:bg-slate-800/50 transition-all font-bold cursor-pointer text-center whitespace-nowrap"
       >
-        <i data-lucide="users" class="w-4 h-4 flex-shrink-0"></i>
+        <i data-lucide="users" class="w-4 h-4 shrink-0"></i>
         <span>5. CLIENTES</span>
       </button>
 
       <button 
         id="tab-btn-gremios"
         onclick="switchAdminTab('gremios')" 
-        class="admin-nav-tab py-3.5 px-3 sm:px-5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 text-center transition-all shrink-0 font-bold cursor-pointer"
+        class="admin-nav-tab flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-transparent text-slate-400 bg-transparent hover:text-slate-200 hover:bg-slate-800/50 transition-all font-bold cursor-pointer text-center whitespace-nowrap"
       >
-        <i data-lucide="shield-check" class="w-4 h-4 flex-shrink-0 text-[#00f5a0]"></i>
+        <i data-lucide="shield-check" class="w-4 h-4 shrink-0 text-[#00f5a0]"></i>
         <span>6. GREMIOS & TARIFARIO</span>
       </button>
     </div>
@@ -1363,8 +1363,8 @@
     function switchAdminTab(tabName) {
       activeTab = tabName;
       document.querySelectorAll(".admin-nav-tab").forEach(btn => {
-        btn.classList.remove("border-[#00f5a0]", "text-[#00f5a0]");
-        btn.classList.add("border-transparent", "text-slate-400");
+        btn.classList.remove("border-[#00f5a0]/50", "text-[#00f5a0]", "bg-[#00f5a0]/15", "shadow-md", "shadow-[#00f5a0]/10");
+        btn.classList.add("border-transparent", "text-slate-400", "bg-transparent");
       });
       document.querySelectorAll(".admin-pane").forEach(pane => pane.classList.add("hidden"));
 
@@ -1372,8 +1372,8 @@
       const targetPane = document.getElementById(`pane-${tabName}`);
 
       if (targetBtn) {
-        targetBtn.classList.add("border-[#00f5a0]", "text-[#00f5a0]");
-        targetBtn.classList.remove("border-transparent", "text-slate-400");
+        targetBtn.classList.add("border-[#00f5a0]/50", "text-[#00f5a0]", "bg-[#00f5a0]/15", "shadow-md", "shadow-[#00f5a0]/10");
+        targetBtn.classList.remove("border-transparent", "text-slate-400", "bg-transparent");
       }
       if (targetPane) targetPane.classList.remove("hidden");
 
