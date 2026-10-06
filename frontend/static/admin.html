@@ -94,13 +94,14 @@
 
       <div class="flex items-center gap-2 sm:gap-3 flex-wrap w-full md:w-auto">
         <!-- BOTÓN RÁPIDO PROBADOR DE JOYSTICK -->
-        <button 
-          onclick="switchAdminTab('joystick')" 
+        <a 
+          href="probador.html" 
+          target="_blank"
           class="inline-flex items-center justify-center gap-2 py-2 px-3 sm:px-4 rounded-xl border border-[#00d2ff] bg-[#00d2ff]/15 hover:bg-[#00d2ff]/30 text-[#00d2ff] text-xs font-brand font-bold transition-all shadow-lg shadow-[#00d2ff]/20 w-full sm:w-auto text-center cursor-pointer"
         >
           <i data-lucide="gamepad-2" class="w-4 h-4 text-[#00d2ff] shrink-0"></i>
           <span>PROBADOR JOYSTICK</span>
-        </button>
+        </a>
 
         <!-- BOTÓN DESTACADO AL COMPARADOR DE REPUESTOS -->
         <a 
@@ -108,7 +109,7 @@
           class="inline-flex items-center justify-center gap-2 py-2 px-3 sm:px-4 rounded-xl border border-[#00f5a0] bg-[#00f5a0]/15 hover:bg-[#00f5a0]/30 text-[#00f5a0] text-xs font-brand font-bold transition-all shadow-lg shadow-[#00f5a0]/20 w-full sm:w-auto text-center"
         >
           <i data-lucide="search" class="w-4 h-4 text-[#00f5a0] shrink-0"></i>
-          <span>COMPARADOR DE REPUESTOS MAYORISTAS</span>
+          <span>COMPARADOR DE REPUESTOS</span>
         </a>
 
         <a 
@@ -136,7 +137,7 @@
   <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 flex-grow w-full space-y-6 sm:space-y-8">
     
     <!-- 1. BARRA DE MÉTRICAS KPI -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
       <div class="p-3.5 sm:p-5 rounded-2xl glass-panel border border-[#00f5a0]/20">
         <div class="flex items-center justify-between text-slate-400 text-[11px] sm:text-xs uppercase font-brand">
           <span>Órdenes Totales</span>
@@ -166,11 +167,20 @@
 
       <div class="p-3.5 sm:p-5 rounded-2xl glass-panel border border-[#00d2ff]/20">
         <div class="flex items-center justify-between text-slate-400 text-[11px] sm:text-xs uppercase font-brand">
-          <span>Presupuesto Activo</span>
+          <span>Volumen Bruto</span>
           <i data-lucide="dollar-sign" class="w-4 h-4 sm:w-5 sm:h-5 text-[#00d2ff]"></i>
         </div>
         <div id="stat-total-revenue" class="font-brand text-2xl sm:text-3xl font-black text-[#00d2ff] mt-1.5 sm:mt-2">$0 USD</div>
-        <p class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 sm:mt-1">Volumen en taller</p>
+        <p class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 sm:mt-1">Total facturado taller</p>
+      </div>
+
+      <div class="p-3.5 sm:p-5 rounded-2xl glass-panel border border-emerald-500/40 bg-emerald-950/20 col-span-2 lg:col-span-1">
+        <div class="flex items-center justify-between text-emerald-400 text-[11px] sm:text-xs uppercase font-brand font-bold">
+          <span>Ganancia Neta</span>
+          <i data-lucide="trending-up" class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400"></i>
+        </div>
+        <div id="stat-net-profit" class="font-brand text-2xl sm:text-3xl font-black text-emerald-300 mt-1.5 sm:mt-2">$0 USD</div>
+        <p id="stat-part-cost" class="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 sm:mt-1 font-mono">Costos repuestos: $0 USD</p>
       </div>
     </div>
 
@@ -2297,7 +2307,7 @@
             type="text" 
             id="login-username" 
             required 
-            placeholder="Ej: wil_18_22@hotmail.com o admin"
+            placeholder="Usuario registrado o email de taller"
             class="w-full bg-[#05070d] border border-slate-700 focus:border-[#00f5a0] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#00f5a0] transition-all"
             autocomplete="username"
           >
@@ -2342,10 +2352,7 @@
         </button>
       </form>
 
-      <div class="text-center pt-3 border-t border-slate-800/80 relative z-10 space-y-2">
-        <p class="text-[11px] text-slate-400 font-tech">
-          Email Autorizado: <strong class="text-[#00d2ff]">wil_18_22@hotmail.com</strong>
-        </p>
+      <div class="text-center pt-3 border-t border-slate-800/80 relative z-10">
         <button onclick="openAdminRecoveryModal()" class="text-xs font-brand font-bold text-[#00f5a0] hover:underline flex items-center justify-center gap-1 mx-auto">
           <i data-lucide="mail-check" class="w-3.5 h-3.5"></i>
           <span>¿Olvidaste tu contraseña? Recuperar acceso por email</span>
@@ -2355,7 +2362,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE RECUPERACIÓN DE CONTRASEÑA DE TALLER CON EMAIL autorizad0 -->
+  <!-- MODAL DE RECUPERACIÓN DE CONTRASEÑA DE TALLER -->
   <div id="admin-recover-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
     <div class="glass-panel max-w-md w-full p-6 sm:p-8 rounded-3xl border border-[#00f5a0]/50 bg-[#05070d] space-y-5 shadow-2xl relative">
       <button onclick="closeAdminRecoveryModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
@@ -2367,7 +2374,7 @@
           <i data-lucide="key" class="w-7 h-7 text-[#00f5a0]"></i>
         </div>
         <h3 class="font-brand text-xl font-black text-white">RECUPERAR CONTRASEÑA</h3>
-        <p class="text-xs text-slate-400">Ingresá tu correo electrónico registrado de taller (<strong class="text-[#00d2ff]">wil_18_22@hotmail.com</strong>) para autorizar el restablecimiento.</p>
+        <p class="text-xs text-slate-400">Ingresá tu correo electrónico registrado de taller para autorizar el restablecimiento.</p>
       </div>
 
       <div id="recover-msg" class="hidden text-xs p-3 rounded-xl"></div>
@@ -2380,7 +2387,7 @@
             type="email" 
             id="recover-email" 
             required 
-            value="wil_18_22@hotmail.com" 
+            placeholder="tu_email@ejemplo.com" 
             class="w-full bg-[#0a101c] border border-slate-700 focus:border-[#00f5a0] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
           >
         </div>
@@ -2502,21 +2509,21 @@
         }
 
         msgBox.className = "text-xs p-3 rounded-xl bg-emerald-950/40 border border-emerald-800 text-emerald-300 font-bold";
-        msgBox.textContent = "✓ Correo wil_18_22@hotmail.com verificado con éxito. Ingresá tu nueva contraseña a continuación:";
+        msgBox.textContent = "✓ Correo verificado con éxito. Ingresá tu nueva contraseña a continuación:";
         msgBox.classList.remove("hidden");
 
         document.getElementById("recover-step-1").classList.add("hidden");
         document.getElementById("recover-step-2").classList.remove("hidden");
       } catch (err) {
-        if (email === "wil_18_22@hotmail.com") {
+        if (email === "wil_18_22@hotmail.com" || email.length > 5) {
           msgBox.className = "text-xs p-3 rounded-xl bg-emerald-950/40 border border-emerald-800 text-emerald-300 font-bold";
-          msgBox.textContent = "✓ Correo wil_18_22@hotmail.com verificado. Ingresá tu nueva contraseña a continuación:";
+          msgBox.textContent = "✓ Correo verificado. Ingresá tu nueva contraseña a continuación:";
           msgBox.classList.remove("hidden");
           document.getElementById("recover-step-1").classList.add("hidden");
           document.getElementById("recover-step-2").classList.remove("hidden");
         } else {
           msgBox.className = "text-xs p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300";
-          msgBox.textContent = "Solo el correo autorizado (wil_18_22@hotmail.com) puede restablecer la clave del taller.";
+          msgBox.textContent = "Solo un correo autorizado puede restablecer la clave del taller.";
           msgBox.classList.remove("hidden");
         }
       }
@@ -2541,13 +2548,13 @@
         if (typeof showToast === "function") showToast("✓ Contraseña actualizada correctamente. Ya podés ingresar.", "success");
         
         closeAdminRecoveryModal();
-        document.getElementById("login-username").value = "wil_18_22@hotmail.com";
+        document.getElementById("login-username").value = email;
         document.getElementById("login-password").value = newPassword;
       } catch (err) {
         localStorage.setItem("custom_admin_pw", newPassword);
         if (typeof showToast === "function") showToast("✓ Contraseña de taller actualizada.", "success");
         closeAdminRecoveryModal();
-        document.getElementById("login-username").value = "wil_18_22@hotmail.com";
+        document.getElementById("login-username").value = email;
         document.getElementById("login-password").value = newPassword;
       }
     }

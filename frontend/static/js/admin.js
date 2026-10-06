@@ -330,6 +330,7 @@ const TechAdmin = (function () {
       serialOrImei: data.serialOrImei || "SN-" + Date.now().toString().slice(-6),
       deviceLockType: data.deviceLockType || "Sin Bloqueo",
       deviceLockCode: data.deviceLockCode || "",
+      deviceLockPattern: data.deviceLockPattern || "",
       deviceChecklist: data.deviceChecklist || {
         display: "ok",
         backCover: "ok",
@@ -351,6 +352,7 @@ const TechAdmin = (function () {
       warrantyStickers: data.warrantyStickers || [],
       devicePhotos: data.devicePhotos || [],
       finalCost: parseFloat(data.finalCost) || 0,
+      partCost: parseFloat(data.partCost) || 0,
       warranty: data.warranty || "90 días de garantía por escrito"
     };
 
@@ -405,6 +407,7 @@ const TechAdmin = (function () {
     if (data.serialOrImei !== undefined) ticket.serialOrImei = data.serialOrImei;
     if (data.deviceLockType !== undefined) ticket.deviceLockType = data.deviceLockType;
     if (data.deviceLockCode !== undefined) ticket.deviceLockCode = data.deviceLockCode;
+    if (data.deviceLockPattern !== undefined) ticket.deviceLockPattern = data.deviceLockPattern;
     if (data.deviceChecklist !== undefined) ticket.deviceChecklist = data.deviceChecklist;
     if (data.deviceConditionNotes !== undefined) ticket.deviceConditionNotes = data.deviceConditionNotes;
     if (data.issueDescription !== undefined) ticket.issueDescription = data.issueDescription;
@@ -420,6 +423,7 @@ const TechAdmin = (function () {
     if (data.warrantyStickers !== undefined) ticket.warrantyStickers = data.warrantyStickers;
     if (data.devicePhotos !== undefined) ticket.devicePhotos = data.devicePhotos;
     if (data.finalCost !== undefined) ticket.finalCost = parseFloat(data.finalCost) || 0;
+    if (data.partCost !== undefined) ticket.partCost = parseFloat(data.partCost) || 0;
     if (data.warranty !== undefined) ticket.warranty = data.warranty;
 
     saveTickets();
@@ -522,23 +526,25 @@ const TechAdmin = (function () {
   }
 
   // -------------------------------------------------------------
-  // 3. MENSAJES AUTOMÁTICOS DE WHATSAPP AL CLIENTE
+  // 3. MENSAJES AUTOMÁTICOS DE WHATSAPP AL CLIENTE (PLANTILLAS RÁPIDAS)
   // -------------------------------------------------------------
-  function notifyClientWhatsApp(ticketId) {
+  function notifyClientWhatsApp(ticketId, templateType = null) {
     const ticket = tickets.find(t => t.id === ticketId);
     if (!ticket) return;
 
     let statusText = "";
     let callToAction = "";
+    const effectiveTemplate = templateType || ticket.status;
 
-    switch (ticket.status) {
+    switch (effectiveTemplate) {
       case "received":
         statusText = "fue ingresado con éxito en nuestro laboratorio técnico.";
         callToAction = "Nuestro equipo comenzará las mediciones en banco de trabajo a la brevedad.";
         break;
       case "diagnosing":
-        statusText = "se encuentra actualmente en etapa de DIAGNÓSTICO con instrumental de precisión.";
-        callToAction = `Informe preliminar: "${ticket.technicianNotes}".`;
+      case "budget":
+        statusText = "tiene su DIAGNÓSTICO Y PRESUPUESTO LISTO.";
+        callToAction = `Presupuesto: $${ticket.finalCost} USD. Informe del laboratorio: "${ticket.technicianNotes || ticket.issueDescription}".`;
         break;
       case "waiting_parts":
         statusText = "se encuentra en espera de arribo de repuestos originales OEM.";
@@ -546,24 +552,28 @@ const TechAdmin = (function () {
         break;
       case "repairing":
         statusText = "se encuentra EN REPARACIÓN / pruebas de estrés térmico.";
-        callToAction = "Estamos realizando los protocolos finales de calidad.";
+        callToAction = "Estamos realizando los protocolos finales de control de calidad.";
         break;
       case "ready":
         statusText = "¡YA ESTÁ REPARADO Y LISTO PARA RETIRAR! 🎉";
-        callToAction = `Pasa por nuestro local en los horarios habituales. Presupuesto final: $${ticket.finalCost} USD (Garantía: ${ticket.warranty}).`;
+        callToAction = `Puedes pasar por nuestro laboratorio en Colón 1475. Presupuesto final: $${ticket.finalCost} USD (Garantía: ${ticket.warranty || '90 días'}).`;
         break;
       case "delivered":
         statusText = "ha sido entregado.";
         callToAction = "¡Gracias por confiar en WILOTECH! Tienes soporte posventa y garantía vigente.";
+        break;
+      default:
+        statusText = "presenta novedades en el laboratorio.";
+        callToAction = `Estado: ${ticket.status}. Presupuesto: $${ticket.finalCost} USD.`;
         break;
     }
 
     const message = `Hola *${ticket.clientName}*! Te informamos desde *WILOTECH - Laboratorio Técnico*:\n\n` +
       `📦 *Ticket N°:* #${ticket.id}\n` +
       `📱 *Equipo:* ${ticket.deviceModel}\n` +
-      `⚡ *Estado actual:* ${statusText}\n\n` +
+      `⚡ *Estado:* ${statusText}\n\n` +
       `📝 *Detalle:* ${callToAction}\n\n` +
-      `Puedes seguir el estado en tiempo real en nuestra web cuando gustes. ¡Saludos!`;
+      `Seguí tu reparación en tiempo real en nuestra web. ¡Saludos!`;
 
     const cleanPhone = (ticket.clientPhone || "").replace(/[^0-9]/g, "");
     const encoded = encodeURIComponent(message);
@@ -571,7 +581,7 @@ const TechAdmin = (function () {
   }
 
   // -------------------------------------------------------------
-  // 4. IMPRESIÓN DE COMPROBANTE TÉCNICO DE INGRESO / EGRESO
+  // 4. IMPRESIÓN DE COMPROBANTE TÉCNICO & ROTULADORA TÉRMICA (58mm/80mm)
   // -------------------------------------------------------------
   function printTicketReceipt(ticketId) {
     const ticket = tickets.find(t => t.id === ticketId);
@@ -609,7 +619,7 @@ const TechAdmin = (function () {
           <h1 class="title">WILOTECH</h1>
           <div class="sub">Laboratorio de Microelectrónica & Reparaciones</div>
           <div>Colón 1475, Mar del Plata, Bs. As., Argentina</div>
-          <div>Tel / WhatsApp: +54 223 591-4163 • Email: wil_18_22@hotmail.com</div>
+          <div>Tel / WhatsApp: +54 223 591-4163</div>
           <div class="ticket-id">ORDEN TÉCNICA #${ticket.id}</div>
         </div>
 
@@ -632,7 +642,7 @@ const TechAdmin = (function () {
           ${ticket.deviceStorage ? `<div class="row"><span>Capacidad / Almacenamiento:</span><span>${ticket.deviceStorage}</span></div>` : ''}
           <div class="row"><span>Categoría:</span><span>${ticket.deviceType}</span></div>
           <div class="row"><span>Serial / IMEI:</span><span>${ticket.serialOrImei}</span></div>
-          <div class="row"><span>Seguridad / Bloqueo:</span><strong>${ticket.deviceLockType || 'Sin Bloqueo'} ${ticket.deviceLockCode ? `[ ${ticket.deviceLockCode} ]` : ''}</strong></div>
+          <div class="row"><span>Seguridad / Bloqueo:</span><strong>${ticket.deviceLockType || 'Sin Bloqueo'} ${ticket.deviceLockCode ? `[ ${ticket.deviceLockCode} ]` : ''} ${ticket.deviceLockPattern ? `[ Patrón 3x3: ${ticket.deviceLockPattern} ]` : ''}</strong></div>
           <div class="row"><span>Falla Declarada:</span><span>${ticket.issueDescription}</span></div>
         </div>
 
@@ -680,6 +690,84 @@ const TechAdmin = (function () {
         <div class="signatures">
           <div class="sig-line">Firma del Cliente</div>
           <div class="sig-line">Firma y Sello WILOTECH</div>
+        </div>
+
+        <script>
+          window.onload = function() { window.print(); }
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+
+  function printThermalTicket(ticketId, width = "80mm") {
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return;
+
+    const trackingUrl = encodeURIComponent(`${window.location.origin}/index.html?ticket=${ticket.id}`);
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${trackingUrl}`;
+
+    const printWindow = window.open("", "_blank", "width=400,height=600");
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Etiqueta Térmica #${ticket.id}</title>
+        <style>
+          @page { size: ${width} auto; margin: 0; }
+          body { 
+            font-family: 'Courier New', Courier, monospace; 
+            width: ${width === "58mm" ? "54mm" : "76mm"}; 
+            margin: 0 auto; 
+            padding: 6px 4px; 
+            color: #000; 
+            background: #fff;
+            font-size: 11px;
+            line-height: 1.2;
+          }
+          .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 6px; }
+          .logo { font-size: 16px; font-weight: 900; letter-spacing: 1px; }
+          .ticket-id { font-size: 18px; font-weight: 900; background: #000; color: #fff; padding: 2px 6px; display: inline-block; margin: 4px 0; }
+          .line { border-bottom: 1px dashed #000; margin: 5px 0; }
+          .bold { font-weight: bold; }
+          .qr-container { text-align: center; margin: 8px 0; }
+          .qr-container img { width: 110px; height: 110px; }
+          .pattern-box { border: 1px solid #000; padding: 4px; font-size: 10px; margin-top: 4px; text-align: center; background: #f0f0f0; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">WILOTECH</div>
+          <div style="font-size: 9px;">LABORATORIO DE REPARACIONES</div>
+          <div class="ticket-id">#${ticket.id}</div>
+          <div style="font-size: 9px;">${ticket.dateReceived}</div>
+        </div>
+
+        <div><span class="bold">CLIENTE:</span> ${ticket.clientName}</div>
+        <div><span class="bold">TEL:</span> ${ticket.clientPhone}</div>
+        <div class="line"></div>
+        <div><span class="bold">EQUIPO:</span> ${ticket.deviceModel}</div>
+        ${ticket.serialOrImei ? `<div><span class="bold">IMEI/SN:</span> ${ticket.serialOrImei}</div>` : ''}
+        <div><span class="bold">FALLA:</span> ${ticket.issueDescription}</div>
+        <div class="line"></div>
+        <div><span class="bold">BLOQUEO:</span> ${ticket.deviceLockType || 'Sin Bloqueo'}</div>
+        ${ticket.deviceLockCode ? `<div><span class="bold">CLAVE:</span> ${ticket.deviceLockCode}</div>` : ''}
+        ${ticket.deviceLockPattern ? `
+          <div class="pattern-box">
+            <span class="bold">PATRÓN 3x3:</span> ${ticket.deviceLockPattern}
+          </div>
+        ` : ''}
+        <div class="line"></div>
+
+        <div class="qr-container">
+          <img src="${qrApiUrl}" alt="QR Tracking">
+          <div style="font-size: 9px; margin-top: 2px;">Escanear para Rastreo de Ticket</div>
+        </div>
+
+        <div style="text-align: center; font-size: 8px; margin-top: 6px;">
+          WILOTECH • Colón 1475 • Tel: 223 591-4163
         </div>
 
         <script>
@@ -829,6 +917,7 @@ const TechAdmin = (function () {
     saveWarrantyStickers: saveWarrantyStickers,
     notifyClientWhatsApp: notifyClientWhatsApp,
     printTicketReceipt: printTicketReceipt,
+    printThermalTicket: printThermalTicket,
     getInventory: getInventory,
     adjustStock: adjustStock,
     getAllCustomers: getAllCustomers,
