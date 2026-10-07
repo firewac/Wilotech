@@ -1456,7 +1456,10 @@ function renderTariffScreen() {
 
   container.innerHTML = categories.map(c => `
     <div class="bg-slate-950 p-5 rounded-3xl border border-slate-800 space-y-3">
-      <h3 class="font-brand font-bold text-white text-sm border-b border-slate-800 pb-2">${c.title}</h3>
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 class="font-brand font-bold text-white text-sm">${c.title}</h3>
+        <button onclick="openEditTariffModal()" class="text-[10px] font-mono text-cyan-400 hover:underline">✏️ Editar</button>
+      </div>
       <div class="space-y-2">
         ${c.items.map(i => `
           <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
@@ -1467,6 +1470,31 @@ function renderTariffScreen() {
       </div>
     </div>
   `).join('');
+}
+
+function openEditTariffModal() {
+  const name = prompt("Nombre del Servicio / Reparación (ej: Reballing IC Tristar Hydra):");
+  if (!name) return;
+  const category = prompt("Categoría (ej: Microsoldadura, Consolas, Pantallas, Baterías):", "Microsoldadura");
+  const cost = parseFloat(prompt("Costo interno de laboratorio (USD):", "25")) || 0;
+  const price = parseFloat(prompt("Precio cobrado al cliente / gremio (USD):", "85")) || 0;
+
+  const margin = price > 0 ? (((price - cost) / price) * 100).toFixed(1) + "%" : "0%";
+
+  fetch("/api/gremios/price-list", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title: name,
+      category: category,
+      price_gremio: price * 1300,
+      price_retail: price * 1300 * 1.4,
+      stock: "Disponible"
+    })
+  }).catch(() => {});
+
+  alert(`✅ Tarifa guardada para "${name}": Costo $${cost} USD | Precio $${price} USD (Margen: ${margin})`);
+  renderTariffScreen();
 }
 
 // ----------------------------------------------------------------------------

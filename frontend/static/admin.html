@@ -717,7 +717,17 @@
     <!-- PANTALLA 6: 💰 TARIFARIO DE REPARACIONES -->
     <!-- ==================================================================== -->
     <section id="screen-tariff" class="screen-view hidden space-y-6">
-      <h1 class="text-2xl font-brand font-bold text-white">TARIFARIO DE SERVICIOS & MANO DE OBRA</h1>
+      <div class="flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h1 class="text-2xl font-brand font-bold text-white">TARIFARIO DE SERVICIOS & MANO DE OBRA</h1>
+          <p class="text-xs text-slate-400 font-mono">Precios de mano de obra gremio, costo interno y márgenes de laboratorio</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openEditTariffModal()" class="btn-cyber px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
+            <i data-lucide="edit-3" class="w-4 h-4"></i> + EDITAR / AGREGAR TARIFA
+          </button>
+        </div>
+      </div>
       
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 font-mono text-xs" id="tariffCategoriesGrid">
         <!-- Render tariff by category -->
