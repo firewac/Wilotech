@@ -499,6 +499,9 @@ async def export_csv_endpoint(q: str = Query(..., min_length=1)):
     )
 
 # --- MONTAR ARCHIVOS ESTÁTICOS Y PÁGINAS HTML DEL FRONTEND ---
-STATIC_DIR = BASE_DIR / "frontend" / "static"
-if STATIC_DIR.exists():
-    app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
+try:
+    STATIC_DIR = BASE_DIR / "frontend" / "static"
+    if STATIC_DIR.exists():
+        app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static_files")
+except Exception:
+    pass
