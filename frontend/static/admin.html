@@ -21,7 +21,7 @@
 
   <style>
     .kanban-col {
-      min-height: calc(100vh - 280px);
+      min-height: calc(100vh - 240px);
     }
     .kanban-card.dragging {
       opacity: 0.4;
@@ -33,775 +33,774 @@
     }
   </style>
 </head>
-<body class="lab-grid-bg min-h-screen text-slate-100 flex overflow-hidden font-sans">
+<body class="lab-grid-bg min-h-screen text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30">
 
   <!-- ============================================================================ -->
-  <!-- SIDEBAR LATERAL PRINCIPAL NAVEGACIÓN WILOTECH OS -->
+  <!-- BARRA DE NAVEGACIÓN SUPERIOR UNIFICADA (TOP NAVBAR) -->
   <!-- ============================================================================ -->
-  <aside class="w-64 bg-slate-950/95 border-r border-slate-800/80 flex flex-col shrink-0 h-screen sticky top-0 z-40 backdrop-blur-xl">
+  <header class="w-full bg-slate-950/95 border-b border-slate-800/80 sticky top-0 z-50 backdrop-blur-xl shadow-2xl">
     
-    <!-- Header Marca -->
-    <div class="p-5 border-b border-slate-800/80 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+    <!-- Fila Principal Header -->
+    <div class="max-w-[1800px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Marca & Logo Izquierda -->
+      <div class="flex items-center gap-3 shrink-0 cursor-pointer" onclick="navigateTo('dashboard')">
+        <div class="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
           <i data-lucide="cpu" class="w-5 h-5"></i>
         </div>
-        <div>
+        <div class="flex items-center gap-2">
           <h1 class="font-brand font-bold text-white text-base tracking-wider">WILOTECH</h1>
-          <p class="text-[10px] font-mono text-cyan-400">Laboratorio Técnico</p>
+          <span class="text-[10px] font-mono text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30 font-bold">OS v2.0</span>
         </div>
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1" title="Sistema Operativo Activo"></span>
       </div>
-      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" title="Sistema Operativo Activo"></span>
-    </div>
 
-    <!-- Menú de Navegación por Pantallas -->
-    <nav class="flex-1 p-3 space-y-1.5 overflow-y-auto custom-scrollbar">
-      
-      <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all text-cyan-400 bg-slate-900 border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.1)]">
-        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-        <span>Dashboard</span>
-      </button>
+      <!-- Ítems de Navegación Horizontal (Organizados arriba) -->
+      <nav class="hidden xl:flex items-center gap-1 overflow-x-auto custom-scrollbar px-2">
+        
+        <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-cyan-400 bg-slate-900 border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.1)]">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span>Dashboard</span>
+        </button>
 
-      <button onclick="navigateTo('repairs')" id="nav-repairs" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/60">
-        <div class="flex items-center gap-3">
+        <button onclick="navigateTo('repairs')" id="nav-repairs" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
           <i data-lucide="wrench" class="w-4 h-4 text-emerald-400"></i>
           <span>Reparaciones</span>
-        </div>
-        <span id="navRepairsBadge" class="px-2 py-0.5 text-[11px] font-mono rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30">0</span>
-      </button>
+          <span id="navRepairsBadge" class="px-1.5 py-0.5 text-[10px] font-mono rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30 font-bold">0</span>
+        </button>
 
-      <button onclick="navigateTo('customers')" id="nav-customers" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/60">
-        <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
-        <span>Clientes</span>
-      </button>
+        <button onclick="navigateTo('customers')" id="nav-customers" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
+          <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
+          <span>Clientes</span>
+        </button>
 
-      <button onclick="navigateTo('inventory')" id="nav-inventory" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/60">
-        <div class="flex items-center gap-3">
+        <button onclick="navigateTo('inventory')" id="nav-inventory" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
           <i data-lucide="package" class="w-4 h-4 text-amber-400"></i>
           <span>Inventario</span>
-        </div>
-        <span id="navStockAlertBadge" class="hidden px-1.5 py-0.5 text-[10px] font-mono rounded bg-rose-950 text-rose-300 border border-rose-800">1 ⚠️</span>
-      </button>
+          <span id="navStockAlertBadge" class="hidden px-1.5 py-0.5 text-[9px] font-mono rounded bg-rose-950 text-rose-300 border border-rose-800">1 ⚠️</span>
+        </button>
 
-      <button onclick="navigateTo('tariff')" id="nav-tariff" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/60">
-        <i data-lucide="coins" class="w-4 h-4 text-cyan-400"></i>
-        <span>Tarifario</span>
-      </button>
+        <button onclick="navigateTo('tariff')" id="nav-tariff" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
+          <i data-lucide="coins" class="w-4 h-4 text-cyan-400"></i>
+          <span>Tarifario</span>
+        </button>
 
-      <button onclick="navigateTo('gremios')" id="nav-gremios" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/60">
-        <i data-lucide="handshake" class="w-4 h-4 text-blue-400"></i>
-        <span>Gremios</span>
-      </button>
+        <button onclick="navigateTo('gremios')" id="nav-gremios" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
+          <i data-lucide="handshake" class="w-4 h-4 text-blue-400"></i>
+          <span>Gremios</span>
+        </button>
 
-      <button onclick="navigateTo('finances')" id="nav-finances" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/60">
-        <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-400"></i>
-        <span>Finanzas</span>
-      </button>
+        <button onclick="navigateTo('finances')" id="nav-finances" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
+          <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-400"></i>
+          <span>Finanzas</span>
+        </button>
 
-      <button onclick="navigateTo('tools')" id="nav-tools" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/60">
-        <i data-lucide="box" class="w-4 h-4 text-indigo-400"></i>
-        <span>Herramientas</span>
-      </button>
+        <button onclick="navigateTo('tools')" id="nav-tools" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
+          <i data-lucide="box" class="w-4 h-4 text-indigo-400"></i>
+          <span>Herramientas</span>
+        </button>
 
-      <button onclick="navigateTo('settings')" id="nav-settings" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/60">
-        <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i>
-        <span>Configuración</span>
-      </button>
+        <button onclick="navigateTo('settings')" id="nav-settings" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
+          <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i>
+          <span>Configuración</span>
+        </button>
 
-    </nav>
+      </nav>
 
-    <!-- Usuario Activo & Logout -->
-    <div class="p-4 border-t border-slate-800/80 bg-slate-950 flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-full bg-cyan-950 border border-cyan-400/50 flex items-center justify-center font-brand font-bold text-xs text-cyan-300">WC</div>
-        <div class="truncate">
-          <p class="text-xs font-semibold text-white truncate">Wilson Correa</p>
-          <span class="text-[10px] font-mono text-emerald-400">Administrador</span>
-        </div>
-      </div>
-      <button onclick="handleLogout()" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors" title="Cerrar Sesión">
-        <i data-lucide="log-out" class="w-4 h-4"></i>
-      </button>
-    </div>
-
-  </aside>
-
-  <!-- ============================================================================ -->
-  <!-- CONTENEDOR PRINCIPAL PERMANENTE CON HEADER SUPERIOR -->
-  <!-- ============================================================================ -->
-  <main class="flex-1 flex flex-col h-screen overflow-hidden">
-    
-    <!-- Top Header Bar (Permanente arriba) -->
-    <header class="h-16 bg-slate-950/80 border-b border-slate-800/80 px-6 flex items-center justify-between shrink-0 backdrop-blur-md z-30">
-      
-      <div class="flex items-center gap-4">
-        <h2 class="font-brand font-bold text-lg text-white">WILOTECH</h2>
-        <span class="text-xs font-mono text-slate-400 border-l border-slate-800 pl-4 hidden md:inline">Laboratorio Técnico de Microelectrónica</span>
-      </div>
-
-      <div class="flex items-center gap-4">
-        <!-- Búsqueda Global -->
-        <div class="relative w-72">
-          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+      <!-- Acciones Rápidas & Búsqueda Derecha -->
+      <div class="flex items-center gap-3 shrink-0">
+        
+        <!-- Buscador Global -->
+        <div class="relative w-48 sm:w-64">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400"></i>
           <input type="text" id="headerGlobalSearch" onkeyup="handleGlobalSearch(event)" placeholder="Buscar orden, IMEI, cliente..."
-            class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-400 rounded-xl py-1.5 pl-9 pr-4 text-xs text-white focus:outline-none placeholder:text-slate-500">
+            class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-400 rounded-xl py-1.5 pl-8 pr-3 text-xs text-white focus:outline-none placeholder:text-slate-500">
         </div>
 
-        <button onclick="openNotificationsModal()" class="relative p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white" title="Notificaciones">
-          <i data-lucide="bell" class="w-4 h-4"></i>
-          <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+        <!-- Dólar Blue Indicator -->
+        <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono">
+          <span class="text-slate-400">USD:</span>
+          <span id="headerDolarRate" class="text-emerald-400 font-bold">$1300</span>
+        </div>
+
+        <!-- Botón Nueva Reparación -->
+        <button onclick="openCreateRepairModal()" class="btn-cyber px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">+ NUEVA REPARACIÓN</span>
         </button>
 
-        <button onclick="navigateTo('settings')" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white" title="Perfil de Wilson">
-          <i data-lucide="user" class="w-4 h-4"></i>
-        </button>
+        <!-- Perfil Usuario & Logout -->
+        <div class="flex items-center gap-2 border-l border-slate-800 pl-3">
+          <div class="w-7 h-7 rounded-full bg-cyan-950 border border-cyan-400/50 flex items-center justify-center font-brand font-bold text-[10px] text-cyan-300">WC</div>
+          <button onclick="handleLogout()" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors" title="Cerrar Sesión">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+
       </div>
-    </header>
-
-    <!-- ÁREA DE PANTALLAS (UNA PANTALLA = UNA TAREA) -->
-    <div class="flex-1 overflow-y-auto p-6 custom-scrollbar" id="screensArea">
-
-      <!-- ==================================================================== -->
-      <!-- PANTALLA 1: 🏠 DASHBOARD (¿Qué está pasando hoy en WILOTECH?) -->
-      <!-- ==================================================================== -->
-      <section id="screen-dashboard" class="screen-view space-y-6">
-        
-        <!-- Header Dashboard -->
-        <div class="flex flex-wrap justify-between items-center gap-4">
-          <div>
-            <h1 class="text-2xl font-brand font-bold text-white">Buenos días, Wilson</h1>
-            <p id="dashTodayDate" class="text-xs text-slate-400 font-mono mt-0.5">Cargando fecha...</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="px-3 py-1 rounded-xl bg-emerald-950 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Laboratorio en línea
-            </span>
-          </div>
-        </div>
-
-        <!-- Métricas Principales (4 Tarjetas) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div onclick="navigateTo('repairs')" class="cursor-pointer p-5 rounded-3xl bg-slate-950 border border-slate-800 hover:border-cyan-500/40 transition-all">
-            <span class="text-xs font-mono text-slate-400 uppercase font-bold">ACTIVAS</span>
-            <p id="dashMetricActive" class="text-3xl font-bold font-mono text-cyan-400 mt-2">0</p>
-          </div>
-
-          <div onclick="filterRepairsByStatus('diagnosing')" class="cursor-pointer p-5 rounded-3xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 transition-all">
-            <span class="text-xs font-mono text-slate-400 uppercase font-bold">EN DIAGNÓSTICO</span>
-            <p id="dashMetricDiagnosing" class="text-3xl font-bold font-mono text-amber-400 mt-2">0</p>
-          </div>
-
-          <div onclick="filterRepairsByStatus('ready')" class="cursor-pointer p-5 rounded-3xl bg-slate-950 border border-slate-800 hover:border-emerald-500/40 transition-all">
-            <span class="text-xs font-mono text-slate-400 uppercase font-bold">LISTAS PARA RETIRAR</span>
-            <p id="dashMetricReady" class="text-3xl font-bold font-mono text-emerald-400 mt-2">0</p>
-          </div>
-
-          <div onclick="navigateTo('finances')" class="cursor-pointer p-5 rounded-3xl bg-slate-950 border border-slate-800 hover:border-purple-500/40 transition-all">
-            <span class="text-xs font-mono text-slate-400 uppercase font-bold">INGRESOS DEL MES</span>
-            <p id="dashMetricIncome" class="text-3xl font-bold font-mono text-purple-400 mt-2">$0 USD</p>
-          </div>
-        </div>
-
-        <!-- Bloque 🚨 Atención Requerida -->
-        <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div class="flex items-center gap-2">
-              <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400 animate-bounce"></i>
-              <h3 class="font-brand font-bold text-white text-base">🚨 Atención Requerida</h3>
-            </div>
-            <span class="text-xs font-mono text-slate-400">Casos prioritarios estancados</span>
-          </div>
-
-          <div id="dashAttentionList" class="space-y-3">
-            <!-- Dynamic Attention Required Items -->
-          </div>
-        </div>
-
-        <!-- Bloque 📊 Flujo de Reparaciones (Barra de Contadores) -->
-        <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-4">
-          <h3 class="font-brand font-bold text-white text-base flex items-center gap-2 border-b border-slate-800 pb-3">
-            <i data-lucide="git-commit" class="w-4 h-4 text-cyan-400"></i>
-            Flujo de Reparaciones en Banco
-          </h3>
-
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="dashFlowCounters">
-            <div onclick="filterRepairsByStatus('received')" class="cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-center">
-              <span class="text-xs font-mono text-slate-400 font-bold block">RECIBIDOS</span>
-              <span id="cntFlow-received" class="text-2xl font-bold text-emerald-400 font-mono mt-1 block">0</span>
-            </div>
-
-            <div onclick="filterRepairsByStatus('diagnosing')" class="cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-amber-500/50 text-center">
-              <span class="text-xs font-mono text-slate-400 font-bold block">DIAGNÓSTICO</span>
-              <span id="cntFlow-diagnosing" class="text-2xl font-bold text-amber-400 font-mono mt-1 block">0</span>
-            </div>
-
-            <div onclick="filterRepairsByStatus('budget_pending')" class="cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-orange-500/50 text-center">
-              <span class="text-xs font-mono text-slate-400 font-bold block">PRESUPUESTO</span>
-              <span id="cntFlow-budget_pending" class="text-2xl font-bold text-orange-400 font-mono mt-1 block">0</span>
-            </div>
-
-            <div onclick="filterRepairsByStatus('repairing')" class="cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-center">
-              <span class="text-xs font-mono text-slate-400 font-bold block">REPARANDO</span>
-              <span id="cntFlow-repairing" class="text-2xl font-bold text-cyan-400 font-mono mt-1 block">0</span>
-            </div>
-
-            <div onclick="filterRepairsByStatus('ready')" class="cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-400 text-center">
-              <span class="text-xs font-mono text-slate-400 font-bold block">LISTOS</span>
-              <span id="cntFlow-ready" class="text-2xl font-bold text-emerald-300 font-mono mt-1 block">0</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bloque Actividad Reciente -->
-        <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-3">
-          <h3 class="font-brand font-bold text-white text-xs uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <i data-lucide="history" class="w-4 h-4 text-cyan-400"></i>
-            Actividad Reciente del Taller
-          </h3>
-          <div id="dashRecentActivityList" class="divide-y divide-slate-800/60 font-mono text-xs text-slate-300">
-            <!-- Dynamic recent log entries -->
-          </div>
-        </div>
-
-      </section>
-
-      <!-- ==================================================================== -->
-      <!-- PANTALLA 2: 🔧 REPARACIONES (HUB PRINCIPAL) -->
-      <!-- ==================================================================== -->
-      <section id="screen-repairs" class="screen-view hidden space-y-6">
-        
-        <div class="flex flex-wrap justify-between items-center gap-4">
-          <div>
-            <h1 class="text-2xl font-brand font-bold text-white">REPARACIONES</h1>
-            <p class="text-xs text-slate-400 font-mono">Gestión integral de órdenes de servicio y banco de trabajo</p>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <!-- Selector de Vista: Tabla vs Kanban -->
-            <div class="bg-slate-900 p-1 rounded-xl border border-slate-800 flex items-center gap-1 font-mono text-xs">
-              <button onclick="switchRepairsView('table')" id="btnViewTable" class="px-3 py-1.5 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-500/30 font-bold flex items-center gap-1.5">
-                <i data-lucide="table" class="w-3.5 h-3.5"></i> TABLA
-              </button>
-              <button onclick="switchRepairsView('kanban')" id="btnViewKanban" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-bold flex items-center gap-1.5">
-                <i data-lucide="kanban" class="w-3.5 h-3.5"></i> KANBAN
-              </button>
-            </div>
-
-            <!-- Botón + NUEVA REPARACIÓN -->
-            <button onclick="openCreateRepairModal()" class="btn-cyber px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
-              <i data-lucide="plus-circle" class="w-4 h-4"></i>
-              <span>+ NUEVA REPARACIÓN</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Buscador y Sub-filtros por Estado -->
-        <div class="bg-slate-950 p-4 rounded-3xl border border-slate-800 space-y-4">
-          <div class="relative">
-            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
-            <input type="text" id="repairSearchInput" onkeyup="filterRepairsTable()" placeholder="Buscar por número de orden, IMEI, cliente, teléfono o modelo..."
-              class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-400 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white focus:outline-none">
-          </div>
-
-          <!-- Pestañas de Filtros -->
-          <div class="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar text-xs font-mono">
-            <button onclick="setRepairsFilter('all')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-cyan-950 text-cyan-300 border border-cyan-500/30 font-bold">Todos</button>
-            <button onclick="setRepairsFilter('received')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Recepcionadas</button>
-            <button onclick="setRepairsFilter('diagnosing')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Diagnóstico</button>
-            <button onclick="setRepairsFilter('budget_pending')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Presupuesto</button>
-            <button onclick="setRepairsFilter('approved')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Aprobadas</button>
-            <button onclick="setRepairsFilter('repairing')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">En reparación</button>
-            <button onclick="setRepairsFilter('waiting_parts')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Esperando repuesto</button>
-            <button onclick="setRepairsFilter('qc')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Control de calidad</button>
-            <button onclick="setRepairsFilter('ready')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Listas</button>
-            <button onclick="setRepairsFilter('delivered')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Entregadas</button>
-          </div>
-        </div>
-
-        <!-- VISTA TABLA -->
-        <div id="repairsViewTable" class="bg-slate-950 rounded-3xl border border-slate-800 overflow-hidden shadow-xl">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-xs">
-              <thead class="bg-slate-900 text-slate-400 font-mono uppercase tracking-wider border-b border-slate-800">
-                <tr>
-                  <th class="p-4">Orden</th>
-                  <th class="p-4">Equipo</th>
-                  <th class="p-4">Cliente</th>
-                  <th class="p-4">Estado</th>
-                  <th class="p-4">Técnico</th>
-                  <th class="p-4">Tiempo en taller</th>
-                  <th class="p-4 text-right">Acción</th>
-                </tr>
-              </thead>
-              <tbody id="repairsTableBody" class="divide-y divide-slate-800/60 text-slate-300">
-                <!-- Rendered dynamically -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- VISTA KANBAN DRAG & DROP -->
-        <div id="repairsViewKanban" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 overflow-x-auto pb-4 custom-scrollbar">
-          
-          <!-- Columns for Kanban -->
-          <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-emerald-400">
-              <span>RECIBIDO</span>
-              <span id="kanbanCnt-received" class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 text-[10px]">0</span>
-            </div>
-            <div id="kanbanCol-received" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'received')" class="kanban-col flex-1 space-y-3"></div>
-          </div>
-
-          <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-amber-400">
-              <span>DIAGNÓSTICO</span>
-              <span id="kanbanCnt-diagnosing" class="px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 text-[10px]">0</span>
-            </div>
-            <div id="kanbanCol-diagnosing" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'diagnosing')" class="kanban-col flex-1 space-y-3"></div>
-          </div>
-
-          <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-orange-400">
-              <span>PRESUPUESTO</span>
-              <span id="kanbanCnt-budget_pending" class="px-2 py-0.5 rounded-full bg-orange-950 text-orange-300 text-[10px]">0</span>
-            </div>
-            <div id="kanbanCol-budget_pending" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'budget_pending')" class="kanban-col flex-1 space-y-3"></div>
-          </div>
-
-          <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-blue-400">
-              <span>APROBADO</span>
-              <span id="kanbanCnt-approved" class="px-2 py-0.5 rounded-full bg-blue-950 text-blue-300 text-[10px]">0</span>
-            </div>
-            <div id="kanbanCol-approved" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'approved')" class="kanban-col flex-1 space-y-3"></div>
-          </div>
-
-          <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-cyan-400">
-              <span>REPARANDO</span>
-              <span id="kanbanCnt-repairing" class="px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 text-[10px]">0</span>
-            </div>
-            <div id="kanbanCol-repairing" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'repairing')" class="kanban-col flex-1 space-y-3"></div>
-          </div>
-
-          <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-purple-400">
-              <span>PRUEBAS</span>
-              <span id="kanbanCnt-testing" class="px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 text-[10px]">0</span>
-            </div>
-            <div id="kanbanCol-testing" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'testing')" class="kanban-col flex-1 space-y-3"></div>
-          </div>
-
-          <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-emerald-300">
-              <span>LISTO</span>
-              <span id="kanbanCnt-ready" class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 text-[10px]">0</span>
-            </div>
-            <div id="kanbanCol-ready" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'ready')" class="kanban-col flex-1 space-y-3"></div>
-          </div>
-
-          <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-slate-400">
-              <span>ENTREGADO</span>
-              <span id="kanbanCnt-delivered" class="px-2 py-0.5 rounded-full bg-slate-900 text-slate-400 text-[10px]">0</span>
-            </div>
-            <div id="kanbanCol-delivered" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'delivered')" class="kanban-col flex-1 space-y-3"></div>
-          </div>
-
-        </div>
-
-      </section>
-
-      <!-- ==================================================================== -->
-      <!-- PANTALLA 3: 🔬 FICHA DE REPARACIÓN DETALLADA (WT-XXXX) -->
-      <!-- ==================================================================== -->
-      <section id="screen-repair-detail" class="screen-view hidden space-y-6">
-        
-        <!-- Header de la Ficha -->
-        <div class="flex flex-wrap justify-between items-center gap-4 pb-4 border-b border-slate-800">
-          <div class="flex items-center gap-4">
-            <button onclick="navigateTo('repairs')" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300" title="Volver a Reparaciones">
-              <i data-lucide="arrow-left" class="w-5 h-5"></i>
-            </button>
-            <div>
-              <div class="flex items-center gap-3">
-                <h1 id="detailTicketId" class="text-2xl font-brand font-bold text-white">WT-1058</h1>
-                <span id="detailStatusBadge" class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-950 text-amber-300 border border-amber-500/30">🔵 EN DIAGNÓSTICO</span>
-              </div>
-              <p id="detailDeviceSub" class="text-xs text-slate-400 font-mono">iPhone 15 Pro • IMEI: 354928109823411</p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button onclick="triggerWhatsAppModal()" class="px-3.5 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5">
-              <i data-lucide="message-square" class="w-4 h-4"></i> WhatsApp
-            </button>
-            <button onclick="copyBudgetApprovalLink()" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-800 text-xs font-bold flex items-center gap-1.5">
-              <i data-lucide="link" class="w-4 h-4"></i> Presupuesto
-            </button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          <!-- Columna Izquierda: Bloques 1, 2, 3, 4 -->
-          <div class="lg:col-span-2 space-y-6">
-            
-            <!-- BLOQUE 1 — CLIENTE -->
-            <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-3">
-              <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2">
-                  <i data-lucide="user" class="w-4 h-4 text-purple-400"></i> BLOQUE 1 — CLIENTE
-                </h3>
-                <button onclick="openClientDetailFromOrder()" class="text-xs font-mono text-cyan-400 hover:underline">[Ver cliente]</button>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
-                <div><span class="text-slate-500 block">Nombre:</span><p id="detailClientName" class="font-bold text-white">--</p></div>
-                <div><span class="text-slate-500 block">WhatsApp:</span><p id="detailClientPhone" class="font-bold text-cyan-400">--</p></div>
-                <div><span class="text-slate-500 block">DNI / CUIT:</span><p id="detailClientDni" class="font-bold text-slate-300">--</p></div>
-              </div>
-            </div>
-
-            <!-- BLOQUE 2 — EQUIPO -->
-            <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-3">
-              <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2 border-b border-slate-800 pb-2">
-                <i data-lucide="smartphone" class="w-4 h-4 text-cyan-400"></i> BLOQUE 2 — EQUIPO
-              </h3>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-                <div><span class="text-slate-500 block">Modelo:</span><p id="detailModel" class="font-bold text-white">--</p></div>
-                <div><span class="text-slate-500 block">Capacidad / Color:</span><p id="detailStorageColor" class="text-slate-300">--</p></div>
-                <div><span class="text-slate-500 block">IMEI:</span><p id="detailImei" class="text-cyan-400 font-bold">--</p></div>
-                <div>
-                  <span class="text-slate-500 block">PIN / Patrón:</span>
-                  <div class="flex items-center gap-2 mt-0.5">
-                    <span id="detailLockCode" class="font-mono text-amber-400 font-bold">••••••</span>
-                    <button onclick="togglePinVisibility()" class="text-[10px] text-slate-400 hover:text-white underline">[Mostrar]</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- BLOQUE 3 — DIAGNÓSTICO -->
-            <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-4">
-              <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2 border-b border-slate-800 pb-2">
-                <i data-lucide="microscope" class="w-4 h-4 text-emerald-400"></i> BLOQUE 3 — DIAGNÓSTICO
-              </h3>
-
-              <div>
-                <span class="text-xs font-mono text-slate-500 block mb-1">FALLA REPORTADA:</span>
-                <p id="detailReportedIssue" class="text-xs font-mono text-amber-300 bg-slate-900 p-3 rounded-2xl border border-slate-800">--</p>
-              </div>
-
-              <!-- Checklist Técnico -->
-              <div class="space-y-2">
-                <span class="text-xs font-mono text-slate-400 font-bold block">Checklist de Laboratorio</span>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-                  <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" checked class="accent-cyan-400"> Inspección visual</label>
-                  <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" checked class="accent-cyan-400"> Prueba de carga</label>
-                  <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" checked class="accent-cyan-400"> Fuente DC</label>
-                  <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" checked class="accent-cyan-400"> Microscopio</label>
-                  <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="accent-cyan-400"> Cámara térmica</label>
-                  <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="accent-cyan-400"> Medición de líneas</label>
-                </div>
-              </div>
-
-              <!-- Mediciones Técnicas -->
-              <div class="space-y-2">
-                <div class="flex justify-between items-center">
-                  <span class="text-xs font-mono text-slate-400 font-bold">Notas Técnicas & Mediciones</span>
-                  <button onclick="addTechMeasurement()" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-cyan-300 text-[11px] font-mono border border-slate-800">+ AGREGAR MEDICIÓN</button>
-                </div>
-                <textarea id="detailTechNotes" rows="4" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-3 text-xs font-mono text-white focus:border-cyan-400 focus:outline-none"></textarea>
-              </div>
-            </div>
-
-            <!-- BLOQUE 4 — EVIDENCIA FOTOGRÁFICA -->
-            <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-4">
-              <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2">
-                  <i data-lucide="camera" class="w-4 h-4 text-cyan-400"></i> BLOQUE 4 — EVIDENCIA FOTOGRÁFICA
-                </h3>
-                <label class="px-3 py-1 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold cursor-pointer">
-                  <span>+ Subir Foto</span>
-                  <input type="file" accept="image/*" class="hidden" onchange="uploadOrderPhoto(event)">
-                </label>
-              </div>
-
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono" id="detailPhotoGrid">
-                <!-- Dynamic photos by category -->
-              </div>
-            </div>
-
-            <!-- BLOQUE 5 — REPUESTOS UTILIZADOS -->
-            <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-4">
-              <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2">
-                  <i data-lucide="package" class="w-4 h-4 text-amber-400"></i> BLOQUE 5 — REPUESTOS UTILIZADOS
-                </h3>
-                <button onclick="addOrderPartItem()" class="px-3 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 text-xs font-bold border border-slate-800">+ Agregar repuesto</button>
-              </div>
-
-              <div id="detailPartsList" class="space-y-2 text-xs font-mono">
-                <!-- Parts items list -->
-              </div>
-
-              <div class="flex justify-between items-center p-3 rounded-2xl bg-slate-900 border border-slate-800 font-mono text-xs">
-                <span class="text-slate-400">Costo Total Repuestos:</span>
-                <span id="detailTotalPartCost" class="font-bold text-rose-300 text-sm">$0 USD</span>
-              </div>
-            </div>
-
-            <!-- BLOQUE 10 — CONTROL DE CALIDAD (QC OBLIGATORIO) -->
-            <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-4">
-              <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2 border-b border-slate-800 pb-2">
-                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> BLOQUE 10 — CONTROL DE CALIDAD (QC)
-              </h3>
-
-              <p class="text-xs text-slate-400 font-mono">Verificación obligatoria antes de marcar como LISTO PARA RETIRO:</p>
-
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Encendido</label>
-                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Carga</label>
-                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Wi-Fi</label>
-                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Bluetooth</label>
-                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Cámara</label>
-                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Micrófono</label>
-                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Altavoz</label>
-                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Red móvil / IMEI</label>
-              </div>
-
-              <button onclick="approveQualityControl()" class="w-full py-3 rounded-2xl bg-emerald-950 hover:bg-emerald-900 text-emerald-300 font-brand font-bold text-xs border border-emerald-500/40">
-                [ APROBAR CONTROL DE CALIDAD ]
-              </button>
-            </div>
-
-          </div>
-
-          <!-- Columna Derecha: Bloques 6, 8, 9 (Presupuesto, Historial) -->
-          <div class="space-y-6">
-            
-            <!-- BLOQUE 6 & 8 — PRESUPUESTO Y APROBACIÓN -->
-            <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-4">
-              <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2 border-b border-slate-800 pb-2">
-                <i data-lucide="receipt" class="w-4 h-4 text-emerald-400"></i> BLOQUE 6 — PRESUPUESTO
-              </h3>
-
-              <div class="space-y-2 font-mono text-xs">
-                <div class="flex justify-between text-slate-400"><span>Diagnóstico:</span><span>$20 USD</span></div>
-                <div class="flex justify-between text-slate-400"><span>Repuesto:</span><span id="detailPresPart">$80 USD</span></div>
-                <div class="flex justify-between text-slate-400"><span>Mano de Obra:</span><span id="detailPresLabor">$60 USD</span></div>
-                <div class="flex justify-between text-white font-bold text-sm border-t border-slate-800 pt-2">
-                  <span>TOTAL:</span>
-                  <span id="detailPresTotal" class="text-emerald-400">$160 USD</span>
-                </div>
-              </div>
-
-              <div class="p-3 rounded-2xl bg-amber-950/40 border border-amber-500/30 text-xs font-mono text-amber-300">
-                Estado: <span id="detailPresStatus" class="font-bold">🟡 Pendiente de aprobación</span>
-              </div>
-
-              <div class="space-y-2">
-                <button onclick="sendWhatsAppBudget()" class="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2">
-                  <i data-lucide="message-square" class="w-4 h-4"></i> Enviar por WhatsApp
-                </button>
-                <button onclick="copyBudgetApprovalLink()" class="w-full py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-cyan-300 font-bold text-xs border border-slate-800 flex items-center justify-center gap-2">
-                  <i data-lucide="link" class="w-4 h-4"></i> Enviar link de aprobación
-                </button>
-              </div>
-            </div>
-
-            <!-- BLOQUE 9 — HISTORIAL (AUDIT TRAIL TIMELINE) -->
-            <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-4">
-              <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2 border-b border-slate-800 pb-2">
-                <i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i> BLOQUE 9 — HISTORIAL
-              </h3>
-
-              <div id="detailTimelineList" class="space-y-3 font-mono text-xs border-l-2 border-slate-800 pl-4">
-                <!-- Dynamic timeline -->
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      <!-- ==================================================================== -->
-      <!-- PANTALLA 4: 👥 CLIENTES -->
-      <!-- ==================================================================== -->
-      <section id="screen-customers" class="screen-view hidden space-y-6">
-        <div class="flex justify-between items-center">
-          <div>
-            <h1 class="text-2xl font-brand font-bold text-white">CLIENTES</h1>
-            <p class="text-xs text-slate-400 font-mono">Directorio de clientes y registro de reparaciones asociadas</p>
-          </div>
-          <button onclick="openCreateCustomerModal()" class="btn-cyber px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
-            <i data-lucide="user-plus" class="w-4 h-4"></i> + NUEVO CLIENTE
-          </button>
-        </div>
-
-        <div class="bg-slate-950 p-4 rounded-3xl border border-slate-800">
-          <input type="text" id="customerSearchInput" onkeyup="filterCustomersTable()" placeholder="🔎 Buscar nombre, DNI, teléfono..."
-            class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-400 rounded-xl py-2.5 px-4 text-xs text-white">
-        </div>
-
-        <div class="bg-slate-950 rounded-3xl border border-slate-800 overflow-hidden">
-          <table class="w-full text-left border-collapse text-xs">
-            <thead class="bg-slate-900 text-slate-400 font-mono uppercase border-b border-slate-800">
-              <tr>
-                <th class="p-4">Cliente</th>
-                <th class="p-4">WhatsApp</th>
-                <th class="p-4">Equipos / Reparaciones</th>
-                <th class="p-4">Última visita</th>
-                <th class="p-4 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="customersTableBody" class="divide-y divide-slate-800/60 text-slate-300">
-              <!-- Render customers -->
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- ==================================================================== -->
-      <!-- PANTALLA 5: 📦 INVENTARIO (CON UBICACIÓN FÍSICA) -->
-      <!-- ==================================================================== -->
-      <section id="screen-inventory" class="screen-view hidden space-y-6">
-        <div class="flex justify-between items-center">
-          <div>
-            <h1 class="text-2xl font-brand font-bold text-white">INVENTARIO</h1>
-            <p class="text-xs text-slate-400 font-mono">Control de repuestos y ubicación física en taller</p>
-          </div>
-          <button onclick="openCreatePartModal()" class="btn-cyber px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i> + AGREGAR REPUESTO
-          </button>
-        </div>
-
-        <!-- Métricas Inventario -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
-          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
-            <span class="text-xs text-slate-400">Stock Total Ítems</span>
-            <p id="invTotalCount" class="text-2xl font-bold text-cyan-400 mt-1">0</p>
-          </div>
-          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
-            <span class="text-xs text-slate-400">Stock Bajo Alerta</span>
-            <p id="invLowCount" class="text-2xl font-bold text-rose-400 mt-1">0</p>
-          </div>
-          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
-            <span class="text-xs text-slate-400">Valor de Inventario</span>
-            <p id="invTotalValue" class="text-2xl font-bold text-emerald-400 mt-1">$0 USD</p>
-          </div>
-        </div>
-
-        <div class="bg-slate-950 rounded-3xl border border-slate-800 overflow-hidden">
-          <table class="w-full text-left border-collapse text-xs">
-            <thead class="bg-slate-900 text-slate-400 font-mono uppercase border-b border-slate-800">
-              <tr>
-                <th class="p-4">Código</th>
-                <th class="p-4">Repuesto</th>
-                <th class="p-4">Stock</th>
-                <th class="p-4">Mínimo</th>
-                <th class="p-4">Costo</th>
-                <th class="p-4">Ubicación Física</th>
-              </tr>
-            </thead>
-            <tbody id="inventoryFullTableBody" class="divide-y divide-slate-800/60 text-slate-300">
-              <!-- Render items -->
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- ==================================================================== -->
-      <!-- PANTALLA 6: 💰 TARIFARIO DE REPARACIONES -->
-      <!-- ==================================================================== -->
-      <section id="screen-tariff" class="screen-view hidden space-y-6">
-        <h1 class="text-2xl font-brand font-bold text-white">TARIFARIO DE SERVICIOS & MANO DE OBRA</h1>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 font-mono text-xs" id="tariffCategoriesGrid">
-          <!-- Render tariff by category -->
-        </div>
-      </section>
-
-      <!-- ==================================================================== -->
-      <!-- PANTALLA 7: 🤝 GREMIOS -->
-      <!-- ==================================================================== -->
-      <section id="screen-gremios" class="screen-view hidden space-y-6">
-        <iframe src="/gremios.html" class="w-full h-[780px] rounded-3xl border border-slate-800 bg-slate-950"></iframe>
-      </section>
-
-      <!-- ==================================================================== -->
-      <!-- PANTALLA 8: 📊 FINANZAS -->
-      <!-- ==================================================================== -->
-      <section id="screen-finances" class="screen-view hidden space-y-6">
-        <h1 class="text-2xl font-brand font-bold text-white">FINANZAS & RENTABILIDAD</h1>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono">
-          <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800">
-            <span class="text-xs text-slate-400">Facturación Hoy</span>
-            <p id="finTodayRev" class="text-2xl font-bold text-cyan-400 mt-1">$0 USD</p>
-          </div>
-          <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800">
-            <span class="text-xs text-slate-400">Facturación Este Mes</span>
-            <p id="finMonthRev" class="text-2xl font-bold text-emerald-400 mt-1">$0 USD</p>
-          </div>
-          <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800">
-            <span class="text-xs text-slate-400">Ganancia Neta Mes</span>
-            <p id="finMonthProfit" class="text-2xl font-bold text-purple-400 mt-1">$0 USD</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================================================================== -->
-      <!-- PANTALLA 9: 🧰 HERRAMIENTAS -->
-      <!-- ==================================================================== -->
-      <section id="screen-tools" class="screen-view hidden space-y-6">
-        <h1 class="text-2xl font-brand font-bold text-white">HERRAMIENTAS TÉCNICAS DE BANCO</h1>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
-            <div class="flex items-center gap-3">
-              <i data-lucide="gamepad-2" class="w-8 h-8 text-cyan-400"></i>
-              <div>
-                <h3 class="font-brand font-bold text-white text-lg">🎮 Probador de Joystick</h3>
-                <p class="text-xs text-slate-400">Diagnóstico de drifts, circularidad y zonas muertas</p>
-              </div>
-            </div>
-            <button onclick="openToolModal('/probador.html')" class="w-full btn-cyber py-3 rounded-xl text-xs font-bold">[ Abrir ]</button>
-          </div>
-
-          <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
-            <div class="flex items-center gap-3">
-              <i data-lucide="search" class="w-8 h-8 text-emerald-400"></i>
-              <div>
-                <h3 class="font-brand font-bold text-white text-lg">🔩 Comparador de Repuestos</h3>
-                <p class="text-xs text-slate-400">Búsqueda multimall de precios y stock en distribuidores</p>
-              </div>
-            </div>
-            <button onclick="openToolModal('/comparador.html')" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 font-bold text-xs border border-slate-800">[ Abrir ]</button>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- ==================================================================== -->
-      <!-- PANTALLA 10: ⚙️ CONFIGURACIÓN & ROLES -->
-      <!-- ==================================================================== -->
-      <section id="screen-settings" class="screen-view hidden space-y-6">
-        <h1 class="text-2xl font-brand font-bold text-white">CONFIGURACIÓN & ROLES</h1>
-        <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-4">
-          <h3 class="font-bold text-white text-base">Roles y Permisos del Taller</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
-            <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><span class="text-cyan-400 font-bold block mb-1">👨‍💼 Administrador</span><p class="text-slate-400">Acceso total a reparaciones, finanzas, márgenes de ganancia y configuración.</p></div>
-            <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><span class="text-emerald-400 font-bold block mb-1">🔬 Técnico Laboratorio</span><p class="text-slate-400">Reparaciones, diagnósticos, fotos, checklist. Sin vista de finanzas.</p></div>
-            <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><span class="text-purple-400 font-bold block mb-1">🖥️ Recepción</span><p class="text-slate-400">Clientes, crear reparaciones, presupuestos, entregas. Sin datos internos.</p></div>
-          </div>
-        </div>
-      </section>
 
     </div>
+
+    <!-- Menú Secundario Móvil/Tablet si la pantalla es estrecha -->
+    <div class="xl:hidden border-t border-slate-800/60 px-4 py-2 flex items-center gap-2 overflow-x-auto custom-scrollbar bg-slate-950">
+      <button onclick="navigateTo('dashboard')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-cyan-400 bg-slate-900">Dashboard</button>
+      <button onclick="navigateTo('repairs')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Reparaciones</button>
+      <button onclick="navigateTo('customers')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Clientes</button>
+      <button onclick="navigateTo('inventory')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Inventario</button>
+      <button onclick="navigateTo('tariff')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Tarifario</button>
+      <button onclick="navigateTo('gremios')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Gremios</button>
+      <button onclick="navigateTo('finances')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Finanzas</button>
+      <button onclick="navigateTo('tools')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Herramientas</button>
+      <button onclick="navigateTo('settings')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Configuración</button>
+    </div>
+
+  </header>
+
+  <!-- ============================================================================ -->
+  <!-- ÁREA PRINCIPAL CONTENIDO 100% ANCHO COMPLETO -->
+  <!-- ============================================================================ -->
+  <main class="flex-1 overflow-y-auto p-4 sm:p-6 max-w-[1800px] w-full mx-auto custom-scrollbar" id="screensArea">
+
+    <!-- ==================================================================== -->
+    <!-- PANTALLA 1: 🏠 DASHBOARD (¿Qué está pasando hoy en WILOTECH?) -->
+    <!-- ==================================================================== -->
+    <section id="screen-dashboard" class="screen-view space-y-6">
+      
+      <!-- Header Dashboard -->
+      <div class="flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h1 class="text-2xl font-brand font-bold text-white">Buenos días, Wilson</h1>
+          <p id="dashTodayDate" class="text-xs text-slate-400 font-mono mt-0.5">Cargando fecha...</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 rounded-xl bg-emerald-950 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Laboratorio en línea
+          </span>
+        </div>
+      </div>
+
+      <!-- Métricas Principales (4 Tarjetas) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div onclick="navigateTo('repairs')" class="cursor-pointer p-5 rounded-3xl bg-slate-950 border border-slate-800 hover:border-cyan-500/40 transition-all">
+          <span class="text-xs font-mono text-slate-400 uppercase font-bold">ACTIVAS</span>
+          <p id="dashMetricActive" class="text-3xl font-bold font-mono text-cyan-400 mt-2">0</p>
+        </div>
+
+        <div onclick="filterRepairsByStatus('diagnosing')" class="cursor-pointer p-5 rounded-3xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 transition-all">
+          <span class="text-xs font-mono text-slate-400 uppercase font-bold">EN DIAGNÓSTICO</span>
+          <p id="dashMetricDiagnosing" class="text-3xl font-bold font-mono text-amber-400 mt-2">0</p>
+        </div>
+
+        <div onclick="filterRepairsByStatus('ready')" class="cursor-pointer p-5 rounded-3xl bg-slate-950 border border-slate-800 hover:border-emerald-500/40 transition-all">
+          <span class="text-xs font-mono text-slate-400 uppercase font-bold">LISTAS PARA RETIRAR</span>
+          <p id="dashMetricReady" class="text-3xl font-bold font-mono text-emerald-400 mt-2">0</p>
+        </div>
+
+        <div onclick="navigateTo('finances')" class="cursor-pointer p-5 rounded-3xl bg-slate-950 border border-slate-800 hover:border-purple-500/40 transition-all">
+          <span class="text-xs font-mono text-slate-400 uppercase font-bold">INGRESOS DEL MES</span>
+          <p id="dashMetricIncome" class="text-3xl font-bold font-mono text-purple-400 mt-2">$0 USD</p>
+        </div>
+      </div>
+
+      <!-- Bloque 🚨 Atención Requerida -->
+      <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400 animate-bounce"></i>
+            <h3 class="font-brand font-bold text-white text-base">🚨 Atención Requerida</h3>
+          </div>
+          <span class="text-xs font-mono text-slate-400">Casos prioritarios estancados</span>
+        </div>
+
+        <div id="dashAttentionList" class="space-y-3">
+          <!-- Dynamic Attention Required Items -->
+        </div>
+      </div>
+
+      <!-- Bloque 📊 Flujo de Reparaciones (Barra de Contadores) -->
+      <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-4">
+        <h3 class="font-brand font-bold text-white text-base flex items-center gap-2 border-b border-slate-800 pb-3">
+          <i data-lucide="git-commit" class="w-4 h-4 text-cyan-400"></i>
+          Flujo de Reparaciones en Banco
+        </h3>
+
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="dashFlowCounters">
+          <div onclick="filterRepairsByStatus('received')" class="cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-center">
+            <span class="text-xs font-mono text-slate-400 font-bold block">RECIBIDOS</span>
+            <span id="cntFlow-received" class="text-2xl font-bold text-emerald-400 font-mono mt-1 block">0</span>
+          </div>
+
+          <div onclick="filterRepairsByStatus('diagnosing')" class="cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-amber-500/50 text-center">
+            <span class="text-xs font-mono text-slate-400 font-bold block">DIAGNÓSTICO</span>
+            <span id="cntFlow-diagnosing" class="text-2xl font-bold text-amber-400 font-mono mt-1 block">0</span>
+          </div>
+
+          <div onclick="filterRepairsByStatus('budget_pending')" class="cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-orange-500/50 text-center">
+            <span class="text-xs font-mono text-slate-400 font-bold block">PRESUPUESTO</span>
+            <span id="cntFlow-budget_pending" class="text-2xl font-bold text-orange-400 font-mono mt-1 block">0</span>
+          </div>
+
+          <div onclick="filterRepairsByStatus('repairing')" class="cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-center">
+            <span class="text-xs font-mono text-slate-400 font-bold block">REPARANDO</span>
+            <span id="cntFlow-repairing" class="text-2xl font-bold text-cyan-400 font-mono mt-1 block">0</span>
+          </div>
+
+          <div onclick="filterRepairsByStatus('ready')" class="cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-400 text-center">
+            <span class="text-xs font-mono text-slate-400 font-bold block">LISTOS</span>
+            <span id="cntFlow-ready" class="text-2xl font-bold text-emerald-300 font-mono mt-1 block">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bloque Actividad Reciente -->
+      <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-3">
+        <h3 class="font-brand font-bold text-white text-xs uppercase tracking-wider text-slate-400 flex items-center gap-2">
+          <i data-lucide="history" class="w-4 h-4 text-cyan-400"></i>
+          Actividad Reciente del Taller
+        </h3>
+        <div id="dashRecentActivityList" class="divide-y divide-slate-800/60 font-mono text-xs text-slate-300">
+          <!-- Dynamic recent log entries -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- PANTALLA 2: 🔧 REPARACIONES (HUB PRINCIPAL) -->
+    <!-- ==================================================================== -->
+    <section id="screen-repairs" class="screen-view hidden space-y-6">
+      
+      <div class="flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h1 class="text-2xl font-brand font-bold text-white">REPARACIONES</h1>
+          <p class="text-xs text-slate-400 font-mono">Gestión integral de órdenes de servicio y banco de trabajo</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- Selector de Vista: Tabla vs Kanban -->
+          <div class="bg-slate-900 p-1 rounded-xl border border-slate-800 flex items-center gap-1 font-mono text-xs">
+            <button onclick="switchRepairsView('table')" id="btnViewTable" class="px-3 py-1.5 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-500/30 font-bold flex items-center gap-1.5">
+              <i data-lucide="table" class="w-3.5 h-3.5"></i> TABLA
+            </button>
+            <button onclick="switchRepairsView('kanban')" id="btnViewKanban" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-bold flex items-center gap-1.5">
+              <i data-lucide="kanban" class="w-3.5 h-3.5"></i> KANBAN
+            </button>
+          </div>
+
+          <!-- Botón + NUEVA REPARACIÓN -->
+          <button onclick="openCreateRepairModal()" class="btn-cyber px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>+ NUEVA REPARACIÓN</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Buscador y Sub-filtros por Estado -->
+      <div class="bg-slate-950 p-4 rounded-3xl border border-slate-800 space-y-4">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
+          <input type="text" id="repairSearchInput" onkeyup="filterRepairsTable()" placeholder="Buscar por número de orden, IMEI, cliente, teléfono o modelo..."
+            class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-400 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white focus:outline-none">
+        </div>
+
+        <!-- Pestañas de Filtros -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar text-xs font-mono">
+          <button onclick="setRepairsFilter('all')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-cyan-950 text-cyan-300 border border-cyan-500/30 font-bold">Todos</button>
+          <button onclick="setRepairsFilter('received')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Recepcionadas</button>
+          <button onclick="setRepairsFilter('diagnosing')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Diagnóstico</button>
+          <button onclick="setRepairsFilter('budget_pending')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Presupuesto</button>
+          <button onclick="setRepairsFilter('approved')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Aprobadas</button>
+          <button onclick="setRepairsFilter('repairing')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">En reparación</button>
+          <button onclick="setRepairsFilter('waiting_parts')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Esperando repuesto</button>
+          <button onclick="setRepairsFilter('qc')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Control de calidad</button>
+          <button onclick="setRepairsFilter('ready')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Listas</button>
+          <button onclick="setRepairsFilter('delivered')" class="rep-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800">Entregadas</button>
+        </div>
+      </div>
+
+      <!-- VISTA TABLA -->
+      <div id="repairsViewTable" class="bg-slate-950 rounded-3xl border border-slate-800 overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="bg-slate-900 text-slate-400 font-mono uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="p-4">Orden</th>
+                <th class="p-4">Equipo</th>
+                <th class="p-4">Cliente</th>
+                <th class="p-4">Estado</th>
+                <th class="p-4">Técnico</th>
+                <th class="p-4">Tiempo en taller</th>
+                <th class="p-4 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="repairsTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VISTA KANBAN DRAG & DROP -->
+      <div id="repairsViewKanban" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 overflow-x-auto pb-4 custom-scrollbar">
+        
+        <!-- Columns for Kanban -->
+        <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
+          <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-emerald-400">
+            <span>RECIBIDO</span>
+            <span id="kanbanCnt-received" class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 text-[10px]">0</span>
+          </div>
+          <div id="kanbanCol-received" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'received')" class="kanban-col flex-1 space-y-3"></div>
+        </div>
+
+        <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
+          <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-amber-400">
+            <span>DIAGNÓSTICO</span>
+            <span id="kanbanCnt-diagnosing" class="px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 text-[10px]">0</span>
+          </div>
+          <div id="kanbanCol-diagnosing" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'diagnosing')" class="kanban-col flex-1 space-y-3"></div>
+        </div>
+
+        <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
+          <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-orange-400">
+            <span>PRESUPUESTO</span>
+            <span id="kanbanCnt-budget_pending" class="px-2 py-0.5 rounded-full bg-orange-950 text-orange-300 text-[10px]">0</span>
+          </div>
+          <div id="kanbanCol-budget_pending" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'budget_pending')" class="kanban-col flex-1 space-y-3"></div>
+        </div>
+
+        <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
+          <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-blue-400">
+            <span>APROBADO</span>
+            <span id="kanbanCnt-approved" class="px-2 py-0.5 rounded-full bg-blue-950 text-blue-300 text-[10px]">0</span>
+          </div>
+          <div id="kanbanCol-approved" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'approved')" class="kanban-col flex-1 space-y-3"></div>
+        </div>
+
+        <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
+          <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-cyan-400">
+            <span>REPARANDO</span>
+            <span id="kanbanCnt-repairing" class="px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 text-[10px]">0</span>
+          </div>
+          <div id="kanbanCol-repairing" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'repairing')" class="kanban-col flex-1 space-y-3"></div>
+        </div>
+
+        <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
+          <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-purple-400">
+            <span>PRUEBAS</span>
+            <span id="kanbanCnt-testing" class="px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 text-[10px]">0</span>
+          </div>
+          <div id="kanbanCol-testing" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'testing')" class="kanban-col flex-1 space-y-3"></div>
+        </div>
+
+        <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
+          <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-emerald-300">
+            <span>LISTO</span>
+            <span id="kanbanCnt-ready" class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 text-[10px]">0</span>
+          </div>
+          <div id="kanbanCol-ready" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'ready')" class="kanban-col flex-1 space-y-3"></div>
+        </div>
+
+        <div class="bg-slate-950/90 rounded-2xl border border-slate-800 p-3 flex flex-col shrink-0 min-w-[220px]">
+          <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800 font-mono text-xs font-bold text-slate-400">
+            <span>ENTREGADO</span>
+            <span id="kanbanCnt-delivered" class="px-2 py-0.5 rounded-full bg-slate-900 text-slate-400 text-[10px]">0</span>
+          </div>
+          <div id="kanbanCol-delivered" ondragover="allowDrop(event)" ondrop="dropTicket(event, 'delivered')" class="kanban-col flex-1 space-y-3"></div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- PANTALLA 3: 🔬 FICHA DE REPARACIÓN DETALLADA (WT-XXXX) -->
+    <!-- ==================================================================== -->
+    <section id="screen-repair-detail" class="screen-view hidden space-y-6">
+      
+      <!-- Header de la Ficha -->
+      <div class="flex flex-wrap justify-between items-center gap-4 pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-4">
+          <button onclick="navigateTo('repairs')" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300" title="Volver a Reparaciones">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+          </button>
+          <div>
+            <div class="flex items-center gap-3">
+              <h1 id="detailTicketId" class="text-2xl font-brand font-bold text-white">WT-1058</h1>
+              <span id="detailStatusBadge" class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-950 text-amber-300 border border-amber-500/30">🔵 EN DIAGNÓSTICO</span>
+            </div>
+            <p id="detailDeviceSub" class="text-xs text-slate-400 font-mono">iPhone 15 Pro • IMEI: 354928109823411</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="triggerWhatsAppModal()" class="px-3.5 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5">
+            <i data-lucide="message-square" class="w-4 h-4"></i> WhatsApp
+          </button>
+          <button onclick="copyBudgetApprovalLink()" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-800 text-xs font-bold flex items-center gap-1.5">
+            <i data-lucide="link" class="w-4 h-4"></i> Presupuesto
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Columna Izquierda: Bloques 1, 2, 3, 4, 5, 10 -->
+        <div class="lg:col-span-2 space-y-6">
+          
+          <!-- BLOQUE 1 — CLIENTE -->
+          <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2">
+                <i data-lucide="user" class="w-4 h-4 text-purple-400"></i> BLOQUE 1 — CLIENTE
+              </h3>
+              <button onclick="openClientDetailFromOrder()" class="text-xs font-mono text-cyan-400 hover:underline">[Ver cliente]</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+              <div><span class="text-slate-500 block">Nombre:</span><p id="detailClientName" class="font-bold text-white">--</p></div>
+              <div><span class="text-slate-500 block">WhatsApp:</span><p id="detailClientPhone" class="font-bold text-cyan-400">--</p></div>
+              <div><span class="text-slate-500 block">DNI / CUIT:</span><p id="detailClientDni" class="font-bold text-slate-300">--</p></div>
+            </div>
+          </div>
+
+          <!-- BLOQUE 2 — EQUIPO -->
+          <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-3">
+            <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2 border-b border-slate-800 pb-2">
+              <i data-lucide="smartphone" class="w-4 h-4 text-cyan-400"></i> BLOQUE 2 — EQUIPO
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+              <div><span class="text-slate-500 block">Modelo:</span><p id="detailModel" class="font-bold text-white">--</p></div>
+              <div><span class="text-slate-500 block">Capacidad / Color:</span><p id="detailStorageColor" class="text-slate-300">--</p></div>
+              <div><span class="text-slate-500 block">IMEI:</span><p id="detailImei" class="text-cyan-400 font-bold">--</p></div>
+              <div>
+                <span class="text-slate-500 block">PIN / Patrón:</span>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span id="detailLockCode" class="font-mono text-amber-400 font-bold">••••••</span>
+                  <button onclick="togglePinVisibility()" class="text-[10px] text-slate-400 hover:text-white underline">[Mostrar]</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BLOQUE 3 — DIAGNÓSTICO -->
+          <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-4">
+            <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2 border-b border-slate-800 pb-2">
+              <i data-lucide="microscope" class="w-4 h-4 text-emerald-400"></i> BLOQUE 3 — DIAGNÓSTICO
+            </h3>
+
+            <div>
+              <span class="text-xs font-mono text-slate-500 block mb-1">FALLA REPORTADA:</span>
+              <p id="detailReportedIssue" class="text-xs font-mono text-amber-300 bg-slate-900 p-3 rounded-2xl border border-slate-800">--</p>
+            </div>
+
+            <!-- Checklist Técnico -->
+            <div class="space-y-2">
+              <span class="text-xs font-mono text-slate-400 font-bold block">Checklist de Laboratorio</span>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" checked class="accent-cyan-400"> Inspección visual</label>
+                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" checked class="accent-cyan-400"> Prueba de carga</label>
+                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" checked class="accent-cyan-400"> Fuente DC</label>
+                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" checked class="accent-cyan-400"> Microscopio</label>
+                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="accent-cyan-400"> Cámara térmica</label>
+                <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="accent-cyan-400"> Medición de líneas</label>
+              </div>
+            </div>
+
+            <!-- Mediciones Técnicas -->
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-mono text-slate-400 font-bold">Notas Técnicas & Mediciones</span>
+                <button onclick="addTechMeasurement()" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-cyan-300 text-[11px] font-mono border border-slate-800">+ AGREGAR MEDICIÓN</button>
+              </div>
+              <textarea id="detailTechNotes" rows="4" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-3 text-xs font-mono text-white focus:border-cyan-400 focus:outline-none"></textarea>
+            </div>
+          </div>
+
+          <!-- BLOQUE 4 — EVIDENCIA FOTOGRÁFICA -->
+          <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2">
+                <i data-lucide="camera" class="w-4 h-4 text-cyan-400"></i> BLOQUE 4 — EVIDENCIA FOTOGRÁFICA
+              </h3>
+              <label class="px-3 py-1 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold cursor-pointer">
+                <span>+ Subir Foto</span>
+                <input type="file" accept="image/*" class="hidden" onchange="uploadOrderPhoto(event)">
+              </label>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono" id="detailPhotoGrid">
+              <!-- Dynamic photos by category -->
+            </div>
+          </div>
+
+          <!-- BLOQUE 5 — REPUESTOS UTILIZADOS -->
+          <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2">
+                <i data-lucide="package" class="w-4 h-4 text-amber-400"></i> BLOQUE 5 — REPUESTOS UTILIZADOS
+              </h3>
+              <button onclick="addOrderPartItem()" class="px-3 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 text-xs font-bold border border-slate-800">+ Agregar repuesto</button>
+            </div>
+
+            <div id="detailPartsList" class="space-y-2 text-xs font-mono">
+              <!-- Parts items list -->
+            </div>
+
+            <div class="flex justify-between items-center p-3 rounded-2xl bg-slate-900 border border-slate-800 font-mono text-xs">
+              <span class="text-slate-400">Costo Total Repuestos:</span>
+              <span id="detailTotalPartCost" class="font-bold text-rose-300 text-sm">$0 USD</span>
+            </div>
+          </div>
+
+          <!-- BLOQUE 10 — CONTROL DE CALIDAD (QC OBLIGATORIO) -->
+          <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-4">
+            <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2 border-b border-slate-800 pb-2">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> BLOQUE 10 — CONTROL DE CALIDAD (QC)
+            </h3>
+
+            <p class="text-xs text-slate-400 font-mono">Verificación obligatoria antes de marcar como LISTO PARA RETIRO:</p>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+              <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Encendido</label>
+              <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Carga</label>
+              <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Wi-Fi</label>
+              <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Bluetooth</label>
+              <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Cámara</label>
+              <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Micrófono</label>
+              <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Altavoz</label>
+              <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800"><input type="checkbox" class="qc-check accent-emerald-400"> Red móvil / IMEI</label>
+            </div>
+
+            <button onclick="approveQualityControl()" class="w-full py-3 rounded-2xl bg-emerald-950 hover:bg-emerald-900 text-emerald-300 font-brand font-bold text-xs border border-emerald-500/40">
+              [ APROBAR CONTROL DE CALIDAD ]
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Columna Derecha: Bloques 6, 8, 9 (Presupuesto, Historial) -->
+        <div class="space-y-6">
+          
+          <!-- BLOQUE 6 & 8 — PRESUPUESTO Y APROBACIÓN -->
+          <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-4">
+            <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2 border-b border-slate-800 pb-2">
+              <i data-lucide="receipt" class="w-4 h-4 text-emerald-400"></i> BLOQUE 6 — PRESUPUESTO
+            </h3>
+
+            <div class="space-y-2 font-mono text-xs">
+              <div class="flex justify-between text-slate-400"><span>Diagnóstico:</span><span>$20 USD</span></div>
+              <div class="flex justify-between text-slate-400"><span>Repuesto:</span><span id="detailPresPart">$80 USD</span></div>
+              <div class="flex justify-between text-slate-400"><span>Mano de Obra:</span><span id="detailPresLabor">$60 USD</span></div>
+              <div class="flex justify-between text-white font-bold text-sm border-t border-slate-800 pt-2">
+                <span>TOTAL:</span>
+                <span id="detailPresTotal" class="text-emerald-400">$160 USD</span>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-amber-950/40 border border-amber-500/30 text-xs font-mono text-amber-300">
+              Estado: <span id="detailPresStatus" class="font-bold">🟡 Pendiente de aprobación</span>
+            </div>
+
+            <div class="space-y-2">
+              <button onclick="sendWhatsAppBudget()" class="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2">
+                <i data-lucide="message-square" class="w-4 h-4"></i> Enviar por WhatsApp
+              </button>
+              <button onclick="copyBudgetApprovalLink()" class="w-full py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-cyan-300 font-bold text-xs border border-slate-800 flex items-center justify-center gap-2">
+                <i data-lucide="link" class="w-4 h-4"></i> Enviar link de aprobación
+              </button>
+            </div>
+          </div>
+
+          <!-- BLOQUE 9 — HISTORIAL (AUDIT TRAIL TIMELINE) -->
+          <div class="bg-slate-950 rounded-3xl p-5 border border-slate-800 space-y-4">
+            <h3 class="font-brand font-bold text-white text-xs uppercase text-slate-400 flex items-center gap-2 border-b border-slate-800 pb-2">
+              <i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i> BLOQUE 9 — HISTORIAL
+            </h3>
+
+            <div id="detailTimelineList" class="space-y-3 font-mono text-xs border-l-2 border-slate-800 pl-4">
+              <!-- Dynamic timeline -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- PANTALLA 4: 👥 CLIENTES -->
+    <!-- ==================================================================== -->
+    <section id="screen-customers" class="screen-view hidden space-y-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-brand font-bold text-white">CLIENTES</h1>
+          <p class="text-xs text-slate-400 font-mono">Directorio de clientes y registro de reparaciones asociadas</p>
+        </div>
+        <button onclick="openCreateCustomerModal()" class="btn-cyber px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> + NUEVO CLIENTE
+        </button>
+      </div>
+
+      <div class="bg-slate-950 p-4 rounded-3xl border border-slate-800">
+        <input type="text" id="customerSearchInput" onkeyup="filterCustomersTable()" placeholder="🔎 Buscar nombre, DNI, teléfono..."
+          class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-400 rounded-xl py-2.5 px-4 text-xs text-white">
+      </div>
+
+      <div class="bg-slate-950 rounded-3xl border border-slate-800 overflow-hidden">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="bg-slate-900 text-slate-400 font-mono uppercase border-b border-slate-800">
+            <tr>
+              <th class="p-4">Cliente</th>
+              <th class="p-4">WhatsApp</th>
+              <th class="p-4">Equipos / Reparaciones</th>
+              <th class="p-4">Última visita</th>
+              <th class="p-4 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="customersTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+            <!-- Render customers -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- PANTALLA 5: 📦 INVENTARIO (CON UBICACIÓN FÍSICA) -->
+    <!-- ==================================================================== -->
+    <section id="screen-inventory" class="screen-view hidden space-y-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-brand font-bold text-white">INVENTARIO</h1>
+          <p class="text-xs text-slate-400 font-mono">Control de repuestos y ubicación física en taller</p>
+        </div>
+        <button onclick="openCreatePartModal()" class="btn-cyber px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i> + AGREGAR REPUESTO
+        </button>
+      </div>
+
+      <!-- Métricas Inventario -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
+        <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+          <span class="text-xs text-slate-400">Stock Total Ítems</span>
+          <p id="invTotalCount" class="text-2xl font-bold text-cyan-400 mt-1">0</p>
+        </div>
+        <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+          <span class="text-xs text-slate-400">Stock Bajo Alerta</span>
+          <p id="invLowCount" class="text-2xl font-bold text-rose-400 mt-1">0</p>
+        </div>
+        <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+          <span class="text-xs text-slate-400">Valor de Inventario</span>
+          <p id="invTotalValue" class="text-2xl font-bold text-emerald-400 mt-1">$0 USD</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-950 rounded-3xl border border-slate-800 overflow-hidden">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="bg-slate-900 text-slate-400 font-mono uppercase border-b border-slate-800">
+            <tr>
+              <th class="p-4">Código</th>
+              <th class="p-4">Repuesto</th>
+              <th class="p-4">Stock</th>
+              <th class="p-4">Mínimo</th>
+              <th class="p-4">Costo</th>
+              <th class="p-4">Ubicación Física</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryFullTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+            <!-- Render items -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- PANTALLA 6: 💰 TARIFARIO DE REPARACIONES -->
+    <!-- ==================================================================== -->
+    <section id="screen-tariff" class="screen-view hidden space-y-6">
+      <h1 class="text-2xl font-brand font-bold text-white">TARIFARIO DE SERVICIOS & MANO DE OBRA</h1>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 font-mono text-xs" id="tariffCategoriesGrid">
+        <!-- Render tariff by category -->
+      </div>
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- PANTALLA 7: 🤝 GREMIOS -->
+    <!-- ==================================================================== -->
+    <section id="screen-gremios" class="screen-view hidden space-y-6">
+      <iframe src="/gremios.html" class="w-full h-[780px] rounded-3xl border border-slate-800 bg-slate-950"></iframe>
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- PANTALLA 8: 📊 FINANZAS -->
+    <!-- ==================================================================== -->
+    <section id="screen-finances" class="screen-view hidden space-y-6">
+      <h1 class="text-2xl font-brand font-bold text-white">FINANZAS & RENTABILIDAD</h1>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono">
+        <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800">
+          <span class="text-xs text-slate-400">Facturación Hoy</span>
+          <p id="finTodayRev" class="text-2xl font-bold text-cyan-400 mt-1">$0 USD</p>
+        </div>
+        <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800">
+          <span class="text-xs text-slate-400">Facturación Este Mes</span>
+          <p id="finMonthRev" class="text-2xl font-bold text-emerald-400 mt-1">$0 USD</p>
+        </div>
+        <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800">
+          <span class="text-xs text-slate-400">Ganancia Neta Mes</span>
+          <p id="finMonthProfit" class="text-2xl font-bold text-purple-400 mt-1">$0 USD</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- PANTALLA 9: 🧰 HERRAMIENTAS -->
+    <!-- ==================================================================== -->
+    <section id="screen-tools" class="screen-view hidden space-y-6">
+      <h1 class="text-2xl font-brand font-bold text-white">HERRAMIENTAS TÉCNICAS DE BANCO</h1>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+          <div class="flex items-center gap-3">
+            <i data-lucide="gamepad-2" class="w-8 h-8 text-cyan-400"></i>
+            <div>
+              <h3 class="font-brand font-bold text-white text-lg">🎮 Probador de Joystick</h3>
+              <p class="text-xs text-slate-400">Diagnóstico de drifts, circularidad y zonas muertas</p>
+            </div>
+          </div>
+          <button onclick="openToolModal('/probador.html')" class="w-full btn-cyber py-3 rounded-xl text-xs font-bold">[ Abrir ]</button>
+        </div>
+
+        <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+          <div class="flex items-center gap-3">
+            <i data-lucide="search" class="w-8 h-8 text-emerald-400"></i>
+            <div>
+              <h3 class="font-brand font-bold text-white text-lg">🔩 Comparador de Repuestos</h3>
+              <p class="text-xs text-slate-400">Búsqueda multimall de precios y stock en distribuidores</p>
+            </div>
+          </div>
+          <button onclick="openToolModal('/comparador.html')" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 font-bold text-xs border border-slate-800">[ Abrir ]</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- PANTALLA 10: ⚙️ CONFIGURACIÓN & ROLES -->
+    <!-- ==================================================================== -->
+    <section id="screen-settings" class="screen-view hidden space-y-6">
+      <h1 class="text-2xl font-brand font-bold text-white">CONFIGURACIÓN & ROLES</h1>
+      <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-4">
+        <h3 class="font-bold text-white text-base">Roles y Permisos del Taller</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+          <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><span class="text-cyan-400 font-bold block mb-1">👨‍💼 Administrador</span><p class="text-slate-400">Acceso total a reparaciones, finanzas, márgenes de ganancia y configuración.</p></div>
+          <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><span class="text-emerald-400 font-bold block mb-1">🔬 Técnico Laboratorio</span><p class="text-slate-400">Reparaciones, diagnósticos, fotos, checklist. Sin vista de finanzas.</p></div>
+          <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><span class="text-purple-400 font-bold block mb-1">🖥️ Recepción</span><p class="text-slate-400">Clientes, crear reparaciones, presupuestos, entregas. Sin datos internos.</p></div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- MODAL FLOTANTE HERRAMIENTAS -->
