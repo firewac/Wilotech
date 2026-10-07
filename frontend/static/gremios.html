@@ -357,6 +357,10 @@
             </div>
 
             <div class="flex items-center gap-2">
+              <button onclick="openGremioPriceModalNew()" class="py-2 px-3.5 rounded-xl bg-[#00f5a0] hover:bg-[#00f5a0]/90 text-slate-950 font-brand font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-[#00f5a0]/20">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>+ AGREGAR PRECIO</span>
+              </button>
               <button onclick="exportGremioPriceListExcel()" class="py-2 px-3.5 rounded-xl border border-slate-700 bg-[#0a101c] hover:bg-slate-800 text-slate-300 font-brand font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2">
                 <i data-lucide="download" class="w-4 h-4 text-[#00f5a0]"></i>
                 <span class="hidden sm:inline">EXCEL</span>
@@ -439,6 +443,88 @@
       <p>© WILOTECH Laboratorio de Microelectrónica - Portal de Servicios para Gremios Técnicos.</p>
     </div>
   </footer>
+
+  <!-- MODAL DE EDICIÓN Y CREACIÓN DE PRECIOS/SERVICIOS -->
+  <div id="modalGremioPriceEdit" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="glass-panel w-full max-w-lg p-6 rounded-2xl border border-[#00f5a0]/40 bg-[#05070d] shadow-2xl relative animate-in fade-in zoom-in duration-200">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <h3 id="modalGremioPriceTitle" class="font-brand font-black text-lg text-white flex items-center gap-2">
+          <i data-lucide="edit-3" class="w-5 h-5 text-[#00f5a0]"></i>
+          <span>Editar Precio de Servicio</span>
+        </h3>
+        <button onclick="closeGremioPriceModal()" class="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="formGremioPriceEdit" onsubmit="saveGremioPriceForm(event)" class="space-y-4">
+        <input type="hidden" id="edit-item-id">
+        
+        <div>
+          <label class="block text-xs font-bold font-brand text-slate-300 uppercase tracking-wider mb-1">Nombre / Título del Servicio</label>
+          <input type="text" id="edit-item-title" required placeholder="Ej: Cambio de Glass LCD/OLED General" class="w-full px-3.5 py-2.5 bg-[#0a101c] border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-[#00f5a0]">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold font-brand text-slate-300 uppercase tracking-wider mb-1">Categoría</label>
+            <select id="edit-item-category" class="w-full px-3.5 py-2.5 bg-[#0a101c] border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-[#00f5a0]">
+              <option value="Placa / Laboratorio">Placa / Laboratorio</option>
+              <option value="Baterías">Batería</option>
+              <option value="Glass & Refurbish">Tapa Trasera / Glass</option>
+              <option value="Módulos & Pantallas">Pantalla / Módulos</option>
+              <option value="Servicios de Laboratorio">Servicios de Laboratorio</option>
+              <option value="General">General</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold font-brand text-slate-300 uppercase tracking-wider mb-1">Código / SKU (Opcional)</label>
+            <input type="text" id="edit-item-code" placeholder="Ej: PLC-001" class="w-full px-3.5 py-2.5 bg-[#0a101c] border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-[#00f5a0]">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-[#0a101c] border border-slate-800 rounded-xl">
+          <div>
+            <label class="block text-xs font-bold font-brand text-[#00f5a0] uppercase tracking-wider mb-1">Precio Gremio (USD)</label>
+            <div class="relative">
+              <span class="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">USD</span>
+              <input type="number" step="0.01" id="edit-item-usd" oninput="syncGremioPriceFromUsd()" placeholder="12" class="w-full pl-12 pr-3 py-2 bg-[#05070d] border border-slate-700 rounded-lg text-white font-brand font-bold text-sm focus:outline-none focus:border-[#00f5a0]">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold font-brand text-[#00d2ff] uppercase tracking-wider mb-1">Precio Gremio (ARS)</label>
+            <div class="relative">
+              <span class="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">$</span>
+              <input type="number" step="1" id="edit-item-ars" oninput="syncGremioPriceFromArs()" placeholder="18660" class="w-full pl-8 pr-3 py-2 bg-[#05070d] border border-slate-700 rounded-lg text-white font-brand font-bold text-sm focus:outline-none focus:border-[#00d2ff]">
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
+          <span>Cotización de Referencia: <b id="modalUsdRateLabel" class="text-white">$1.555</b></span>
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+          <button type="button" id="btn-delete-gremio-item" onclick="deleteGremioPriceItemCurrent()" class="py-2.5 px-4 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-brand font-bold uppercase transition-all flex items-center gap-1.5 hidden">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>Eliminar</span>
+          </button>
+
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" onclick="closeGremioPriceModal()" class="py-2.5 px-4 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 text-xs font-brand font-bold uppercase transition-all">
+              Cancelar
+            </button>
+            <button type="submit" class="py-2.5 px-5 rounded-xl bg-gradient-to-r from-[#00f5a0] to-[#00d2ff] text-slate-950 font-brand font-black text-xs uppercase tracking-wider hover:opacity-95 shadow-lg shadow-[#00f5a0]/20 transition-all flex items-center gap-1.5">
+              <i data-lucide="check" class="w-4 h-4"></i>
+              <span>Guardar Precio</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- SCRIPT LÓGICA DE GREMIOS -->
   <script src="js/gremios.js"></script>

@@ -627,24 +627,34 @@ function renderIlabPriceList() {
 
     if (currentIlabCat === "pantalla" || item.category.includes("Módulos")) {
       return `
-        <div class="flex items-center justify-between p-3.5 bg-[#0a101c] border border-slate-800 rounded-2xl hover:border-[#00f5a0]/50 transition-all">
+        <div class="flex items-center justify-between p-3.5 bg-[#0a101c] border border-slate-800 rounded-2xl hover:border-[#00f5a0]/50 transition-all group">
           <div class="flex flex-col gap-0.5">
             <span class="font-brand font-bold text-sm text-white">${modelName}</span>
             <span class="text-xs text-slate-300 font-medium">${detailTag}</span>
             ${isIcChange ? `<span class="text-[10px] font-mono text-amber-400 italic">✓ Con cambio de IC</span>` : ''}
           </div>
-          <span class="font-brand font-black text-base text-[#00f5a0] tabular-nums flex-shrink-0">${priceText}</span>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="font-brand font-black text-base text-[#00f5a0] tabular-nums">${priceText}</span>
+            <button onclick="openGremioPriceModalEdit(${item.id})" title="Editar Precio" class="p-1.5 rounded-xl bg-slate-800/80 hover:bg-[#00f5a0] hover:text-slate-950 border border-slate-700 hover:border-[#00f5a0] text-slate-300 transition-all flex items-center justify-center">
+              <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
         </div>
       `;
     }
 
     return `
-      <div class="flex items-center justify-between p-3.5 bg-[#0a101c] border border-slate-800 rounded-2xl hover:border-[#00f5a0]/50 transition-all">
+      <div class="flex items-center justify-between p-3.5 bg-[#0a101c] border border-slate-800 rounded-2xl hover:border-[#00f5a0]/50 transition-all group">
         <div class="flex items-center gap-2.5">
           <div class="w-2 h-2 rounded-full bg-[#00f5a0]"></div>
           <span class="font-brand font-bold text-sm text-white">${modelName}</span>
         </div>
-        <span class="font-brand font-black text-base text-[#00f5a0] tabular-nums flex-shrink-0">${priceText}</span>
+        <div class="flex items-center gap-3 shrink-0">
+          <span class="font-brand font-black text-base text-[#00f5a0] tabular-nums">${priceText}</span>
+          <button onclick="openGremioPriceModalEdit(${item.id})" title="Editar Precio" class="p-1.5 rounded-xl bg-slate-800/80 hover:bg-[#00f5a0] hover:text-slate-950 border border-slate-700 hover:border-[#00f5a0] text-slate-300 transition-all flex items-center justify-center">
+            <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
       </div>
     `;
   }).join("");
@@ -677,5 +687,175 @@ function exportGremioPriceListExcel() {
     showToast("Planilla Excel exportada con éxito", "success");
   } catch (err) {
     showToast(`Error al exportar: ${err.message}`, "error");
+  }
+}
+
+// ==========================================
+// FUNCIONES DE EDICIÓN Y GESTIÓN DE PRECIOS
+// ==========================================
+
+let currentEditingGremioItemId = null;
+
+function openGremioPriceModalNew() {
+  currentEditingGremioItemId = null;
+  document.getElementById("modalGremioPriceTitle").innerHTML = `
+    <i data-lucide="plus-circle" class="w-5 h-5 text-[#00f5a0]"></i>
+    <span>Agregar Nuevo Precio / Servicio</span>
+  `;
+  document.getElementById("edit-item-id").value = "";
+  document.getElementById("edit-item-title").value = "";
+  document.getElementById("edit-item-category").value = "Placa / Laboratorio";
+  document.getElementById("edit-item-code").value = "";
+  document.getElementById("edit-item-usd").value = "";
+  document.getElementById("edit-item-ars").value = "";
+
+  const btnDelete = document.getElementById("btn-delete-gremio-item");
+  if (btnDelete) btnDelete.classList.add("hidden");
+
+  const rateLabel = document.getElementById("modalUsdRateLabel");
+  if (rateLabel) rateLabel.textContent = `$${ilabBlueRate.toLocaleString("es-AR")}`;
+
+  const modal = document.getElementById("modalGremioPriceEdit");
+  if (modal) modal.classList.remove("hidden");
+  if (window.lucide) lucide.createIcons();
+}
+
+function openGremioPriceModalEdit(itemId) {
+  const item = allGremioPriceItems.find(it => String(it.id) === String(itemId));
+  if (!item) {
+    showToast("No se encontró el ítem seleccionado", "error");
+    return;
+  }
+
+  currentEditingGremioItemId = item.id;
+  document.getElementById("modalGremioPriceTitle").innerHTML = `
+    <i data-lucide="edit-3" class="w-5 h-5 text-[#00f5a0]"></i>
+    <span>Editar Precio de Servicio</span>
+  `;
+  document.getElementById("edit-item-id").value = item.id;
+  document.getElementById("edit-item-title").value = item.title || "";
+  document.getElementById("edit-item-category").value = item.category || "General";
+  document.getElementById("edit-item-code").value = item.code || "";
+
+  const priceArs = item.price_gremio || 0;
+  const priceUsd = ilabBlueRate > 0 ? (priceArs / ilabBlueRate).toFixed(2) : 0;
+
+  document.getElementById("edit-item-ars").value = Math.round(priceArs);
+  document.getElementById("edit-item-usd").value = priceUsd;
+
+  const btnDelete = document.getElementById("btn-delete-gremio-item");
+  if (btnDelete) btnDelete.classList.remove("hidden");
+
+  const rateLabel = document.getElementById("modalUsdRateLabel");
+  if (rateLabel) rateLabel.textContent = `$${ilabBlueRate.toLocaleString("es-AR")}`;
+
+  const modal = document.getElementById("modalGremioPriceEdit");
+  if (modal) modal.classList.remove("hidden");
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeGremioPriceModal() {
+  const modal = document.getElementById("modalGremioPriceEdit");
+  if (modal) modal.classList.add("hidden");
+}
+
+function syncGremioPriceFromUsd() {
+  const usdVal = parseFloat(document.getElementById("edit-item-usd").value) || 0;
+  const arsVal = Math.round(usdVal * ilabBlueRate);
+  document.getElementById("edit-item-ars").value = arsVal > 0 ? arsVal : "";
+}
+
+function syncGremioPriceFromArs() {
+  const arsVal = parseFloat(document.getElementById("edit-item-ars").value) || 0;
+  const usdVal = ilabBlueRate > 0 ? (arsVal / ilabBlueRate).toFixed(2) : 0;
+  document.getElementById("edit-item-usd").value = usdVal > 0 ? usdVal : "";
+}
+
+async function saveGremioPriceForm(event) {
+  event.preventDefault();
+  const idVal = document.getElementById("edit-item-id").value;
+  const title = document.getElementById("edit-item-title").value.trim();
+  const category = document.getElementById("edit-item-category").value;
+  const code = document.getElementById("edit-item-code").value.trim();
+  const arsVal = parseFloat(document.getElementById("edit-item-ars").value) || 0;
+
+  if (!title) {
+    showToast("Ingresá un título para el servicio", "error");
+    return;
+  }
+
+  if (arsVal <= 0) {
+    showToast("Ingresá un precio válido mayor a 0", "error");
+    return;
+  }
+
+  const payload = {
+    title: title,
+    category: category,
+    code: code,
+    price_gremio: arsVal,
+    price_retail: Math.round(arsVal * 1.6),
+    brand: "Apple",
+    stock: "Disponible"
+  };
+
+  if (idVal) {
+    payload.id = parseInt(idVal);
+  }
+
+  try {
+    const endpoint = idVal ? `/api/gremios/price-list/${idVal}` : "/api/gremios/price-list";
+    const method = idVal ? "PUT" : "POST";
+
+    const res = await fetch(endpoint, {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Error al guardar el precio");
+    }
+
+    const data = await res.json();
+    const savedItem = data.item || payload;
+
+    if (idVal) {
+      const idx = allGremioPriceItems.findIndex(it => String(it.id) === String(idVal));
+      if (idx >= 0) {
+        allGremioPriceItems[idx] = savedItem;
+      }
+    } else {
+      allGremioPriceItems.unshift(savedItem);
+    }
+
+    closeGremioPriceModal();
+    renderIlabPriceList();
+    showToast(`Precio '${title}' guardado correctamente`, "success");
+  } catch (err) {
+    showToast(`Error: ${err.message}`, "error");
+  }
+}
+
+async function deleteGremioPriceItemCurrent() {
+  if (!currentEditingGremioItemId) return;
+  if (!confirm("¿Estás seguro de que deseas eliminar este precio de la lista de gremios?")) return;
+
+  try {
+    const res = await fetch(`/api/gremios/price-list/${currentEditingGremioItemId}`, {
+      method: "DELETE"
+    });
+
+    if (!res.ok) {
+      throw new Error("No se pudo eliminar el ítem");
+    }
+
+    allGremioPriceItems = allGremioPriceItems.filter(it => String(it.id) !== String(currentEditingGremioItemId));
+    closeGremioPriceModal();
+    renderIlabPriceList();
+    showToast("Precio eliminado con éxito", "success");
+  } catch (err) {
+    showToast(`Error: ${err.message}`, "error");
   }
 }
