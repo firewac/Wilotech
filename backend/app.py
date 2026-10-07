@@ -170,7 +170,7 @@ async def gremios_register_endpoint(req: GremioRegisterRequest):
     
     return {
         "status": "ok",
-        "message": "Registro exitoso. Ya puedes acceder al Sector de Gremios.",
+        "message": "Registro completado con éxito. Tu cuenta ha quedado PENDIENTE DE ALTA. El administrador del taller habilitará tu ingreso.",
         "user": user
     }
 
@@ -187,8 +187,18 @@ async def gremios_login_endpoint(req: GremioLoginRequest):
     if not verify_gremio_password(req.password.strip(), stored_hash):
         raise HTTPException(status_code=401, detail="Correo electrónico o contraseña incorrectos")
     
-    if user_data.get("status") == "disabled":
-        raise HTTPException(status_code=403, detail="Tu cuenta de gremio ha sido desactivada por la administración del taller")
+    status = user_data.get("status", "pending")
+    if status == "pending":
+        raise HTTPException(
+            status_code=403, 
+            detail="Tu registro fue recibido con éxito, pero tu cuenta está PENDIENTE DE ALTA. El administrador del taller debe darte de alta antes de tu ingreso."
+        )
+    
+    if status == "disabled":
+        raise HTTPException(
+            status_code=403, 
+            detail="Tu cuenta de gremio ha sido desactivada por la administración del taller."
+        )
     
     user_info = {
         "id": user_data["id"],
@@ -212,12 +222,13 @@ async def gremios_list_users_endpoint():
 @app.put("/api/gremios/users/{user_id}/status")
 async def gremios_update_user_status_endpoint(user_id: int, payload: Dict[str, Any]):
     new_status = payload.get("status", "active")
-    if new_status not in ["active", "disabled"]:
-        raise HTTPException(status_code=400, detail="Estado no válido")
+    if new_status not in ["active", "pending", "disabled"]:
+        raise HTTPException(status_code=400, detail="Estado no válido. Use 'active', 'pending' o 'disabled'.")
     success = update_gremio_user_status(user_id, new_status)
     if not success:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return {"status": "ok", "message": f"Estado actualizado a '{new_status}'"}
+    msg = "Dado de Alta y Autorizado para Ingreso" if new_status == "active" else f"Estado cambiado a '{new_status}'"
+    return {"status": "ok", "message": f"Usuario {msg} exitosamente."}
 
 @app.get("/api/gremios/price-list")
 async def gremios_get_price_list_endpoint(

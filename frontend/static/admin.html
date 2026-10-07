@@ -733,10 +733,62 @@
     </section>
 
     <!-- ==================================================================== -->
-    <!-- PANTALLA 7: 🤝 GREMIOS -->
+    <!-- PANTALLA 7: 🤝 GESTIÓN DE GREMIOS, CLIENTES & ALTA DE USUARIOS -->
     <!-- ==================================================================== -->
     <section id="screen-gremios" class="screen-view hidden space-y-6">
-      <iframe src="/gremios.html" class="w-full h-[780px] rounded-3xl border border-slate-800 bg-slate-950"></iframe>
+      
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-950 p-6 rounded-3xl border border-slate-800 shadow-xl">
+        <div>
+          <div class="flex items-center gap-3">
+            <h1 class="text-2xl font-brand font-bold text-white">GESTIÓN DE GREMIOS & ALTA DE USUARIOS</h1>
+            <span id="badgePendingCount" class="text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-full animate-pulse">
+              Cargando solicitudes...
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Autorizá o desactivá cuentas de gremios técnicos para permitir su ingreso al sistema y consulta de precios.</p>
+        </div>
+
+        <button onclick="renderAdminGremiosUsers()" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-400 font-brand font-bold text-xs border border-cyan-500/30 flex items-center gap-2 transition-all">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Actualizar Lista
+        </button>
+      </div>
+
+      <!-- TABLA DE ALTA Y GESTIÓN DE CLIENTES DE GREMIO -->
+      <div class="bg-slate-950 rounded-3xl border border-slate-800 p-6 space-y-4 shadow-xl">
+        <div class="flex items-center justify-between">
+          <h3 class="font-brand font-bold text-white text-base flex items-center gap-2">
+            <i data-lucide="users" class="w-5 h-5 text-cyan-400"></i> Solicitudes y Cuentas de Gremios Registradas
+          </h3>
+          <span class="text-xs text-slate-500 font-mono">Control de Altas por Administración</span>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-800/80 rounded-2xl">
+          <table class="w-full text-left border-collapse font-sans">
+            <thead>
+              <tr class="bg-[#05070d] text-[11px] font-brand font-bold text-cyan-400 uppercase tracking-wider border-b border-slate-800">
+                <th class="py-3.5 px-4">Cliente / Nombre Comercial</th>
+                <th class="py-3.5 px-4">Correo Electrónico</th>
+                <th class="py-3.5 px-4">Teléfono</th>
+                <th class="py-3.5 px-4">Fecha Registro</th>
+                <th class="py-3.5 px-4">Estado de Ingreso</th>
+                <th class="py-3.5 px-4 text-right">Acción de Alta / Permiso</th>
+              </tr>
+            </thead>
+            <tbody id="admin-gremio-users-tbody" class="divide-y divide-slate-800/60 text-xs">
+              <!-- Carga dinámica por admin.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VISOR DEL PORTAL DE PRECIOS GREMIOS -->
+      <div class="space-y-3 pt-4 border-t border-slate-800">
+        <h3 class="font-brand font-bold text-white text-sm flex items-center gap-2">
+          <i data-lucide="tag" class="w-4 h-4 text-[#00f5a0]"></i> Vista Previa e Interfaz del Tarifario Gremios
+        </h3>
+        <iframe src="/gremios.html" class="w-full h-[650px] rounded-3xl border border-slate-800 bg-slate-950"></iframe>
+      </div>
+
     </section>
 
     <!-- ==================================================================== -->

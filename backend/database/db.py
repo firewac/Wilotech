@@ -865,18 +865,27 @@ def create_gremio_user(name: str, email: str, phone: str, password_plain: str) -
         now_str = datetime.now().isoformat()
         cursor.execute("""
         INSERT INTO gremio_users (name, email, phone, password_hash, status, created_at)
-        VALUES (?, ?, ?, ?, 'active', ?)
+        VALUES (?, ?, ?, ?, 'pending', ?)
         """, (name.strip(), email.strip().lower(), phone.strip() if phone else "", pw_hash, now_str))
         conn.commit()
         user_id = cursor.lastrowid
-        return {
+        user_data = {
             "id": user_id,
             "name": name.strip(),
             "email": email.strip().lower(),
             "phone": phone.strip() if phone else "",
-            "status": "active",
+            "status": "pending",
             "created_at": now_str
         }
+        if is_supabase_enabled():
+            save_gremio_user_supabase({
+                "name": user_data["name"],
+                "email": user_data["email"],
+                "phone": user_data["phone"],
+                "password_hash": pw_hash,
+                "status": "pending"
+            })
+        return user_data
     except sqlite3.IntegrityError:
         return None
     finally:
@@ -910,7 +919,13 @@ def update_gremio_user_status(user_id: int, status: str) -> bool:
     try:
         cursor.execute("UPDATE gremio_users SET status = ? WHERE id = ?", (status, user_id))
         conn.commit()
-        return cursor.rowcount > 0
+        success = cursor.rowcount > 0
+        if success and is_supabase_enabled():
+            cursor.execute("SELECT * FROM gremio_users WHERE id = ?", (user_id,))
+            row = cursor.fetchone()
+            if row:
+                save_gremio_user_supabase(dict(row))
+        return success
     finally:
         conn.close()
 

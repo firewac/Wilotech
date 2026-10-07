@@ -24,6 +24,7 @@ const TechAdmin = (function () {
     loadTickets();
     loadInventory();
     loadCustomers();
+    if (typeof renderAdminGremiosUsers === 'function') renderAdminGremiosUsers();
   }
 
   // -------------------------------------------------------------
@@ -964,6 +965,7 @@ function navigateTo(screenId) {
   else if (screenId === 'inventory') renderInventoryScreen();
   else if (screenId === 'tariff') renderTariffScreen();
   else if (screenId === 'finances') renderFinancesScreen();
+  else if (screenId === 'gremios') renderAdminGremiosUsers();
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -1628,6 +1630,117 @@ function copyBudgetApprovalLink() {
 
 function triggerWhatsAppModal() {
   if (currentDetailTicketId) TechAdmin.notifyClientWhatsApp(currentDetailTicketId);
+}
+
+// ----------------------------------------------------------------------------
+// GESTIÓN DE ALTA DE USUARIOS GREMIOS Y AUTORIZACIÓN POR ADMINISTRADOR
+// ----------------------------------------------------------------------------
+async function renderAdminGremiosUsers() {
+  const tbody = document.getElementById("admin-gremio-users-tbody");
+  const badgePending = document.getElementById("badgePendingCount");
+  if (!tbody) return;
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="6" class="py-8 text-center text-slate-500 font-mono">
+        <span class="inline-block animate-spin text-cyan-400 text-lg mr-2">⏳</span> Consultando lista de gremios registrados...
+      </td>
+    </tr>
+  `;
+
+  try {
+    const res = await fetch("/api/gremios/users");
+    if (!res.ok) throw new Error("No se pudieron cargar los usuarios de gremios");
+    const users = await res.json();
+
+    const pendingUsers = users.filter(u => u.status === 'pending');
+    if (badgePending) {
+      if (pendingUsers.length > 0) {
+        badgePending.className = "text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-full animate-pulse";
+        badgePending.textContent = `🔔 ${pendingUsers.length} Solicitud(es) Pendiente(s) de Alta`;
+      } else {
+        badgePending.className = "text-xs font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full";
+        badgePending.textContent = `✅ Sin solicitudes pendientes`;
+      }
+    }
+
+    if (users.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="py-6 text-center text-slate-400">
+            No hay gremios registrados aún en el sistema.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = users.map(u => {
+      let statusBadge = '';
+      if (u.status === 'pending') {
+        statusBadge = `<span class="px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold uppercase text-[10px]">⏳ PENDIENTE DE ALTA</span>`;
+      } else if (u.status === 'active') {
+        statusBadge = `<span class="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold uppercase text-[10px]">🟢 ACTIVO / AUTORIZADO</span>`;
+      } else {
+        statusBadge = `<span class="px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 font-bold uppercase text-[10px]">🔴 DESACTIVADO</span>`;
+      }
+
+      const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString("es-AR", { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Reciente';
+
+      return `
+        <tr class="hover:bg-slate-900/50 transition-colors">
+          <td class="py-3.5 px-4 font-bold text-white font-brand">${u.name || 'Gremio Sin Nombre'}</td>
+          <td class="py-3.5 px-4 font-mono text-cyan-300">${u.email}</td>
+          <td class="py-3.5 px-4 font-mono text-slate-300">${u.phone || 'Sin datos'}</td>
+          <td class="py-3.5 px-4 font-mono text-slate-400">${dateStr}</td>
+          <td class="py-3.5 px-4">${statusBadge}</td>
+          <td class="py-3.5 px-4 text-right">
+            <div class="flex items-center justify-end gap-2">
+              ${u.status !== 'active' ? `
+                <button onclick="updateGremioUserStatusAdmin(${u.id}, 'active')" class="py-1.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 font-bold text-xs border border-emerald-500/40 transition-all shadow-md flex items-center gap-1">
+                  <span>🟢 DAR DE ALTA</span>
+                </button>
+              ` : ''}
+              ${u.status !== 'disabled' ? `
+                <button onclick="updateGremioUserStatusAdmin(${u.id}, 'disabled')" class="py-1.5 px-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-xs border border-rose-500/30 transition-all">
+                  <span>🔴 DESACTIVAR</span>
+                </button>
+              ` : ''}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  } catch (err) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="py-6 text-center text-rose-400 font-mono">
+          Error al cargar usuarios de gremios: ${err.message}
+        </td>
+      </tr>
+    `;
+  }
+}
+
+async function updateGremioUserStatusAdmin(userId, newStatus) {
+  try {
+    const res = await fetch(`/api/gremios/users/${userId}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Error al actualizar estado");
+    }
+    const data = await res.json();
+    alert(data.message || "Estado actualizado correctamente");
+    renderAdminGremiosUsers();
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
 }
 
 
