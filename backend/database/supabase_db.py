@@ -30,7 +30,7 @@ def is_supabase_enabled() -> bool:
     return bool(SUPABASE_URL and SUPABASE_KEY) or bool(DATABASE_URL)
 
 # ====================================================================
-# SERVICIOS DE MANEJO DE TABLAS EN SUPABASE
+# SERVICIOS DE MANEJO DE TABLAS EN SUPABASE (EN TIEMPO REAL)
 # ====================================================================
 
 def fetch_gremio_users_supabase() -> List[Dict[str, Any]]:
@@ -77,6 +77,17 @@ def upsert_gremio_price_supabase(price_item: Dict[str, Any]) -> Optional[Dict[st
         logger.error(f"Supabase upsert gremio_price_list error: {e}")
         return None
 
+def delete_gremio_price_supabase(item_id: int) -> bool:
+    client = get_supabase_client()
+    if not client:
+        return False
+    try:
+        client.table("gremio_price_list").delete().eq("id", item_id).execute()
+        return True
+    except Exception as e:
+        logger.error(f"Supabase delete gremio_price_list error: {e}")
+        return False
+
 def fetch_tickets_supabase() -> List[Dict[str, Any]]:
     client = get_supabase_client()
     if not client:
@@ -93,8 +104,21 @@ def save_ticket_supabase(ticket_data: Dict[str, Any]) -> Optional[Dict[str, Any]
     if not client:
         return None
     try:
-        res = client.table("repair_tickets").upsert(ticket_data).execute()
+        t_copy = dict(ticket_data)
+        t_copy.pop("parts_used_json", None)
+        res = client.table("repair_tickets").upsert(t_copy).execute()
         return res.data[0] if res.data else None
     except Exception as e:
         logger.error(f"Supabase save repair_ticket error: {e}")
         return None
+
+def delete_ticket_supabase(ticket_id: str) -> bool:
+    client = get_supabase_client()
+    if not client:
+        return False
+    try:
+        client.table("repair_tickets").delete().eq("id", ticket_id).execute()
+        return True
+    except Exception as e:
+        logger.error(f"Supabase delete repair_ticket error: {e}")
+        return False

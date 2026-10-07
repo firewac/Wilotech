@@ -104,3 +104,9 @@ ALTER TABLE repair_tickets ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Permitir acceso público a usuarios gremio" ON gremio_users FOR ALL USING (true);
 CREATE POLICY "Permitir acceso público a lista de precios" ON gremio_price_list FOR ALL USING (true);
 CREATE POLICY "Permitir acceso público a órdenes de reparación" ON repair_tickets FOR ALL USING (true);
+
+-- Habilitar Publicación en Tiempo Real (Supabase Realtime WebSockets)
+ALTER PUBLICATION supabase_realtime ADD TABLE gremio_users;
+ALTER PUBLICATION supabase_realtime ADD TABLE gremio_price_list;
+ALTER PUBLICATION supabase_realtime ADD TABLE repair_tickets;
+CREATE POLICY "Permitir acceso público a órdenes de reparación" ON repair_tickets FOR ALL USING (true);
