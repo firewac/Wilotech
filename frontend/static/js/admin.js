@@ -927,6 +927,509 @@ const TechAdmin = (function () {
   };
 })();
 
+// ============================================================================
+// WILOTECH OS — CONTROLLERS & INTERACTION SYSTEM
+// ============================================================================
+
+let currentExpTicketId = null;
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.classList.remove('text-cyan-400', 'bg-slate-900', 'border', 'border-cyan-500/30', 'shadow-[0_0_15px_rgba(0,210,255,0.1)]');
+    btn.classList.add('text-slate-400');
+  });
+
+  const targetTab = document.getElementById(`tab-${tabId}`);
+  if (targetTab) targetTab.classList.remove('hidden');
+
+  const targetNav = document.getElementById(`nav-${tabId}`);
+  if (targetNav) {
+    targetNav.classList.remove('text-slate-400');
+    targetNav.classList.add('text-cyan-400', 'bg-slate-900', 'border', 'border-cyan-500/30');
+  }
+
+  if (tabId === 'dashboard') renderDashboard();
+  else if (tabId === 'kanban') renderKanbanBoard();
+  else if (tabId === 'repairs') renderRepairsTable();
+  else if (tabId === 'customers') renderCustomersGrid();
+  else if (tabId === 'inventory') renderInventoryTable();
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function switchToolSubTab(subId) {
+  document.querySelectorAll('.subtool-content').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.subtool-btn').forEach(btn => {
+    btn.classList.remove('bg-cyan-950', 'text-cyan-300', 'border-cyan-500/30');
+    btn.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-800');
+  });
+
+  const targetSub = document.getElementById(`tool-${subId}`);
+  if (targetSub) targetSub.classList.remove('hidden');
+
+  const targetBtn = document.getElementById(`subnav-${subId}`);
+  if (targetBtn) {
+    targetBtn.classList.remove('bg-slate-900', 'text-slate-400', 'border-slate-800');
+    targetBtn.classList.add('bg-cyan-950', 'text-cyan-300', 'border-cyan-500/30');
+  }
+}
+
+// ----------------------------------------------------------------------------
+// DASHBOARD & ATTENTION ALERTS
+// ----------------------------------------------------------------------------
+function renderDashboard() {
+  const tickets = TechAdmin.getAllTickets();
+
+  // Active Count & Profit
+  const activeTickets = tickets.filter(t => t.status !== 'delivered');
+  document.getElementById('dashActiveCount').innerText = activeTickets.length;
+
+  let grossVol = 0;
+  let partsTotalCost = 0;
+
+  tickets.forEach(t => {
+    grossVol += parseFloat(t.finalCost) || 0;
+    partsTotalCost += parseFloat(t.partCost) || 0;
+  });
+
+  const netProfit = grossVol - partsTotalCost;
+
+  document.getElementById('dashGrossVolume').innerText = `$${grossVol.toLocaleString('en-US')} USD`;
+  document.getElementById('dashPartsCost').innerText = `$${partsTotalCost.toLocaleString('en-US')} USD`;
+  document.getElementById('dashNetProfit').innerText = `$${netProfit.toLocaleString('en-US')} USD`;
+  document.getElementById('dashTotalProfit').innerText = `$${netProfit.toLocaleString('en-US')} USD`;
+
+  // Status Metrics "HOY"
+  const counts = {
+    received: 0,
+    diagnosing: 0,
+    budget_pending: 0,
+    approved: 0,
+    repairing: 0,
+    testing: 0,
+    ready: 0,
+    delivered: 0,
+    expired: 0
+  };
+
+  tickets.forEach(t => {
+    const st = t.status || 'received';
+    if (counts[st] !== undefined) counts[st]++;
+    else counts.received++;
+
+    // Check if expired / delayed (> 5 days in non-delivered)
+    if (st !== 'delivered' && t.dateReceived) {
+      const days = (new Date() - new Date(t.dateReceived.replace(" ", "T"))) / (1000 * 3600 * 24);
+      if (days > 5) counts.expired++;
+    }
+  });
+
+  for (const [key, val] of Object.entries(counts)) {
+    const el = document.getElementById(`kpi-${key}`);
+    if (el) el.innerText = val;
+  }
+
+  const badgeKanban = document.getElementById('badgeKanbanCount');
+  if (badgeKanban) badgeKanban.innerText = activeTickets.length;
+
+  renderAttentionAlerts(tickets);
+}
+
+function renderAttentionAlerts(tickets) {
+  const list = document.getElementById('attentionAlertsList');
+  if (!list) return;
+
+  const alerts = [];
+
+  tickets.forEach(t => {
+    if (t.status === 'budget_pending') {
+      alerts.push({
+        type: 'amber',
+        ticketId: t.id,
+        title: `${t.deviceModel || 'Equipo'} — ${t.id}`,
+        desc: `Esperando aprobación de presupuesto ($${t.finalCost} USD) por parte del cliente.`
+      });
+    } else if (t.status === 'waiting_parts') {
+      alerts.push({
+        type: 'purple',
+        ticketId: t.id,
+        title: `${t.deviceModel || 'Equipo'} — ${t.id}`,
+        desc: `Esperando repuesto de proveedor.`
+      });
+    } else if (t.status === 'ready') {
+      alerts.push({
+        type: 'emerald',
+        ticketId: t.id,
+        title: `${t.deviceModel || 'Equipo'} — ${t.id}`,
+        desc: `Reparación terminada — Listo para retirar.`
+      });
+    }
+  });
+
+  if (alerts.length === 0) {
+    list.innerHTML = `<p class="text-xs font-mono text-slate-500">🎉 No hay alertas críticas pendientes en el taller.</p>`;
+    return;
+  }
+
+  list.innerHTML = alerts.slice(0, 5).map(a => `
+    <div class="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3 text-xs">
+      <div class="space-y-0.5">
+        <span class="font-bold text-white font-tech">${a.title}</span>
+        <p class="text-slate-400 font-mono text-[11px]">${a.desc}</p>
+      </div>
+      <button onclick="openExpedienteModal('${a.ticketId}')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-cyan-950 text-cyan-300 font-mono text-[11px] border border-slate-700 shrink-0">
+        👁️ Expediente
+      </button>
+    </div>
+  `).join('');
+}
+
+// ----------------------------------------------------------------------------
+// TABLERO VISUAL KANBAN & DRAG AND DROP
+// ----------------------------------------------------------------------------
+function renderKanbanBoard() {
+  const tickets = TechAdmin.getAllTickets();
+  const statuses = ['received', 'diagnosing', 'budget_pending', 'approved', 'repairing', 'testing', 'ready', 'delivered'];
+
+  statuses.forEach(st => {
+    const col = document.getElementById(`col-${st}`);
+    const cnt = document.getElementById(`cnt-${st}`);
+    if (col) col.innerHTML = '';
+
+    const colTickets = tickets.filter(t => (t.status || 'received') === st);
+    if (cnt) cnt.innerText = colTickets.length;
+
+    if (col) {
+      colTickets.forEach(t => {
+        col.appendChild(createKanbanCard(t));
+      });
+    }
+  });
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function createKanbanCard(ticket) {
+  const card = document.createElement('div');
+  card.className = 'kanban-card p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-cyan-500/50 cursor-grab space-y-2 shadow-lg transition-all';
+  card.draggable = true;
+
+  card.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('ticket_id', ticket.id);
+    card.classList.add('opacity-40');
+  });
+
+  card.addEventListener('dragend', () => {
+    card.classList.remove('opacity-40');
+  });
+
+  card.innerHTML = `
+    <div class="flex justify-between items-center text-[11px] font-mono">
+      <span class="font-bold text-cyan-400">#${ticket.id}</span>
+      <span class="text-slate-500 text-[10px]">${(ticket.dateReceived || '').slice(0, 10)}</span>
+    </div>
+    <div>
+      <h4 class="font-bold text-white text-xs font-tech truncate">${ticket.deviceBrand || ''} ${ticket.deviceModel || 'Modelo'}</h4>
+      <p class="text-[11px] text-slate-400 truncate">${ticket.clientName || 'Cliente'}</p>
+    </div>
+    <p class="text-[11px] text-slate-400 font-mono line-clamp-2 leading-relaxed bg-slate-950/60 p-2 rounded-xl border border-slate-800/50">${ticket.issueDescription || 'Sin detalle'}</p>
+    <div class="flex justify-between items-center pt-2 border-t border-slate-800/80 text-xs">
+      <span class="font-mono font-bold text-emerald-400">$${ticket.finalCost || 0} USD</span>
+      <button onclick="openExpedienteModal('${ticket.id}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-cyan-950 text-[10px] font-mono text-cyan-300 border border-slate-700">
+        👁️ Expediente
+      </button>
+    </div>
+  `;
+
+  return card;
+}
+
+function allowDrop(e) {
+  e.preventDefault();
+}
+
+function dropTicket(e, targetStatus) {
+  e.preventDefault();
+  const ticketId = e.dataTransfer.getData('ticket_id');
+  if (!ticketId) return;
+
+  TechAdmin.updateTicketStatus(ticketId, targetStatus);
+  renderKanbanBoard();
+  renderDashboard();
+}
+
+function filterKanbanByStatus(status) {
+  switchTab('kanban');
+}
+
+// ----------------------------------------------------------------------------
+// EXPEDIENTE TÉCNICO DIGITAL MODAL (WT-XXXX)
+// ----------------------------------------------------------------------------
+function openExpedienteModal(ticketId) {
+  currentExpTicketId = ticketId;
+  const ticket = TechAdmin.getTicketById(ticketId);
+  if (!ticket) return;
+
+  document.getElementById('expModalTitle').innerText = `${ticket.id} — ${ticket.deviceBrand || ''} ${ticket.deviceModel || ''}`;
+  document.getElementById('expModalSub').innerText = `IMEI/SN: ${ticket.serialOrImei || 'No provisto'} • Titular: ${ticket.clientName || 'Cliente'}`;
+  
+  const statusBadge = document.getElementById('expModalStatusBadge');
+  statusBadge.innerText = (ticket.status || 'received').toUpperCase();
+
+  // Populate info
+  document.getElementById('expClientName').innerText = ticket.clientName || '--';
+  document.getElementById('expClientPhone').innerText = ticket.clientPhone || '--';
+  document.getElementById('expClientDni').innerText = ticket.clientDni || '--';
+  document.getElementById('expDeviceModel').innerText = `${ticket.deviceBrand || ''} ${ticket.deviceModel || ''}`;
+  document.getElementById('expDeviceImei').innerText = ticket.serialOrImei || '--';
+  document.getElementById('expDeviceLock').innerText = `${ticket.deviceLockType || 'Sin Bloqueo'} ${ticket.deviceLockCode ? `[ ${ticket.deviceLockCode} ]` : ''}`;
+
+  document.getElementById('expTechNotes').value = ticket.technicianNotes || ticket.issueDescription || '';
+
+  document.getElementById('expPartCost').value = ticket.partCost || 0;
+  document.getElementById('expFinalCost').value = ticket.finalCost || 0;
+
+  const partC = parseFloat(ticket.partCost) || 0;
+  const finalC = parseFloat(ticket.finalCost) || 0;
+  const net = finalC - partC;
+  const pct = finalC > 0 ? ((net / finalC) * 100).toFixed(1) : 0;
+  document.getElementById('expProfitNet').innerText = `$${net} USD (${pct}%)`;
+
+  // Render IMEI history
+  renderExpHistory(ticket);
+
+  document.getElementById('modalExpediente').classList.remove('hidden');
+  switchExpTab('info');
+}
+
+function renderExpHistory(ticket) {
+  const container = document.getElementById('expHistoryList');
+  if (!container) return;
+
+  const allTickets = TechAdmin.getAllTickets();
+  const history = allTickets.filter(t => t.id !== ticket.id && (
+    (t.serialOrImei && t.serialOrImei === ticket.serialOrImei) ||
+    (t.clientPhone && t.clientPhone === ticket.clientPhone) ||
+    (t.clientDni && t.clientDni === ticket.clientDni)
+  ));
+
+  if (history.length === 0) {
+    container.innerHTML = `<p class="text-slate-500 py-2">Primera intervención registrada para este cliente/dispositivo en WILOTECH.</p>`;
+    return;
+  }
+
+  container.innerHTML = history.map(h => `
+    <div class="py-2.5 flex justify-between items-center">
+      <div>
+        <span class="font-bold text-white">#${h.id} (${h.dateReceived || ''})</span>
+        <p class="text-slate-400">${h.deviceModel} — ${h.issueDescription}</p>
+      </div>
+      <span class="font-bold text-emerald-400">$${h.finalCost} USD</span>
+    </div>
+  `).join('');
+}
+
+function closeExpedienteModal() {
+  document.getElementById('modalExpediente').classList.add('hidden');
+}
+
+function switchExpTab(tabName) {
+  document.querySelectorAll('.exp-content-box').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.exp-tab-btn').forEach(btn => {
+    btn.classList.remove('bg-cyan-950', 'text-cyan-300', 'border-cyan-500/30');
+    btn.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-800');
+  });
+
+  const targetBox = document.getElementById(`expcontent-${tabName}`);
+  if (targetBox) targetBox.classList.remove('hidden');
+
+  const targetBtn = document.getElementById(`exptab-${tabName}`);
+  if (targetBtn) {
+    targetBtn.classList.remove('bg-slate-900', 'text-slate-400', 'border-slate-800');
+    targetBtn.classList.add('bg-cyan-950', 'text-cyan-300', 'border-cyan-500/30');
+  }
+}
+
+function saveExpedienteChanges() {
+  if (!currentExpTicketId) return;
+
+  const notes = document.getElementById('expTechNotes').value.trim();
+  const partCost = parseFloat(document.getElementById('expPartCost').value) || 0;
+  const finalCost = parseFloat(document.getElementById('expFinalCost').value) || 0;
+
+  TechAdmin.updateTicket(currentExpTicketId, {
+    technicianNotes: notes,
+    partCost: partCost,
+    finalCost: finalCost
+  });
+
+  closeExpedienteModal();
+  renderDashboard();
+  renderKanbanBoard();
+}
+
+function sendWhatsAppTemplate(type) {
+  if (!currentExpTicketId) return;
+  TechAdmin.notifyClientWhatsApp(currentExpTicketId, type);
+}
+
+function copyBudgetLink() {
+  if (!currentExpTicketId) return;
+  const link = `${window.location.origin}/presupuesto.html?id=${currentExpTicketId}`;
+  navigator.clipboard.writeText(link);
+  alert(`Link copiado al portapapeles:\n${link}`);
+}
+
+function deleteExpTicket() {
+  if (!currentExpTicketId) return;
+  if (!confirm(`¿Eliminar definitivamente la orden #${currentExpTicketId}?`)) return;
+
+  TechAdmin.deleteTicket(currentExpTicketId);
+  closeExpedienteModal();
+  renderDashboard();
+  renderKanbanBoard();
+}
+
+// ----------------------------------------------------------------------------
+// LISTA DE ÓRDENES Y CLIENTES
+// ----------------------------------------------------------------------------
+function renderRepairsTable() {
+  const tbody = document.getElementById('ticketsTableBody');
+  if (!tbody) return;
+
+  const tickets = TechAdmin.getAllTickets();
+
+  tbody.innerHTML = tickets.map(t => `
+    <tr class="hover:bg-slate-900/60 transition-colors">
+      <td class="p-4 font-mono font-bold text-cyan-400">#${t.id}</td>
+      <td class="p-4">${t.clientName || 'Cliente'}<br><span class="text-slate-500 font-mono text-[10px]">${t.clientPhone || ''}</span></td>
+      <td class="p-4 font-semibold text-white">${t.deviceBrand || ''} ${t.deviceModel || ''}<br><span class="text-slate-500 font-mono text-[10px]">SN: ${t.serialOrImei || ''}</span></td>
+      <td class="p-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-cyan-300 border border-slate-700">${(t.status || 'received').toUpperCase()}</span></td>
+      <td class="p-4 font-mono font-bold text-emerald-400">$${t.finalCost || 0} USD</td>
+      <td class="p-4">
+        <button onclick="openExpedienteModal('${t.id}')" class="px-3 py-1 rounded-xl bg-slate-800 hover:bg-cyan-950 text-cyan-300 font-mono text-[11px] border border-slate-700">
+          👁️ Expediente
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderCustomersGrid() {
+  const grid = document.getElementById('customersListGrid');
+  if (!grid) return;
+
+  const customers = TechAdmin.getAllCustomers();
+
+  grid.innerHTML = customers.map(c => `
+    <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2 text-xs font-mono">
+      <div class="flex justify-between items-center">
+        <span class="font-bold text-white text-sm">${c.name}</span>
+        <span class="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 text-[10px] border border-cyan-500/30">${c.type || 'Público'}</span>
+      </div>
+      <p class="text-slate-400">Tel: <span class="text-cyan-400">${c.phone || 'No registrado'}</span></p>
+      <p class="text-slate-400">DNI: ${c.dni || 'No provisto'}</p>
+    </div>
+  `).join('');
+}
+
+function renderInventoryTable() {
+  const tbody = document.getElementById('inventoryTableBody');
+  if (!tbody) return;
+
+  const inventory = TechAdmin.getInventory();
+
+  tbody.innerHTML = inventory.map((item, idx) => `
+    <tr class="hover:bg-slate-900/60 transition-colors">
+      <td class="p-4 font-mono font-bold text-cyan-400">${item.sku || 'SKU-001'}</td>
+      <td class="p-4 font-semibold text-white">${item.description || item.name}</td>
+      <td class="p-4 font-mono text-slate-300">${item.location || 'Cajón A1'}</td>
+      <td class="p-4 font-mono">
+        <span class="font-bold ${item.qty <= (item.minStock || 2) ? 'text-rose-400' : 'text-emerald-400'}">${item.qty}</span> / Mín: ${item.minStock || 2}
+      </td>
+      <td class="p-4 font-mono text-emerald-300">$${item.cost || 10} USD / Venta: $${item.price || 30} USD</td>
+      <td class="p-4">
+        <button onclick="TechAdmin.adjustStock(${idx}, 1); renderInventoryTable();" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded font-mono text-[10px]">+1</button>
+        <button onclick="TechAdmin.adjustStock(${idx}, -1); renderInventoryTable();" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded font-mono text-[10px]">-1</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function calculateMargin() {
+  const part = parseFloat(document.getElementById('calcPartCost').value) || 0;
+  const labor = parseFloat(document.getElementById('calcLaborCost').value) || 0;
+  const pct = parseFloat(document.getElementById('calcMarginPct').value) || 40;
+
+  const base = part + labor;
+  const price = base * (1 + pct / 100);
+
+  document.getElementById('calcSuggestedPrice').innerText = `$${Math.round(price)} USD`;
+}
+
+function openNewTicketModal() {
+  const name = prompt("Nombre del Cliente:");
+  if (!name) return;
+  const phone = prompt("Teléfono / WhatsApp:");
+  const model = prompt("Modelo del Dispositivo (ej: iPhone 15 Pro):");
+  const issue = prompt("Falla declarada:");
+
+  const ticket = TechAdmin.createNewTicket({
+    clientName: name,
+    clientPhone: phone,
+    deviceModel: model,
+    issueDescription: issue
+  });
+
+  renderDashboard();
+  renderKanbanBoard();
+  openExpedienteModal(ticket.id);
+}
+
+function openNewPartModal() {
+  const desc = prompt("Descripción del repuesto:");
+  if (!desc) return;
+  const sku = prompt("Código / SKU (ej: IC-HYDRA-15):");
+  const qty = parseInt(prompt("Cantidad stock inicial:", "5")) || 5;
+
+  const inventory = TechAdmin.getInventory();
+  inventory.unshift({
+    sku: sku || `SKU-${Date.now().toString().slice(-4)}`,
+    description: desc,
+    qty: qty,
+    minStock: 2,
+    location: "Cajón Taller",
+    cost: 15,
+    price: 45
+  });
+
+  TechAdmin.saveInventory();
+  renderInventoryTable();
+}
+
+function handleGlobalSearch(e) {
+  const query = e.target.value.trim().toLowerCase();
+  if (!query) return;
+
+  if (e.key === 'Enter') {
+    const tickets = TechAdmin.getAllTickets();
+    const match = tickets.find(t =>
+      t.id.toLowerCase().includes(query) ||
+      (t.serialOrImei && t.serialOrImei.toLowerCase().includes(query)) ||
+      (t.clientName && t.clientName.toLowerCase().includes(query)) ||
+      (t.clientPhone && t.clientPhone.includes(query))
+    );
+
+    if (match) {
+      openExpedienteModal(match.id);
+    } else {
+      alert("No se encontró ninguna orden que coincida con la búsqueda.");
+    }
+  }
+}
+
 if (typeof window !== "undefined") {
   window.TechAdmin = TechAdmin;
 }
+

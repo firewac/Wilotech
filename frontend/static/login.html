@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso al Panel | WILOTECH OS</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts & Custom Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <link rel="stylesheet" href="/css/styles.css">
+  
+  <style>
+    body {
+      background-color: #05070d;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+  </style>
+</head>
+<body class="lab-grid-bg min-h-screen flex items-center justify-center p-4">
+
+  <!-- Glow Background Effects -->
+  <div class="fixed top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="fixed bottom-1/4 left-1/2 -translate-x-1/2 translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+  <div class="w-full max-w-md relative z-10">
+    
+    <!-- Branding Header -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 backdrop-blur-md mb-4 shadow-[0_0_20px_rgba(0,210,255,0.15)]">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="font-brand font-bold text-lg text-gradient-cyber tracking-wider">WILOTECH OS</span>
+        <span class="text-xs font-mono px-2 py-0.5 rounded bg-cyan-900/60 text-cyan-300 border border-cyan-500/30">v2.0</span>
+      </div>
+      <h1 class="text-2xl font-brand font-bold text-white tracking-wide">Sistema Operativo de Taller</h1>
+      <p class="text-sm text-slate-400 mt-1">Ingresá tus credenciales para acceder al panel administrativo</p>
+    </div>
+
+    <!-- Login Card -->
+    <div class="glass-panel-glow rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-cyber"></div>
+
+      <!-- Login Form -->
+      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
+        <div>
+          <label class="block text-xs font-mono uppercase tracking-wider text-slate-300 mb-2">Usuario / Email del Taller</label>
+          <div class="relative">
+            <i data-lucide="user" class="w-5 h-5 absolute left-3.5 top-3.5 text-slate-400"></i>
+            <input type="text" id="username" required placeholder="admin o email del taller"
+              class="w-full bg-slate-900/80 border border-slate-700/80 focus:border-cyan-400 rounded-xl py-3 pl-11 pr-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all placeholder:text-slate-500">
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="block text-xs font-mono uppercase tracking-wider text-slate-300">Contraseña</label>
+            <button type="button" onclick="toggleRecoverModal(true)" class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">¿Olvidaste tu clave?</button>
+          </div>
+          <div class="relative">
+            <i data-lucide="lock" class="w-5 h-5 absolute left-3.5 top-3.5 text-slate-400"></i>
+            <input type="password" id="password" required placeholder="••••••••"
+              class="w-full bg-slate-900/80 border border-slate-700/80 focus:border-cyan-400 rounded-xl py-3 pl-11 pr-10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all placeholder:text-slate-500">
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-3.5 text-slate-400 hover:text-white">
+              <i data-lucide="eye" id="eyeIcon" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Feedback Alert -->
+        <div id="loginAlert" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+          <span id="loginAlertText">Credenciales inválidas.</span>
+        </div>
+
+        <button type="submit" id="btnSubmit" class="w-full btn-cyber py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+          <span>INGRESAR A WILOTECH OS</span>
+        </button>
+      </form>
+
+      <!-- Footer Info -->
+      <div class="mt-6 pt-6 border-t border-slate-800/80 text-center">
+        <p class="text-xs text-slate-500 flex items-center justify-center gap-1.5">
+          <i data-lucide="lock" class="w-3.5 h-3.5 text-emerald-400"></i>
+          Conexión segura cifrada • WILOTECH Lab
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Recuperar Contraseña -->
+  <div id="recoverModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="glass-panel-glow rounded-3xl p-6 max-w-md w-full relative">
+      <button onclick="toggleRecoverModal(false)" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+          <i data-lucide="key-round" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h3 class="font-brand font-bold text-white text-lg">Recuperar Acceso</h3>
+          <p class="text-xs text-slate-400">Verificá tu email registrado para restablecer tu clave</p>
+        </div>
+      </div>
+
+      <form id="recoverForm" onsubmit="handleRecover(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-mono text-slate-300 mb-1.5">Email Autorizado del Taller</label>
+          <input type="email" id="recoverEmail" required placeholder="wil_18_22@hotmail.com"
+            class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl p-3 text-white text-sm">
+        </div>
+
+        <div id="newPasswordGroup" class="hidden space-y-3 pt-2 border-t border-slate-800">
+          <label class="block text-xs font-mono text-emerald-400 font-semibold">Nueva Contraseña</label>
+          <input type="password" id="newPassword" placeholder="Ingresá la nueva clave"
+            class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl p-3 text-white text-sm">
+        </div>
+
+        <div id="recoverAlert" class="hidden p-3 rounded-xl text-xs flex items-center gap-2"></div>
+
+        <button type="submit" id="btnRecover" class="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm transition-all flex items-center justify-center gap-2">
+          <span>VERIFICAR CORREO</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let stepRecover = 1;
+
+    function togglePasswordVisibility() {
+      const input = document.getElementById("password");
+      const icon = document.getElementById("eyeIcon");
+      if (input.type === "password") {
+        input.type = "text";
+        icon.setAttribute("data-lucide", "eye-off");
+      } else {
+        input.type = "password";
+        icon.setAttribute("data-lucide", "eye");
+      }
+      lucide.createIcons();
+    }
+
+    function toggleRecoverModal(show) {
+      const modal = document.getElementById("recoverModal");
+      if (show) modal.classList.remove("hidden");
+      else modal.classList.add("hidden");
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      const alertBox = document.getElementById("loginAlert");
+      const alertText = document.getElementById("loginAlertText");
+      const btn = document.getElementById("btnSubmit");
+
+      alertBox.classList.add("hidden");
+      btn.disabled = true;
+      btn.innerHTML = `<span class="inline-block animate-spin">⚡</span> Autenticando...`;
+
+      try {
+        const resp = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: user, password: pass })
+        });
+
+        const data = await resp.json();
+
+        if (resp.ok && data.status === "ok") {
+          // Guardar sesión en localStorage
+          localStorage.setItem("wilotech_auth", JSON.stringify({
+            loggedIn: true,
+            user: user,
+            role: "admin",
+            loginTime: new Date().toISOString()
+          }));
+          window.location.href = "/admin.html";
+        } else {
+          alertText.innerText = data.detail || "Credenciales incorrectas.";
+          alertBox.classList.remove("hidden");
+        }
+      } catch (err) {
+        // Fallback para modo offline local si coincide con las credenciales maestras
+        if ((user === "admin" || user === "wil_18_22@hotmail.com") && (pass === "admin123" || pass === "wilotech2026")) {
+          localStorage.setItem("wilotech_auth", JSON.stringify({
+            loggedIn: true,
+            user: user,
+            role: "admin",
+            loginTime: new Date().toISOString()
+          }));
+          window.location.href = "/admin.html";
+          return;
+        }
+        alertText.innerText = "Error de conexión con el servidor de autenticación.";
+        alertBox.classList.remove("hidden");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="shield-check" class="w-5 h-5"></i><span>INGRESAR A WILOTECH OS</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    async function handleRecover(e) {
+      e.preventDefault();
+      const email = document.getElementById("recoverEmail").value.trim();
+      const alertBox = document.getElementById("recoverAlert");
+      const btn = document.getElementById("btnRecover");
+
+      if (stepRecover === 1) {
+        btn.disabled = true;
+        btn.innerText = "Verificando...";
+        try {
+          const resp = await fetch("/api/admin/recover-verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email })
+          });
+          const data = await resp.json();
+
+          if (resp.ok && data.authorized) {
+            alertBox.className = "p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2";
+            alertBox.innerText = "Correo autorizado. Ingresá tu nueva clave a continuación.";
+            alertBox.classList.remove("hidden");
+            document.getElementById("newPasswordGroup").classList.remove("hidden");
+            btn.innerText = "RESTABLECER CONTRASEÑA";
+            stepRecover = 2;
+          } else {
+            alertBox.className = "p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2";
+            alertBox.innerText = data.detail || "Correo no reconocido en el sistema.";
+            alertBox.classList.remove("hidden");
+          }
+        } catch (err) {
+          alertBox.className = "p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2";
+          alertBox.innerText = "Error al conectar con el servidor.";
+          alertBox.classList.remove("hidden");
+        } finally {
+          btn.disabled = false;
+        }
+      } else if (stepRecover === 2) {
+        const newPassword = document.getElementById("newPassword").value.trim();
+        if (!newPassword || newPassword.length < 4) {
+          alertBox.innerText = "La contraseña debe tener al menos 4 caracteres.";
+          return;
+        }
+        btn.disabled = true;
+        btn.innerText = "Actualizando...";
+        try {
+          const resp = await fetch("/api/admin/reset-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, new_password: newPassword })
+          });
+          const data = await resp.json();
+
+          if (resp.ok && data.status === "ok") {
+            alertBox.className = "p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2";
+            alertBox.innerText = "¡Contraseña actualizada con éxito! Redirigiendo...";
+            alertBox.classList.remove("hidden");
+            setTimeout(() => toggleRecoverModal(false), 2000);
+          } else {
+            alertBox.innerText = data.detail || "No se pudo actualizar la clave.";
+          }
+        } catch (err) {
+          alertBox.innerText = "Error de conexión.";
+        } finally {
+          btn.disabled = false;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

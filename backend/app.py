@@ -111,6 +111,22 @@ async def admin_page():
         return FileResponse(str(admin_file))
     raise HTTPException(status_code=404, detail="Página admin.html no encontrada")
 
+@app.get("/login.html")
+@app.get("/login")
+async def login_page():
+    login_file = STATIC_DIR / "login.html"
+    if login_file.exists():
+        return FileResponse(str(login_file))
+    raise HTTPException(status_code=404, detail="Página login.html no encontrada")
+
+@app.get("/presupuesto.html")
+@app.get("/presupuesto")
+async def presupuesto_page():
+    presupuesto_file = STATIC_DIR / "presupuesto.html"
+    if presupuesto_file.exists():
+        return FileResponse(str(presupuesto_file))
+    raise HTTPException(status_code=404, detail="Página presupuesto.html no encontrada")
+
 @app.get("/comparador.html")
 @app.get("/comparador")
 async def comparador_page():
