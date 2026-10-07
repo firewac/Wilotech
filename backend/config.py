@@ -21,6 +21,12 @@ SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = DATA_DIR / "repuestos.db"
 SECRET_KEY_PATH = DATA_DIR / "secret.key"
 
+# Configuración de Conexión a Supabase
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+USE_SUPABASE = bool(SUPABASE_URL and SUPABASE_KEY) or bool(DATABASE_URL)
+
 def get_or_create_cipher() -> Fernet:
     """Obtiene o genera una clave simétrica única para cifrar credenciales."""
     env_key = os.environ.get("FERNET_SECRET_KEY")
