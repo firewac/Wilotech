@@ -792,9 +792,9 @@ function exportGremioPriceListExcel() {
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Tarifario iLab Gremios");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Tarifario Oficial WILOTECH");
 
-    XLSX.writeFile(workbook, `Tarifario_iLab_Gremios_WILOTECH.xlsx`);
+    XLSX.writeFile(workbook, `Tarifario_Oficial_WILOTECH.xlsx`);
     showToast("Planilla Excel exportada con éxito", "success");
   } catch (err) {
     showToast(`Error al exportar: ${err.message}`, "error");
