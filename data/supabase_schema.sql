@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS repair_tickets (
     technician TEXT,
     technician_notes TEXT,
     parts_used TEXT,
+    parts_used_json TEXT,
     final_cost NUMERIC DEFAULT 0.0,
     warranty TEXT,
     updated_at TIMESTAMPTZ DEFAULT NOW()
