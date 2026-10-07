@@ -21,6 +21,25 @@
     <link rel="stylesheet" href="css/styles.css">
     
     <script>
+        if (window.self !== window.top) {
+            document.documentElement.classList.add('in-iframe');
+        }
+    </script>
+    <style>
+        .in-iframe header,
+        .in-iframe footer {
+            display: none !important;
+        }
+        .in-iframe body {
+            padding-top: 0 !important;
+            min-h-screen: 0 !important;
+        }
+        .in-iframe main {
+            padding-top: 0.5rem !important;
+        }
+    </style>
+
+    <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -72,7 +91,7 @@
             <div class="flex items-center gap-2.5 sm:gap-3">
                 
                 <!-- Botón Volver al Panel de Taller -->
-                <a href="/admin.html" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0d1526] hover:bg-[#131f38] border border-[#00ff87]/40 text-[#00ff87] text-xs font-semibold transition-all hover:border-[#00ff87] shadow-sm cursor-pointer font-tech">
+                <a href="/admin.html" target="_top" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0d1526] hover:bg-[#131f38] border border-[#00ff87]/40 text-[#00ff87] text-xs font-semibold transition-all hover:border-[#00ff87] shadow-sm cursor-pointer font-tech">
                     <svg class="w-4 h-4 text-[#00ff87]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"></path></svg>
                     <span>Panel de Taller</span>
                 </a>

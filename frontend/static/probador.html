@@ -37,7 +37,24 @@
   <!-- Custom Styles -->
   <link rel="stylesheet" href="css/styles.css">
 
+  <script>
+    if (window.self !== window.top) {
+      document.documentElement.classList.add('in-iframe');
+    }
+  </script>
+
   <style>
+    .in-iframe header,
+    .in-iframe footer {
+      display: none !important;
+    }
+    .in-iframe body {
+      padding-top: 0 !important;
+      min-h-screen: 0 !important;
+    }
+    .in-iframe main {
+      padding-top: 0.5rem !important;
+    }
     .custom-scrollbar::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -83,7 +100,7 @@
       <!-- BOTONES DE NAVEGACIÓN RÁPIDA -->
       <div class="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
         <a 
-          href="admin.html" 
+          href="admin.html" target="_top" 
           class="inline-flex items-center justify-center gap-2 py-2 px-3 sm:px-4 rounded-xl border border-[#00f5a0] bg-[#00f5a0]/15 hover:bg-[#00f5a0]/30 text-[#00f5a0] text-xs font-brand font-bold transition-all shadow-lg shadow-[#00f5a0]/20 flex-1 sm:flex-none text-center"
         >
           <i data-lucide="wrench" class="w-4 h-4 text-[#00f5a0]"></i>

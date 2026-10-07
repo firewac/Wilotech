@@ -39,6 +39,25 @@
 
   <!-- Custom Styles -->
   <link rel="stylesheet" href="css/styles.css">
+
+  <script>
+    if (window.self !== window.top) {
+      document.documentElement.classList.add('in-iframe');
+    }
+  </script>
+  <style>
+    .in-iframe header,
+    .in-iframe footer {
+      display: none !important;
+    }
+    .in-iframe body {
+      padding-top: 0 !important;
+      min-h-screen: 0 !important;
+    }
+    .in-iframe main {
+      padding-top: 0.5rem !important;
+    }
+  </style>
 </head>
 <body class="lab-grid-bg antialiased text-slate-200 min-h-screen flex flex-col font-tech selection:bg-[#00f5a0] selection:text-slate-950">
 
