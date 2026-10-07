@@ -471,8 +471,57 @@ function renderPartCard(p) {
 // 6. TAB 3: LISTA DE PRECIOS & BUSCADOR TIPO iLAB GREMIO
 let currentIlabCat = "placa";
 let currentIlabCurrency = "usd";
-let ilabBlueRate = 1300;
+let currentIlabViewType = "gremio"; // "gremio" vs "retail"
+let isIlabEditMode = false;
+let selectedBulkItemIds = new Set();
+let ilabBlueRate = 1555;
 let ilabBlueRateTime = null;
+
+function setIlabViewType(type) {
+  currentIlabViewType = type;
+  const btnGremio = document.getElementById("btnViewGremio");
+  const btnRetail = document.getElementById("btnViewRetail");
+  if (btnGremio && btnRetail) {
+    if (type === "gremio") {
+      btnGremio.className = "py-1.5 px-3.5 rounded-xl text-xs font-brand font-bold transition-all bg-[#00d2ff]/20 text-[#00d2ff] border border-[#00d2ff]/40 shadow-sm";
+      btnRetail.className = "py-1.5 px-3.5 rounded-xl text-xs font-brand font-bold transition-all border border-slate-700 text-slate-400 hover:text-white";
+    } else {
+      btnRetail.className = "py-1.5 px-3.5 rounded-xl text-xs font-brand font-bold transition-all bg-[#00f5a0]/20 text-[#00f5a0] border border-[#00f5a0]/40 shadow-sm";
+      btnGremio.className = "py-1.5 px-3.5 rounded-xl text-xs font-brand font-bold transition-all border border-slate-700 text-slate-400 hover:text-white";
+    }
+  }
+  renderIlabPriceList();
+}
+
+function toggleIlabEditMode(forceState) {
+  isIlabEditMode = typeof forceState === "boolean" ? forceState : !isIlabEditMode;
+  
+  const banner = document.getElementById("edit-mode-banner");
+  const txtBtn = document.getElementById("txt-edit-mode");
+  const btnToggle = document.getElementById("btn-toggle-edit-mode");
+
+  if (banner) {
+    if (isIlabEditMode) {
+      banner.classList.remove("hidden");
+    } else {
+      banner.classList.add("hidden");
+    }
+  }
+
+  if (txtBtn) {
+    txtBtn.textContent = isIlabEditMode ? "✓ MODO CONSULTA" : "✎ EDITAR PRECIOS";
+  }
+
+  if (btnToggle) {
+    if (isIlabEditMode) {
+      btnToggle.className = "py-2 px-3.5 rounded-xl border border-[#00f5a0] bg-[#00f5a0] text-slate-950 font-brand font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-[#00f5a0]/20";
+    } else {
+      btnToggle.className = "py-2 px-3.5 rounded-xl border border-[#00f5a0]/40 bg-[#00f5a0]/10 hover:bg-[#00f5a0] text-[#00f5a0] hover:text-slate-950 font-brand font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md";
+    }
+  }
+
+  renderIlabPriceList();
+}
 
 async function loadGremioPriceList() {
   const container = document.getElementById("ilab-results-container");
@@ -499,11 +548,11 @@ async function loadIlabBlueRate() {
     const res = await fetch("https://dolarapi.com/v1/ambito/dolares/blue");
     if (!res.ok) throw new Error("error dapi");
     const data = await res.json();
-    ilabBlueRate = data.venta || 1300;
+    ilabBlueRate = data.venta || 1555;
     ilabBlueRateTime = new Date();
     updateIlabCotizInfo();
   } catch (e) {
-    ilabBlueRate = 1300;
+    ilabBlueRate = 1555;
     updateIlabCotizInfo(true);
   }
 }
@@ -525,11 +574,11 @@ function setIlabCurrency(currency) {
   const btnArs = document.getElementById("btnArs");
 
   if (currency === "usd") {
-    btnUsd.className = "py-1.5 px-4 rounded-xl text-xs font-brand font-bold transition-all bg-[#00f5a0] text-slate-950 shadow-md";
-    btnArs.className = "py-1.5 px-4 rounded-xl text-xs font-brand font-bold transition-all border border-slate-700 text-slate-300 hover:text-white";
+    btnUsd.className = "py-1.5 px-3.5 rounded-xl text-xs font-brand font-bold transition-all bg-[#00f5a0] text-slate-950 shadow-md";
+    btnArs.className = "py-1.5 px-3.5 rounded-xl text-xs font-brand font-bold transition-all border border-slate-700 text-slate-300 hover:text-white";
   } else {
-    btnArs.className = "py-1.5 px-4 rounded-xl text-xs font-brand font-bold transition-all bg-[#00f5a0] text-slate-950 shadow-md";
-    btnUsd.className = "py-1.5 px-4 rounded-xl text-xs font-brand font-bold transition-all border border-slate-700 text-slate-300 hover:text-white";
+    btnArs.className = "py-1.5 px-3.5 rounded-xl text-xs font-brand font-bold transition-all bg-[#00f5a0] text-slate-950 shadow-md";
+    btnUsd.className = "py-1.5 px-3.5 rounded-xl text-xs font-brand font-bold transition-all border border-slate-700 text-slate-300 hover:text-white";
   }
 
   renderIlabPriceList();
@@ -608,8 +657,80 @@ function renderIlabPriceList() {
     return;
   }
 
+  // SI ESTAMOS EN MODO EDICIÓN -> RENDERIZAR TABLA DE EDICIÓN INLINE COMPLETA
+  if (isIlabEditMode) {
+    let rowsHtml = filtered.map(item => {
+      const isChecked = selectedBulkItemIds.has(item.id);
+      const gremioUsdVal = item.price_gremio_usd || (ilabBlueRate > 0 ? (item.price_gremio / ilabBlueRate) : 0);
+      const retailUsdVal = item.price_retail_usd || (ilabBlueRate > 0 ? (item.price_retail / ilabBlueRate) : (gremioUsdVal * 1.5));
+
+      return `
+        <div class="p-3 bg-[#0a101c] border border-slate-800 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 hover:border-[#00f5a0]/40 transition-all" id="edit-row-${item.id}">
+          <div class="flex items-center gap-3 flex-1 w-full">
+            <input type="checkbox" onchange="toggleSelectItem(${item.id}, this.checked)" ${isChecked ? 'checked' : ''} class="w-4 h-4 accent-[#00f5a0] rounded border-slate-700">
+            <div class="flex-1 space-y-1">
+              <input type="text" id="inline-title-${item.id}" value="${item.title.replace(/"/g, '&quot;')}" class="w-full bg-[#05070d] border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-brand font-bold focus:border-[#00f5a0]">
+              <div class="flex items-center gap-2">
+                <select id="inline-cat-${item.id}" class="bg-[#05070d] border border-slate-800 rounded px-2 py-0.5 text-[11px] text-slate-300">
+                  <option value="Placa / Laboratorio" ${item.category.includes("Placa") || item.category.includes("Laboratorio") ? "selected" : ""}>Placa / Lab</option>
+                  <option value="Baterías" ${item.category.includes("Baterí") ? "selected" : ""}>Baterías</option>
+                  <option value="Glass & Refurbish" ${item.category.includes("Glass") || item.category.includes("Tapa") ? "selected" : ""}>Glass & Refurbish</option>
+                  <option value="Módulos & Pantallas" ${item.category.includes("Módulos") || item.category.includes("Pantalla") ? "selected" : ""}>Módulos</option>
+                  <option value="General" ${!item.category || item.category === "General" ? "selected" : ""}>General</option>
+                </select>
+                <span class="text-[10px] text-slate-400 font-mono">${item.code || ''}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+            <!-- INPUT PRECIO PÚBLICO USD -->
+            <div class="flex flex-col items-end">
+              <span class="text-[9px] font-brand font-bold text-[#00d2ff] uppercase">Público (USD)</span>
+              <div class="relative w-24">
+                <span class="absolute left-2 top-1 text-[10px] text-slate-400 font-bold">$</span>
+                <input type="number" step="0.5" id="inline-retail-usd-${item.id}" value="${retailUsdVal.toFixed(2)}" class="w-full pl-5 pr-1 py-1 bg-[#05070d] border border-slate-700 rounded-lg text-xs text-white font-brand font-bold text-right focus:border-[#00d2ff]">
+              </div>
+            </div>
+
+            <!-- INPUT PRECIO GREMIO USD -->
+            <div class="flex flex-col items-end">
+              <span class="text-[9px] font-brand font-bold text-[#00f5a0] uppercase">Gremio (USD)</span>
+              <div class="relative w-24">
+                <span class="absolute left-2 top-1 text-[10px] text-slate-400 font-bold">$</span>
+                <input type="number" step="0.5" id="inline-gremio-usd-${item.id}" value="${gremioUsdVal.toFixed(2)}" class="w-full pl-5 pr-1 py-1 bg-[#05070d] border border-slate-700 rounded-lg text-white font-brand font-bold text-right focus:border-[#00f5a0]">
+              </div>
+            </div>
+
+            <!-- BOTÓN GUARDAR FILA -->
+            <button onclick="saveInlinePriceRow(${item.id})" title="Guardar cambios de esta fila" class="py-1.5 px-2.5 rounded-xl bg-[#00f5a0]/10 hover:bg-[#00f5a0] text-[#00f5a0] hover:text-slate-950 border border-[#00f5a0]/40 font-brand font-bold text-xs transition-all flex items-center gap-1">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    container.innerHTML = `
+      <div class="space-y-2">
+        <div class="flex items-center justify-between px-2 text-[11px] font-brand font-bold text-slate-400 border-b border-slate-800 pb-1">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" onchange="toggleSelectAllItems(this.checked)" class="w-3.5 h-3.5 accent-[#00f5a0]">
+            <span>Seleccionar Todos (${filtered.length})</span>
+          </label>
+          <span>Edición Directa por Fila</span>
+        </div>
+        ${rowsHtml}
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  // MODO CONSULTA NORMAL (CLEAN SEARCH VIEW)
   container.innerHTML = filtered.map(item => {
-    const rawPriceArs = item.price_gremio || 0;
+    const isRetail = currentIlabViewType === "retail";
+    const rawPriceArs = isRetail ? (item.price_retail || (item.price_gremio * 1.6)) : (item.price_gremio || 0);
     const isUsd = currentIlabCurrency === "usd";
     const priceRounded = isUsd
       ? Math.ceil(rawPriceArs / ilabBlueRate)
@@ -624,34 +745,24 @@ function renderIlabPriceList() {
 
     let modelName = item.title.replace(/^Mano de Obra:\s*/i, "").replace(/\(iLab\)/i, "").trim();
     let detailTag = item.category || "General";
-
-    if (currentIlabCat === "pantalla" || item.category.includes("Módulos")) {
-      return `
-        <div class="flex items-center justify-between p-3.5 bg-[#0a101c] border border-slate-800 rounded-2xl hover:border-[#00f5a0]/50 transition-all group">
-          <div class="flex flex-col gap-0.5">
-            <span class="font-brand font-bold text-sm text-white">${modelName}</span>
-            <span class="text-xs text-slate-300 font-medium">${detailTag}</span>
-            ${isIcChange ? `<span class="text-[10px] font-mono text-amber-400 italic">✓ Con cambio de IC</span>` : ''}
-          </div>
-          <div class="flex items-center gap-3 shrink-0">
-            <span class="font-brand font-black text-base text-[#00f5a0] tabular-nums">${priceText}</span>
-            <button onclick="openGremioPriceModalEdit(${item.id})" title="Editar Precio" class="p-1.5 rounded-xl bg-slate-800/80 hover:bg-[#00f5a0] hover:text-slate-950 border border-slate-700 hover:border-[#00f5a0] text-slate-300 transition-all flex items-center justify-center">
-              <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
-            </button>
-          </div>
-        </div>
-      `;
-    }
+    let typeTag = isRetail ? `<span class="text-[10px] px-1.5 py-0.2 rounded bg-[#00d2ff]/10 text-[#00d2ff] border border-[#00d2ff]/30 font-bold">Público</span>` : `<span class="text-[10px] px-1.5 py-0.2 rounded bg-[#00f5a0]/10 text-[#00f5a0] border border-[#00f5a0]/30 font-bold">Gremio</span>`;
 
     return `
       <div class="flex items-center justify-between p-3.5 bg-[#0a101c] border border-slate-800 rounded-2xl hover:border-[#00f5a0]/50 transition-all group">
         <div class="flex items-center gap-2.5">
-          <div class="w-2 h-2 rounded-full bg-[#00f5a0]"></div>
-          <span class="font-brand font-bold text-sm text-white">${modelName}</span>
+          <div class="w-2 h-2 rounded-full ${isRetail ? 'bg-[#00d2ff]' : 'bg-[#00f5a0]'}"></div>
+          <div class="flex flex-col">
+            <span class="font-brand font-bold text-sm text-white">${modelName}</span>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="text-[11px] text-slate-400 font-medium">${detailTag}</span>
+              ${typeTag}
+              ${isIcChange ? `<span class="text-[10px] font-mono text-amber-400 italic">✓ Con cambio de IC</span>` : ''}
+            </div>
+          </div>
         </div>
         <div class="flex items-center gap-3 shrink-0">
-          <span class="font-brand font-black text-base text-[#00f5a0] tabular-nums">${priceText}</span>
-          <button onclick="openGremioPriceModalEdit(${item.id})" title="Editar Precio" class="p-1.5 rounded-xl bg-slate-800/80 hover:bg-[#00f5a0] hover:text-slate-950 border border-slate-700 hover:border-[#00f5a0] text-slate-300 transition-all flex items-center justify-center">
+          <span class="font-brand font-black text-base ${isRetail ? 'text-[#00d2ff]' : 'text-[#00f5a0]'} tabular-nums cursor-pointer" onclick="openGremioPriceModalEdit(${item.id})" title="Click para editar">${priceText}</span>
+          <button onclick="openGremioPriceModalEdit(${item.id})" title="Editar Servicio" class="p-1.5 rounded-xl bg-slate-800/80 hover:bg-[#00f5a0] hover:text-slate-950 border border-slate-700 hover:border-[#00f5a0] text-slate-400 hover:text-white transition-all flex items-center justify-center">
             <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
           </button>
         </div>
@@ -700,14 +811,17 @@ function openGremioPriceModalNew() {
   currentEditingGremioItemId = null;
   document.getElementById("modalGremioPriceTitle").innerHTML = `
     <i data-lucide="plus-circle" class="w-5 h-5 text-[#00f5a0]"></i>
-    <span>Agregar Nuevo Precio / Servicio</span>
+    <span>Agregar Nuevo Servicio / Reparación</span>
   `;
   document.getElementById("edit-item-id").value = "";
   document.getElementById("edit-item-title").value = "";
   document.getElementById("edit-item-category").value = "Placa / Laboratorio";
+  document.getElementById("edit-item-pricetype").value = "usd_to_ars";
   document.getElementById("edit-item-code").value = "";
   document.getElementById("edit-item-usd").value = "";
   document.getElementById("edit-item-ars").value = "";
+  document.getElementById("edit-retail-usd").value = "";
+  document.getElementById("edit-retail-ars").value = "";
 
   const btnDelete = document.getElementById("btn-delete-gremio-item");
   if (btnDelete) btnDelete.classList.add("hidden");
@@ -735,13 +849,20 @@ function openGremioPriceModalEdit(itemId) {
   document.getElementById("edit-item-id").value = item.id;
   document.getElementById("edit-item-title").value = item.title || "";
   document.getElementById("edit-item-category").value = item.category || "General";
+  document.getElementById("edit-item-pricetype").value = item.price_type || "usd_to_ars";
   document.getElementById("edit-item-code").value = item.code || "";
 
   const priceArs = item.price_gremio || 0;
-  const priceUsd = ilabBlueRate > 0 ? (priceArs / ilabBlueRate).toFixed(2) : 0;
+  const priceUsd = item.price_gremio_usd || (ilabBlueRate > 0 ? (priceArs / ilabBlueRate) : 0);
+
+  const retailArs = item.price_retail || (priceArs * 1.6);
+  const retailUsd = item.price_retail_usd || (ilabBlueRate > 0 ? (retailArs / ilabBlueRate) : (priceUsd * 1.5));
 
   document.getElementById("edit-item-ars").value = Math.round(priceArs);
-  document.getElementById("edit-item-usd").value = priceUsd;
+  document.getElementById("edit-item-usd").value = priceUsd > 0 ? priceUsd.toFixed(2) : "";
+
+  document.getElementById("edit-retail-ars").value = Math.round(retailArs);
+  document.getElementById("edit-retail-usd").value = retailUsd > 0 ? retailUsd.toFixed(2) : "";
 
   const btnDelete = document.getElementById("btn-delete-gremio-item");
   if (btnDelete) btnDelete.classList.remove("hidden");
@@ -771,20 +892,38 @@ function syncGremioPriceFromArs() {
   document.getElementById("edit-item-usd").value = usdVal > 0 ? usdVal : "";
 }
 
+function syncRetailFromUsd() {
+  const usdVal = parseFloat(document.getElementById("edit-retail-usd").value) || 0;
+  const arsVal = Math.round(usdVal * ilabBlueRate);
+  document.getElementById("edit-retail-ars").value = arsVal > 0 ? arsVal : "";
+}
+
+function syncRetailFromArs() {
+  const arsVal = parseFloat(document.getElementById("edit-retail-ars").value) || 0;
+  const usdVal = ilabBlueRate > 0 ? (arsVal / ilabBlueRate).toFixed(2) : 0;
+  document.getElementById("edit-retail-usd").value = usdVal > 0 ? usdVal : "";
+}
+
 async function saveGremioPriceForm(event) {
   event.preventDefault();
   const idVal = document.getElementById("edit-item-id").value;
   const title = document.getElementById("edit-item-title").value.trim();
   const category = document.getElementById("edit-item-category").value;
+  const priceType = document.getElementById("edit-item-pricetype").value;
   const code = document.getElementById("edit-item-code").value.trim();
-  const arsVal = parseFloat(document.getElementById("edit-item-ars").value) || 0;
+
+  const gremioUsd = parseFloat(document.getElementById("edit-item-usd").value) || 0;
+  const gremioArs = parseFloat(document.getElementById("edit-item-ars").value) || Math.round(gremioUsd * ilabBlueRate);
+
+  const retailUsd = parseFloat(document.getElementById("edit-retail-usd").value) || (gremioUsd * 1.5);
+  const retailArs = parseFloat(document.getElementById("edit-retail-ars").value) || Math.round(retailUsd * ilabBlueRate);
 
   if (!title) {
     showToast("Ingresá un título para el servicio", "error");
     return;
   }
 
-  if (arsVal <= 0) {
+  if (gremioArs <= 0 && gremioUsd <= 0) {
     showToast("Ingresá un precio válido mayor a 0", "error");
     return;
   }
@@ -792,9 +931,13 @@ async function saveGremioPriceForm(event) {
   const payload = {
     title: title,
     category: category,
+    price_type: priceType,
     code: code,
-    price_gremio: arsVal,
-    price_retail: Math.round(arsVal * 1.6),
+    price_gremio: gremioArs,
+    price_retail: retailArs,
+    price_gremio_usd: gremioUsd,
+    price_retail_usd: retailUsd,
+    usd_rate: ilabBlueRate,
     brand: "Apple",
     stock: "Disponible"
   };
@@ -832,7 +975,7 @@ async function saveGremioPriceForm(event) {
 
     closeGremioPriceModal();
     renderIlabPriceList();
-    showToast(`Precio '${title}' guardado correctamente`, "success");
+    showToast(`Servicio '${title}' guardado correctamente`, "success");
   } catch (err) {
     showToast(`Error: ${err.message}`, "error");
   }
@@ -858,4 +1001,203 @@ async function deleteGremioPriceItemCurrent() {
   } catch (err) {
     showToast(`Error: ${err.message}`, "error");
   }
+}
+
+async function saveInlinePriceRow(itemId) {
+  const titleEl = document.getElementById(`inline-title-${itemId}`);
+  const catEl = document.getElementById(`inline-cat-${itemId}`);
+  const retailUsdEl = document.getElementById(`inline-retail-usd-${itemId}`);
+  const gremioUsdEl = document.getElementById(`inline-gremio-usd-${itemId}`);
+
+  if (!titleEl || !gremioUsdEl) return;
+
+  const title = titleEl.value.trim();
+  const category = catEl ? catEl.value : "General";
+  const retailUsd = parseFloat(retailUsdEl ? retailUsdEl.value : 0) || 0;
+  const gremioUsd = parseFloat(gremioUsdEl.value) || 0;
+
+  if (!title || gremioUsd <= 0) {
+    showToast("Título y precio en USD deben ser válidos", "error");
+    return;
+  }
+
+  const priceGremioArs = Math.round(gremioUsd * ilabBlueRate);
+  const priceRetailArs = Math.round(retailUsd * ilabBlueRate);
+
+  const payload = {
+    id: parseInt(itemId),
+    title: title,
+    category: category,
+    price_gremio: priceGremioArs,
+    price_retail: priceRetailArs,
+    price_gremio_usd: gremioUsd,
+    price_retail_usd: retailUsd,
+    price_type: "usd_to_ars",
+    usd_rate: ilabBlueRate,
+    brand: "Apple",
+    stock: "Disponible"
+  };
+
+  try {
+    const res = await fetch(`/api/gremios/price-list/${itemId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error("Error al guardar fila");
+
+    const data = await res.json();
+    const savedItem = data.item || payload;
+
+    const idx = allGremioPriceItems.findIndex(it => String(it.id) === String(itemId));
+    if (idx >= 0) allGremioPriceItems[idx] = savedItem;
+
+    showToast(`Precio '${title}' actualizado ($${gremioUsd} USD)`, "success");
+  } catch (err) {
+    showToast(`Error: ${err.message}`, "error");
+  }
+}
+
+async function saveAllInlinePrices() {
+  const rows = document.querySelectorAll("[id^='inline-title-']");
+  if (rows.length === 0) {
+    showToast("No hay filas visibles para guardar", "info");
+    return;
+  }
+
+  let count = 0;
+  for (const titleEl of rows) {
+    const itemId = titleEl.id.replace("inline-title-", "");
+    await saveInlinePriceRow(itemId);
+    count++;
+  }
+
+  showToast(`Se guardaron ${count} precios modificados`, "success");
+  toggleIlabEditMode(false);
+}
+
+function toggleSelectItem(itemId, isChecked) {
+  if (isChecked) {
+    selectedBulkItemIds.add(itemId);
+  } else {
+    selectedBulkItemIds.delete(itemId);
+  }
+}
+
+function toggleSelectAllItems(isChecked) {
+  selectedBulkItemIds.clear();
+  if (isChecked) {
+    allGremioPriceItems.forEach(it => selectedBulkItemIds.add(it.id));
+  }
+  renderIlabPriceList();
+}
+
+function openBulkUpdateModal() {
+  const countLabel = document.getElementById("bulkCountLabel");
+  const numSelected = selectedBulkItemIds.size > 0 ? selectedBulkItemIds.size : allGremioPriceItems.length;
+  const isAll = selectedBulkItemIds.size === 0;
+
+  if (countLabel) {
+    countLabel.textContent = `${numSelected} ítems ${isAll ? '(Todos)' : '(Seleccionados)'}`;
+  }
+
+  const modal = document.getElementById("modalGremioBulkUpdate");
+  if (modal) modal.classList.remove("hidden");
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeBulkModal() {
+  const modal = document.getElementById("modalGremioBulkUpdate");
+  if (modal) modal.classList.add("hidden");
+}
+
+async function applyBulkPreset(actionType, amount) {
+  const targetIds = selectedBulkItemIds.size > 0 ? Array.from(selectedBulkItemIds) : allGremioPriceItems.map(it => it.id);
+  
+  if (targetIds.length === 0) {
+    showToast("No hay ítems para modificar", "error");
+    return;
+  }
+
+  const labels = {
+    percent_add: `+${amount}%`,
+    percent_sub: `-${amount}%`,
+    amount_add: `+$${amount} USD`,
+    amount_sub: `-$${amount} USD`
+  };
+
+  if (!confirm(`¿Confirmar ajuste de ${labels[actionType]} a ${targetIds.length} precios de servicios?`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/gremios/price-list/bulk-update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        item_ids: targetIds,
+        action_type: actionType,
+        amount: amount,
+        usd_rate: ilabBlueRate,
+        changed_by: currentGremioUser ? currentGremioUser.name : "Administrador"
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Error al aplicar edición masiva");
+    }
+
+    const data = await res.json();
+    showToast(`✓ Modificados ${data.updated_count} precios exitosamente`, "success");
+    closeBulkModal();
+    selectedBulkItemIds.clear();
+    await loadGremioPriceList();
+  } catch (e) {
+    showToast(`Error: ${e.message}`, "error");
+  }
+}
+
+async function openPriceHistoryModal() {
+  const container = document.getElementById("history-list-container");
+  const modal = document.getElementById("modalGremioHistory");
+  if (modal) modal.classList.remove("hidden");
+  if (window.lucide) lucide.createIcons();
+
+  if (!container) return;
+  container.innerHTML = `<div class="py-8 text-center text-slate-400 text-xs font-mono">Cargando historial comercial...</div>`;
+
+  try {
+    const res = await fetch("/api/gremios/price-list/history");
+    const items = await res.json();
+
+    if (!Array.isArray(items) || items.length === 0) {
+      container.innerHTML = `<div class="py-8 text-center text-slate-500 text-xs">Sin registros recientes de cambio de precio.</div>`;
+      return;
+    }
+
+    container.innerHTML = items.map(h => {
+      const fecha = h.created_at ? new Date(h.created_at).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-";
+      return `
+        <div class="p-3 bg-[#0a101c] border border-slate-800 rounded-xl flex items-center justify-between text-xs">
+          <div>
+            <span class="font-brand font-bold text-white block">${h.item_title || 'Servicio'}</span>
+            <span class="text-[10px] text-slate-400">${fecha} · por: <b class="text-[#00d2ff]">${h.changed_by || 'Admin'}</b></span>
+          </div>
+          <div class="text-right font-brand font-bold">
+            <div class="text-[#00f5a0]">Gremio: USD ${h.old_price_gremio_usd || 0} → USD ${h.new_price_gremio_usd || 0}</div>
+            <div class="text-[#00d2ff] text-[11px]">Público: USD ${h.old_price_retail_usd || 0} → USD ${h.new_price_retail_usd || 0}</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  } catch (e) {
+    container.innerHTML = `<div class="py-8 text-center text-rose-400 text-xs">Error al obtener historial: ${e.message}</div>`;
+  }
+}
+
+function closeHistoryModal() {
+  const modal = document.getElementById("modalGremioHistory");
+  if (modal) modal.classList.add("hidden");
 }

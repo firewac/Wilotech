@@ -154,12 +154,41 @@ def init_db():
         brand TEXT DEFAULT '',
         price_gremio REAL NOT NULL,
         price_retail REAL DEFAULT 0.0,
+        price_gremio_usd REAL DEFAULT 0.0,
+        price_retail_usd REAL DEFAULT 0.0,
+        price_type TEXT DEFAULT 'usd_to_ars',
         stock TEXT DEFAULT 'Disponible',
         updated_at TEXT
     )
     """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_gremio_price_title ON gremio_price_list(title)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_gremio_price_cat ON gremio_price_list(category)")
+
+    # Migraciones para agregar columnas si la tabla ya existía
+    for col_def in [
+        ("price_gremio_usd", "REAL DEFAULT 0.0"),
+        ("price_retail_usd", "REAL DEFAULT 0.0"),
+        ("price_type", "TEXT DEFAULT 'usd_to_ars'")
+    ]:
+        try:
+            cursor.execute(f"ALTER TABLE gremio_price_list ADD COLUMN {col_def[0]} {col_def[1]}")
+        except Exception:
+            pass
+
+    # Tabla de Historial de Cambios de Precios Comercial
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS gremio_price_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_id INTEGER,
+        item_title TEXT,
+        old_price_gremio_usd REAL,
+        new_price_gremio_usd REAL,
+        old_price_retail_usd REAL,
+        new_price_retail_usd REAL,
+        changed_by TEXT DEFAULT 'Administrador',
+        created_at TEXT
+    )
+    """)
 
     # Tabla de Configuración del Sistema y Credenciales del Taller
     try:
@@ -905,7 +934,7 @@ def list_gremio_price_items(query: Optional[str] = None, category: Optional[str]
     finally:
         conn.close()
 
-def upsert_gremio_price_item(item_data: Dict[str, Any]) -> Dict[str, Any]:
+def upsert_gremio_price_item(item_data: Dict[str, Any], changed_by: str = "Administrador") -> Dict[str, Any]:
     conn = get_connection()
     cursor = conn.cursor()
     try:
@@ -914,23 +943,52 @@ def upsert_gremio_price_item(item_data: Dict[str, Any]) -> Dict[str, Any]:
         title = (item_data.get("title") or "").strip()
         category = (item_data.get("category") or "General").strip() or "General"
         brand = (item_data.get("brand") or "").strip()
-        price_gremio = float(item_data.get("price_gremio", 0))
-        price_retail = float(item_data.get("price_retail", 0))
+        price_type = (item_data.get("price_type") or "usd_to_ars").strip()
         stock = (item_data.get("stock") or "Disponible").strip() or "Disponible"
         now_str = datetime.now().isoformat()
 
+        price_gremio = float(item_data.get("price_gremio", 0))
+        price_retail = float(item_data.get("price_retail", 0))
+        
+        # Calcular / obtener USD
+        usd_rate = float(item_data.get("usd_rate") or 1555.0)
+        price_gremio_usd = float(item_data.get("price_gremio_usd") or (price_gremio / usd_rate if price_gremio > 0 else 0))
+        price_retail_usd = float(item_data.get("price_retail_usd") or (price_retail / usd_rate if price_retail > 0 else 0))
+
+        old_gremio_usd = 0.0
+        old_retail_usd = 0.0
+
         if item_id:
+            cursor.execute("SELECT price_gremio_usd, price_retail_usd, title FROM gremio_price_list WHERE id = ?", (item_id,))
+            row = cursor.fetchone()
+            if row:
+                old_gremio_usd = float(row[0] or 0)
+                old_retail_usd = float(row[1] or 0)
+
             cursor.execute("""
             UPDATE gremio_price_list
-            SET code = ?, title = ?, category = ?, brand = ?, price_gremio = ?, price_retail = ?, stock = ?, updated_at = ?
+            SET code = ?, title = ?, category = ?, brand = ?, price_gremio = ?, price_retail = ?,
+                price_gremio_usd = ?, price_retail_usd = ?, price_type = ?, stock = ?, updated_at = ?
             WHERE id = ?
-            """, (code, title, category, brand, price_gremio, price_retail, stock, now_str, item_id))
+            """, (code, title, category, brand, price_gremio, price_retail, price_gremio_usd, price_retail_usd, price_type, stock, now_str, item_id))
+
+            # Registrar en historial si los precios en USD cambiaron
+            if abs(old_gremio_usd - price_gremio_usd) > 0.01 or abs(old_retail_usd - price_retail_usd) > 0.01:
+                cursor.execute("""
+                INSERT INTO gremio_price_history (item_id, item_title, old_price_gremio_usd, new_price_gremio_usd, old_price_retail_usd, new_price_retail_usd, changed_by, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (item_id, title, old_gremio_usd, price_gremio_usd, old_retail_usd, price_retail_usd, changed_by, now_str))
         else:
             cursor.execute("""
-            INSERT INTO gremio_price_list (code, title, category, brand, price_gremio, price_retail, stock, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (code, title, category, brand, price_gremio, price_retail, stock, now_str))
+            INSERT INTO gremio_price_list (code, title, category, brand, price_gremio, price_retail, price_gremio_usd, price_retail_usd, price_type, stock, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (code, title, category, brand, price_gremio, price_retail, price_gremio_usd, price_retail_usd, price_type, stock, now_str))
             item_id = cursor.lastrowid
+
+            cursor.execute("""
+            INSERT INTO gremio_price_history (item_id, item_title, old_price_gremio_usd, new_price_gremio_usd, old_price_retail_usd, new_price_retail_usd, changed_by, created_at)
+            VALUES (?, ?, 0.0, ?, 0.0, ?, ?, ?)
+            """, (item_id, title, price_gremio_usd, price_retail_usd, changed_by, now_str))
 
         conn.commit()
         return {
@@ -941,9 +999,82 @@ def upsert_gremio_price_item(item_data: Dict[str, Any]) -> Dict[str, Any]:
             "brand": brand,
             "price_gremio": price_gremio,
             "price_retail": price_retail,
+            "price_gremio_usd": price_gremio_usd,
+            "price_retail_usd": price_retail_usd,
+            "price_type": price_type,
             "stock": stock,
             "updated_at": now_str
         }
+    finally:
+        conn.close()
+
+def get_gremio_price_history(limit: int = 50) -> List[Dict[str, Any]]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+        SELECT id, item_id, item_title, old_price_gremio_usd, new_price_gremio_usd, old_price_retail_usd, new_price_retail_usd, changed_by, created_at
+        FROM gremio_price_history
+        ORDER BY id DESC
+        LIMIT ?
+        """, (limit,))
+        rows = cursor.fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+def bulk_update_gremio_prices(item_ids: List[int], action_type: str, amount: float, usd_rate: float = 1555.0, changed_by: str = "Administrador") -> int:
+    conn = get_connection()
+    cursor = conn.cursor()
+    count = 0
+    now_str = datetime.now().isoformat()
+    try:
+        for item_id in item_ids:
+            cursor.execute("SELECT id, title, price_gremio_usd, price_retail_usd, price_gremio, price_retail FROM gremio_price_list WHERE id = ?", (item_id,))
+            row = cursor.fetchone()
+            if not row:
+                continue
+            
+            title = row[1]
+            old_gremio_usd = float(row[2] or (row[4] / usd_rate if row[4] else 0))
+            old_retail_usd = float(row[3] or (row[5] / usd_rate if row[5] else 0))
+
+            new_gremio_usd = old_gremio_usd
+            new_retail_usd = old_retail_usd
+
+            if action_type == "percent_add":
+                new_gremio_usd = old_gremio_usd * (1.0 + amount / 100.0)
+                new_retail_usd = old_retail_usd * (1.0 + amount / 100.0)
+            elif action_type == "percent_sub":
+                new_gremio_usd = old_gremio_usd * (1.0 - amount / 100.0)
+                new_retail_usd = old_retail_usd * (1.0 - amount / 100.0)
+            elif action_type == "amount_add":
+                new_gremio_usd = old_gremio_usd + amount
+                new_retail_usd = old_retail_usd + amount
+            elif action_type == "amount_sub":
+                new_gremio_usd = max(0.0, old_gremio_usd - amount)
+                new_retail_usd = max(0.0, old_retail_usd - amount)
+
+            new_gremio_usd = round(new_gremio_usd, 2)
+            new_retail_usd = round(new_retail_usd, 2)
+            new_gremio_ars = round(new_gremio_usd * usd_rate)
+            new_retail_ars = round(new_retail_usd * usd_rate)
+
+            cursor.execute("""
+            UPDATE gremio_price_list
+            SET price_gremio_usd = ?, price_retail_usd = ?, price_gremio = ?, price_retail = ?, updated_at = ?
+            WHERE id = ?
+            """, (new_gremio_usd, new_retail_usd, new_gremio_ars, new_retail_ars, now_str, item_id))
+
+            cursor.execute("""
+            INSERT INTO gremio_price_history (item_id, item_title, old_price_gremio_usd, new_price_gremio_usd, old_price_retail_usd, new_price_retail_usd, changed_by, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (item_id, title, old_gremio_usd, new_gremio_usd, old_retail_usd, new_retail_usd, changed_by, now_str))
+
+            count += 1
+
+        conn.commit()
+        return count
     finally:
         conn.close()
 

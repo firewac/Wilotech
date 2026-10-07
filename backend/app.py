@@ -28,6 +28,8 @@ from backend.database.db import (
     list_gremio_price_items,
     upsert_gremio_price_item,
     delete_gremio_price_item,
+    get_gremio_price_history,
+    bulk_update_gremio_prices,
     seed_iphone_gremio_items_db,
     seed_ilab_gremio_items_db,
     verify_admin_login,
@@ -245,6 +247,30 @@ async def gremios_delete_price_item_endpoint(item_id: int):
     if not deleted:
         raise HTTPException(status_code=404, detail="Ítem no encontrado")
     return {"status": "ok", "message": "Ítem eliminado de la lista de gremios"}
+
+@app.get("/api/gremios/price-list/history")
+async def gremios_price_history_endpoint(limit: int = Query(50, ge=1, le=200)):
+    return get_gremio_price_history(limit=limit)
+
+@app.post("/api/gremios/price-list/bulk-update")
+async def gremios_price_bulk_update_endpoint(payload: Dict[str, Any]):
+    item_ids = payload.get("item_ids", [])
+    action_type = payload.get("action_type", "percent_add")
+    amount = float(payload.get("amount", 0.0))
+    usd_rate = float(payload.get("usd_rate", 1555.0))
+    changed_by = payload.get("changed_by", "Administrador")
+
+    if not item_ids or amount == 0:
+        raise HTTPException(status_code=400, detail="Debe seleccionar al menos un ítem y un monto diferente de 0.")
+
+    updated_count = bulk_update_gremio_prices(
+        item_ids=item_ids,
+        action_type=action_type,
+        amount=amount,
+        usd_rate=usd_rate,
+        changed_by=changed_by
+    )
+    return {"status": "ok", "message": f"Se actualizaron {updated_count} precios exitosamente.", "updated_count": updated_count}
 
 @app.post("/api/gremios/price-list/seed-iphone")
 async def gremios_seed_iphone_endpoint():
