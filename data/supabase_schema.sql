@@ -11,8 +11,10 @@ CREATE TABLE IF NOT EXISTS gremio_users (
     phone TEXT DEFAULT '',
     password_hash TEXT NOT NULL,
     status TEXT DEFAULT 'active',
+    role TEXT DEFAULT 'gremio',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE gremio_users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'gremio';
 
 -- 2. Tabla de Lista de Precios Gremios / Tarifario
 CREATE TABLE IF NOT EXISTS gremio_price_list (

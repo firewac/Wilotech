@@ -46,6 +46,9 @@ function showToast(message, type = "info") {
 
 // 1. SESIÓN, CREDENCIALES Y VISTAS
 function isWilotechAdmin() {
+  if (currentGremioUser && currentGremioUser.role === "admin") {
+    return true;
+  }
   return localStorage.getItem("wilotechAdminAuth") === "true" || sessionStorage.getItem("wilotechAdminAuth") === "true";
 }
 

@@ -53,6 +53,13 @@ def save_gremio_user_supabase(user_data: Dict[str, Any]) -> Optional[Dict[str, A
         return res.data[0] if res.data else None
     except Exception as e:
         logger.error(f"Supabase save gremio_user error: {e}")
+        if "role" in user_data:
+            try:
+                fallback_data = {k: v for k, v in user_data.items() if k != "role"}
+                res = client.table("gremio_users").upsert(fallback_data, on_conflict="email").execute()
+                return res.data[0] if res.data else None
+            except Exception as inner_e:
+                logger.error(f"Supabase save gremio_user fallback error: {inner_e}")
         return None
 
 def fetch_gremio_prices_supabase() -> List[Dict[str, Any]]:

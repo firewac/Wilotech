@@ -1671,7 +1671,7 @@ async function renderAdminGremiosUsers() {
     if (users.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" class="py-6 text-center text-slate-400">
+          <td colspan="7" class="py-6 text-center text-slate-400">
             No hay gremios registrados aún en el sistema.
           </td>
         </tr>
@@ -1689,6 +1689,7 @@ async function renderAdminGremiosUsers() {
         statusBadge = `<span class="px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 font-bold uppercase text-[10px]">🔴 DESACTIVADO</span>`;
       }
 
+      const userRole = u.role || 'gremio';
       const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString("es-AR", { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Reciente';
 
       return `
@@ -1697,16 +1698,22 @@ async function renderAdminGremiosUsers() {
           <td class="py-3.5 px-4 font-mono text-cyan-300">${u.email}</td>
           <td class="py-3.5 px-4 font-mono text-slate-300">${u.phone || 'Sin datos'}</td>
           <td class="py-3.5 px-4 font-mono text-slate-400">${dateStr}</td>
+          <td class="py-3.5 px-4">
+            <select id="user-role-select-${u.id}" onchange="updateGremioUserRoleAdmin(${u.id}, this.value, '${u.status}')" class="bg-[#05070d] text-slate-200 border border-slate-700 focus:border-[#00f5a0] rounded-xl px-2.5 py-1 text-xs font-tech font-bold outline-none cursor-pointer">
+              <option value="gremio" ${userRole === 'gremio' ? 'selected' : ''}>⚙️ Cliente Gremio (Sin edic. precios)</option>
+              <option value="admin" ${userRole === 'admin' ? 'selected' : ''}>👑 Administrador Taller (Edita precios)</option>
+            </select>
+          </td>
           <td class="py-3.5 px-4">${statusBadge}</td>
           <td class="py-3.5 px-4 text-right">
             <div class="flex items-center justify-end gap-2">
               ${u.status !== 'active' ? `
-                <button onclick="updateGremioUserStatusAdmin(${u.id}, 'active')" class="py-1.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 font-bold text-xs border border-emerald-500/40 transition-all shadow-md flex items-center gap-1">
+                <button onclick="updateGremioUserStatusAdmin(${u.id}, 'active', '${userRole}')" class="py-1.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 font-bold text-xs border border-emerald-500/40 transition-all shadow-md flex items-center gap-1">
                   <span>🟢 DAR DE ALTA</span>
                 </button>
               ` : ''}
               ${u.status !== 'disabled' ? `
-                <button onclick="updateGremioUserStatusAdmin(${u.id}, 'disabled')" class="py-1.5 px-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-xs border border-rose-500/30 transition-all">
+                <button onclick="updateGremioUserStatusAdmin(${u.id}, 'disabled', '${userRole}')" class="py-1.5 px-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-xs border border-rose-500/30 transition-all">
                   <span>🔴 DESACTIVAR</span>
                 </button>
               ` : ''}
@@ -1720,7 +1727,7 @@ async function renderAdminGremiosUsers() {
   } catch (err) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" class="py-6 text-center text-rose-400 font-mono">
+        <td colspan="7" class="py-6 text-center text-rose-400 font-mono">
           Error al cargar usuarios de gremios: ${err.message}
         </td>
       </tr>
@@ -1728,7 +1735,33 @@ async function renderAdminGremiosUsers() {
   }
 }
 
-async function updateGremioUserStatusAdmin(userId, newStatus) {
+async function updateGremioUserStatusAdmin(userId, newStatus, defaultRole = 'gremio') {
+  try {
+    const roleSelect = document.getElementById(`user-role-select-${userId}`);
+    const selectedRole = roleSelect ? roleSelect.value : defaultRole;
+
+    const res = await fetch(`/api/gremios/users/${userId}/status`, {
+      method: "PUT",
+      headers: { 
+        "Content-Type": "application/json",
+        "X-Admin-Role": "admin",
+        "X-Admin-Auth": "true"
+      },
+      body: JSON.stringify({ status: newStatus, role: selectedRole })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Error al actualizar estado");
+    }
+    const data = await res.json();
+    alert(data.message || "Usuario actualizado correctamente");
+    renderAdminGremiosUsers();
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
+async function updateGremioUserRoleAdmin(userId, newRole, currentStatus = 'active') {
   try {
     const res = await fetch(`/api/gremios/users/${userId}/status`, {
       method: "PUT",
@@ -1737,14 +1770,15 @@ async function updateGremioUserStatusAdmin(userId, newStatus) {
         "X-Admin-Role": "admin",
         "X-Admin-Auth": "true"
       },
-      body: JSON.stringify({ status: newStatus })
+      body: JSON.stringify({ status: currentStatus, role: newRole })
     });
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.detail || "Error al actualizar estado");
+      throw new Error(err.detail || "Error al cambiar rol");
     }
     const data = await res.json();
-    alert(data.message || "Estado actualizado correctamente");
+    const roleName = newRole === 'admin' ? 'Administrador Taller (Edita precios)' : 'Cliente Gremio (Sin edic. precios)';
+    alert(`✅ Permisos actualizados a: ${roleName}`);
     renderAdminGremiosUsers();
   } catch (err) {
     alert(`Error: ${err.message}`);

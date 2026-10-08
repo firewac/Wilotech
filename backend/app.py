@@ -206,6 +206,7 @@ async def gremios_login_endpoint(req: GremioLoginRequest):
         "email": user_data["email"],
         "phone": user_data["phone"],
         "status": user_data["status"],
+        "role": user_data.get("role", "gremio"),
         "created_at": user_data["created_at"]
     }
     
@@ -223,12 +224,16 @@ async def gremios_list_users_endpoint():
 async def gremios_update_user_status_endpoint(user_id: int, payload: Dict[str, Any], request: Request):
     verify_admin_header_permission(request)
     new_status = payload.get("status", "active")
+    new_role = payload.get("role")
     if new_status not in ["active", "pending", "disabled"]:
         raise HTTPException(status_code=400, detail="Estado no válido. Use 'active', 'pending' o 'disabled'.")
-    success = update_gremio_user_status(user_id, new_status)
+    if new_role and new_role not in ["gremio", "admin"]:
+        raise HTTPException(status_code=400, detail="Rol no válido. Use 'gremio' o 'admin'.")
+    success = update_gremio_user_status(user_id, new_status, new_role)
     if not success:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    msg = "Dado de Alta y Autorizado para Ingreso" if new_status == "active" else f"Estado cambiado a '{new_status}'"
+    role_label = "Administrador del Taller" if (new_role == "admin") else "Cliente Gremio"
+    msg = f"Dado de Alta como '{role_label}' y Autorizado para Ingreso" if new_status == "active" else f"Estado actualizado a '{new_status}' ({role_label})"
     return {"status": "ok", "message": f"Usuario {msg} exitosamente."}
 
 def verify_admin_header_permission(request: Request, payload: Dict[str, Any] = None):

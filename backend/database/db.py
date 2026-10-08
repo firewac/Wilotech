@@ -141,9 +141,14 @@ def init_db():
         phone TEXT DEFAULT '',
         password_hash TEXT NOT NULL,
         status TEXT DEFAULT 'active',
+        role TEXT DEFAULT 'gremio',
         created_at TEXT
     )
     """)
+    try:
+        cursor.execute("ALTER TABLE gremio_users ADD COLUMN role TEXT DEFAULT 'gremio'")
+    except sqlite3.OperationalError:
+        pass
 
     # Tabla de Lista de Precios Gremios
     cursor.execute("""
@@ -858,16 +863,16 @@ def verify_gremio_password(plain_password: str, stored_hash: str) -> bool:
         return True
     return False
 
-def create_gremio_user(name: str, email: str, phone: str, password_plain: str) -> Optional[Dict[str, Any]]:
+def create_gremio_user(name: str, email: str, phone: str, password_plain: str, role: str = "gremio") -> Optional[Dict[str, Any]]:
     conn = get_connection()
     cursor = conn.cursor()
     try:
         pw_hash = hash_gremio_password(password_plain)
         now_str = datetime.now().isoformat()
         cursor.execute("""
-        INSERT INTO gremio_users (name, email, phone, password_hash, status, created_at)
-        VALUES (?, ?, ?, ?, 'pending', ?)
-        """, (name.strip(), email.strip().lower(), phone.strip() if phone else "", pw_hash, now_str))
+        INSERT INTO gremio_users (name, email, phone, password_hash, status, role, created_at)
+        VALUES (?, ?, ?, ?, 'pending', ?, ?)
+        """, (name.strip(), email.strip().lower(), phone.strip() if phone else "", pw_hash, role, now_str))
         conn.commit()
         user_id = cursor.lastrowid
         user_data = {
@@ -876,6 +881,7 @@ def create_gremio_user(name: str, email: str, phone: str, password_plain: str) -
             "email": email.strip().lower(),
             "phone": phone.strip() if phone else "",
             "status": "pending",
+            "role": role,
             "created_at": now_str
         }
         if is_supabase_enabled():
@@ -884,7 +890,8 @@ def create_gremio_user(name: str, email: str, phone: str, password_plain: str) -
                 "email": user_data["email"],
                 "phone": user_data["phone"],
                 "password_hash": pw_hash,
-                "status": "pending"
+                "status": "pending",
+                "role": role
             })
         return user_data
     except sqlite3.IntegrityError:
@@ -900,7 +907,10 @@ def get_gremio_user_by_email(email: str) -> Optional[Dict[str, Any]]:
         row = cursor.fetchone()
         if not row:
             return None
-        return dict(row)
+        d = dict(row)
+        if not d.get("role"):
+            d["role"] = "gremio"
+        return d
     finally:
         conn.close()
 
@@ -908,17 +918,26 @@ def list_gremio_users() -> List[Dict[str, Any]]:
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT id, name, email, phone, status, created_at FROM gremio_users ORDER BY created_at DESC")
+        cursor.execute("SELECT id, name, email, phone, status, role, created_at FROM gremio_users ORDER BY created_at DESC")
         rows = cursor.fetchall()
-        return [dict(r) for r in rows]
+        result = []
+        for r in rows:
+            d = dict(r)
+            if not d.get("role"):
+                d["role"] = "gremio"
+            result.append(d)
+        return result
     finally:
         conn.close()
 
-def update_gremio_user_status(user_id: int, status: str) -> bool:
+def update_gremio_user_status(user_id: int, status: str, role: Optional[str] = None) -> bool:
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("UPDATE gremio_users SET status = ? WHERE id = ?", (status, user_id))
+        if role:
+            cursor.execute("UPDATE gremio_users SET status = ?, role = ? WHERE id = ?", (status, role, user_id))
+        else:
+            cursor.execute("UPDATE gremio_users SET status = ? WHERE id = ?", (status, user_id))
         conn.commit()
         success = cursor.rowcount > 0
         if success and is_supabase_enabled():
