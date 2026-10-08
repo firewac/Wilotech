@@ -45,6 +45,19 @@ function showToast(message, type = "info") {
 }
 
 // 1. SESIÓN, CREDENCIALES Y VISTAS
+function isWilotechAdmin() {
+  return localStorage.getItem("wilotechAdminAuth") === "true" || sessionStorage.getItem("wilotechAdminAuth") === "true";
+}
+
+function getAdminAuthHeaders() {
+  const headers = { "Content-Type": "application/json" };
+  if (isWilotechAdmin()) {
+    headers["X-Admin-Role"] = "admin";
+    headers["X-Admin-Auth"] = "true";
+  }
+  return headers;
+}
+
 function getLocalGremioAccounts() {
   try {
     const raw = localStorage.getItem("local_gremio_accounts");
@@ -58,7 +71,7 @@ function saveLocalGremioAccount(user, password) {
   try {
     const accounts = getLocalGremioAccounts();
     const existingIndex = accounts.findIndex(a => a.user.email.toLowerCase() === user.email.toLowerCase());
-    const accountData = { user, password, updated_at: new Date().isoformat ? new Date().isoformat() : new Date().toISOString() };
+    const accountData = { user, password, updated_at: new Date().toISOString() };
     if (existingIndex >= 0) {
       accounts[existingIndex] = accountData;
     } else {
@@ -70,13 +83,7 @@ function saveLocalGremioAccount(user, password) {
   }
 }
 
-function findLocalGremioAccount(email, password) {
-  const accounts = getLocalGremioAccounts();
-  return accounts.find(a => a.user.email.toLowerCase() === email.toLowerCase() && a.password === password);
-}
-
 function checkGremioSession() {
-  // Auto-completar credenciales recordadas si existen
   try {
     const remembered = localStorage.getItem("gremio_remembered_creds");
     if (remembered) {
@@ -93,9 +100,14 @@ function checkGremioSession() {
   const saved = localStorage.getItem("gremio_user");
   if (saved) {
     try {
-      currentGremioUser = JSON.parse(saved);
-      renderPortalView();
-      return;
+      const parsed = JSON.parse(saved);
+      if (parsed && parsed.status === "active") {
+        currentGremioUser = parsed;
+        renderPortalView();
+        return;
+      } else {
+        localStorage.removeItem("gremio_user");
+      }
     } catch (e) {
       localStorage.removeItem("gremio_user");
     }
@@ -118,7 +130,8 @@ function toggleAuthView(mode) {
 function renderAuthView() {
   document.getElementById("auth-section").classList.remove("hidden");
   document.getElementById("portal-section").classList.add("hidden");
-  document.getElementById("user-header-badge").classList.add("hidden");
+  const badge = document.getElementById("user-header-badge");
+  if (badge) badge.classList.add("hidden");
 }
 
 function renderPortalView() {
@@ -126,11 +139,31 @@ function renderPortalView() {
   document.getElementById("portal-section").classList.remove("hidden");
   
   const headerBadge = document.getElementById("user-header-badge");
-  headerBadge.classList.remove("hidden");
-  document.getElementById("user-name-span").textContent = currentGremioUser.name;
+  if (headerBadge) headerBadge.classList.remove("hidden");
   
-  document.getElementById("portal-user-name").textContent = currentGremioUser.name;
-  document.getElementById("portal-user-email").textContent = currentGremioUser.email;
+  const userSpan = document.getElementById("user-name-span");
+  if (userSpan) userSpan.textContent = currentGremioUser ? currentGremioUser.name : "Gremio";
+  
+  const portalName = document.getElementById("portal-user-name");
+  if (portalName) portalName.textContent = currentGremioUser ? currentGremioUser.name : "Gremio";
+  
+  const portalEmail = document.getElementById("portal-user-email");
+  if (portalEmail) portalEmail.textContent = currentGremioUser ? currentGremioUser.email : "";
+
+  // Mostrar botón de editar precios ÚNICAMENTE si el usuario actual es Administrador de Wilotech
+  const btnToggleEditMode = document.getElementById("btn-toggle-edit-mode");
+  if (btnToggleEditMode) {
+    if (isWilotechAdmin()) {
+      btnToggleEditMode.classList.remove("hidden");
+      btnToggleEditMode.style.display = "";
+    } else {
+      btnToggleEditMode.classList.add("hidden");
+      btnToggleEditMode.style.display = "none";
+      isIlabEditMode = false;
+      const banner = document.getElementById("edit-mode-banner");
+      if (banner) banner.classList.add("hidden");
+    }
+  }
 
   // Cargar lista de precios inicial
   loadGremioPriceList();
@@ -171,34 +204,22 @@ async function handleGremioLogin(event) {
       });
 
       const data = await resp.json();
-      if (resp.ok && data.user) {
+      if (!resp.ok) {
+        throw new Error(data.detail || "Correo electrónico o contraseña incorrectos");
+      }
+      if (data.user) {
         userLoggedIn = data.user;
       }
     } catch (networkErr) {
-      console.warn("Backend login failed or offline, checking local backup...", networkErr);
-    }
-
-    // Fallback a respaldo local de cuentas si la API falló o el servidor se reinició
-    if (!userLoggedIn) {
-      const localAccount = findLocalGremioAccount(email, password);
-      if (localAccount) {
-        userLoggedIn = localAccount.user;
-        // Re-sincronizar cuenta silenciosamente con el servidor backend
-        fetch("/api/gremios/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: userLoggedIn.name,
-            phone: userLoggedIn.phone || "",
-            email: userLoggedIn.email,
-            password: password
-          })
-        }).catch(() => {});
+      if (networkErr.message && (networkErr.message.includes("PENDIENTE DE ALTA") || networkErr.message.includes("desactivada"))) {
+        throw networkErr;
       }
+      console.warn("Backend login network check error:", networkErr);
+      throw networkErr;
     }
 
-    if (!userLoggedIn) {
-      throw new Error("Correo electrónico o contraseña incorrectos. Si no tenés cuenta, registrate haciendo clic abajo.");
+    if (!userLoggedIn || userLoggedIn.status !== "active") {
+      throw new Error("Tu cuenta está PENDIENTE DE ALTA. El administrador del taller debe autorizar tu ingreso en el Panel Administrador.");
     }
 
     currentGremioUser = userLoggedIn;
@@ -207,7 +228,8 @@ async function handleGremioLogin(event) {
     showToast(`Bienvenido/a ${userLoggedIn.name}`, "success");
     renderPortalView();
   } catch (err) {
-    showToast(err.message, "error");
+    showToast(err.message, "error", 6000);
+    alert(err.message);
   } finally {
     btn.disabled = false;
     btn.innerHTML = `<i data-lucide="log-in" class="w-4 h-4"></i><span>INGRESAR AL SECTOR GREMIOS</span>`;
@@ -225,53 +247,33 @@ async function handleGremioRegister(event) {
 
   try {
     btn.disabled = true;
-    btn.innerHTML = `<span class="animate-spin">⏳</span> Creando cuenta...`;
+    btn.innerHTML = `<span class="animate-spin">⏳</span> Enviando solicitud de registro...`;
 
-    let newUser = null;
+    const resp = await fetch("/api/gremios/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, phone, email, password })
+    });
 
-    try {
-      const resp = await fetch("/api/gremios/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, email, password })
-      });
-
-      const data = await resp.json();
-      if (resp.ok && data.user) {
-        newUser = data.user;
-      } else if (data.detail && data.detail.includes("ya se encuentra registrado")) {
-        throw new Error(data.detail);
-      }
-    } catch (err) {
-      if (err.message && err.message.includes("ya se encuentra registrado")) {
-        throw err;
-      }
-      console.warn("Backend registration offline, creating local profile...", err);
+    const data = await resp.json();
+    if (!resp.ok) {
+      throw new Error(data.detail || "No se pudo registrar la cuenta de gremio");
     }
 
-    if (!newUser) {
-      newUser = {
-        id: Date.now(),
-        name: name,
-        email: email,
-        phone: phone,
-        status: "active",
-        created_at: new Date().toISOString()
-      };
-    }
+    showToast("Registro enviado. Tu cuenta quedó PENDIENTE DE ALTA por el administrador.", "info", 8000);
+    alert("¡Solicitud enviada con éxito!\n\nTu cuenta fue creada en estado PENDIENTE DE ALTA. El administrador del taller deberá darte de alta antes de que puedas iniciar sesión.");
 
-    currentGremioUser = newUser;
-    saveLocalGremioAccount(newUser, password);
-    localStorage.setItem("gremio_user", JSON.stringify(newUser));
-    localStorage.setItem("gremio_remembered_creds", JSON.stringify({ email, password }));
-
-    showToast("Cuenta de gremio registrada e iniciada con éxito", "success");
-    renderPortalView();
+    // Cambiar vista al login sin autologuear
+    const tabLogin = document.getElementById("tab-gremio-login");
+    if (tabLogin) tabLogin.click();
+    document.getElementById("login-email").value = email;
+    document.getElementById("login-password").value = password;
   } catch (err) {
-    showToast(err.message, "error");
+    showToast(err.message, "error", 6000);
+    alert(err.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i><span>CREAR MI CUENTA DE GREMIO</span>`;
+    btn.innerHTML = `<i data-lucide="user-plus" class="w-4 h-4"></i><span>SOLICITAR REGISTRO Y ALTA DE GREMIO</span>`;
     if (window.lucide) lucide.createIcons();
   }
 }
@@ -952,7 +954,7 @@ async function saveGremioPriceForm(event) {
 
     const res = await fetch(endpoint, {
       method: method,
-      headers: { "Content-Type": "application/json" },
+      headers: getAdminAuthHeaders(),
       body: JSON.stringify(payload)
     });
 
@@ -987,7 +989,8 @@ async function deleteGremioPriceItemCurrent() {
 
   try {
     const res = await fetch(`/api/gremios/price-list/${currentEditingGremioItemId}`, {
-      method: "DELETE"
+      method: "DELETE",
+      headers: getAdminAuthHeaders()
     });
 
     if (!res.ok) {
@@ -1041,7 +1044,7 @@ async function saveInlinePriceRow(itemId) {
   try {
     const res = await fetch(`/api/gremios/price-list/${itemId}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getAdminAuthHeaders(),
       body: JSON.stringify(payload)
     });
 
@@ -1134,7 +1137,7 @@ async function applyBulkPreset(actionType, amount) {
   try {
     const res = await fetch("/api/gremios/price-list/bulk-update", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAdminAuthHeaders(),
       body: JSON.stringify({
         item_ids: targetIds,
         action_type: actionType,

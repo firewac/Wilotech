@@ -1485,7 +1485,11 @@ function openEditTariffModal() {
 
   fetch("/api/gremios/price-list", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      "X-Admin-Role": "admin",
+      "X-Admin-Auth": "true"
+    },
     body: JSON.stringify({
       title: name,
       category: category,
@@ -1728,7 +1732,11 @@ async function updateGremioUserStatusAdmin(userId, newStatus) {
   try {
     const res = await fetch(`/api/gremios/users/${userId}/status`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "X-Admin-Role": "admin",
+        "X-Admin-Auth": "true"
+      },
       body: JSON.stringify({ status: newStatus })
     });
     if (!res.ok) {

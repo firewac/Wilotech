@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any, Tuple
 from backend.config import DB_PATH, encrypt_password, decrypt_password
 from backend.database.models import DistributorConfig, DistributorResponse
+from backend.database.supabase_db import is_supabase_enabled, save_gremio_user_supabase
 
 def get_connection():
     conn = sqlite3.connect(DB_PATH, timeout=20.0)

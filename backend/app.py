@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, HTTPException, Query, Response, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Query, Response, UploadFile, File, Form, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -220,7 +220,8 @@ async def gremios_list_users_endpoint():
     return list_gremio_users()
 
 @app.put("/api/gremios/users/{user_id}/status")
-async def gremios_update_user_status_endpoint(user_id: int, payload: Dict[str, Any]):
+async def gremios_update_user_status_endpoint(user_id: int, payload: Dict[str, Any], request: Request):
+    verify_admin_header_permission(request)
     new_status = payload.get("status", "active")
     if new_status not in ["active", "pending", "disabled"]:
         raise HTTPException(status_code=400, detail="Estado no válido. Use 'active', 'pending' o 'disabled'.")
@@ -230,6 +231,15 @@ async def gremios_update_user_status_endpoint(user_id: int, payload: Dict[str, A
     msg = "Dado de Alta y Autorizado para Ingreso" if new_status == "active" else f"Estado cambiado a '{new_status}'"
     return {"status": "ok", "message": f"Usuario {msg} exitosamente."}
 
+def verify_admin_header_permission(request: Request, payload: Dict[str, Any] = None):
+    admin_hdr = (request.headers.get("X-Admin-Role") or request.headers.get("X-Admin-Auth") or "").strip().lower()
+    if admin_hdr in ["true", "admin"]:
+        return True
+    raise HTTPException(
+        status_code=403, 
+        detail="Acceso Denegado: Esta acción está reservada únicamente para los administradores autorizados del taller."
+    )
+
 @app.get("/api/gremios/price-list")
 async def gremios_get_price_list_endpoint(
     q: Optional[str] = Query(None, description="Búsqueda por código, título o marca"),
@@ -238,14 +248,16 @@ async def gremios_get_price_list_endpoint(
     return list_gremio_price_items(query=q, category=category)
 
 @app.post("/api/gremios/price-list")
-async def gremios_save_price_item_endpoint(item: Dict[str, Any]):
+async def gremios_save_price_item_endpoint(item: Dict[str, Any], request: Request):
+    verify_admin_header_permission(request, item)
     if not item.get("title") or item.get("price_gremio") is None:
         raise HTTPException(status_code=400, detail="Título y Precio Gremio son obligatorios")
     saved = upsert_gremio_price_item(item)
     return {"status": "ok", "message": f"Ítem '{saved['title']}' guardado.", "item": saved}
 
 @app.put("/api/gremios/price-list/{item_id}")
-async def gremios_update_price_item_endpoint(item_id: int, item: Dict[str, Any]):
+async def gremios_update_price_item_endpoint(item_id: int, item: Dict[str, Any], request: Request):
+    verify_admin_header_permission(request, item)
     item["id"] = item_id
     if not item.get("title") or item.get("price_gremio") is None:
         raise HTTPException(status_code=400, detail="Título y Precio Gremio son obligatorios")
@@ -253,7 +265,8 @@ async def gremios_update_price_item_endpoint(item_id: int, item: Dict[str, Any])
     return {"status": "ok", "message": f"Ítem '{saved['title']}' actualizado.", "item": saved}
 
 @app.delete("/api/gremios/price-list/{item_id}")
-async def gremios_delete_price_item_endpoint(item_id: int):
+async def gremios_delete_price_item_endpoint(item_id: int, request: Request):
+    verify_admin_header_permission(request)
     deleted = delete_gremio_price_item(item_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Ítem no encontrado")
@@ -264,7 +277,8 @@ async def gremios_price_history_endpoint(limit: int = Query(50, ge=1, le=200)):
     return get_gremio_price_history(limit=limit)
 
 @app.post("/api/gremios/price-list/bulk-update")
-async def gremios_price_bulk_update_endpoint(payload: Dict[str, Any]):
+async def gremios_price_bulk_update_endpoint(payload: Dict[str, Any], request: Request):
+    verify_admin_header_permission(request, payload)
     item_ids = payload.get("item_ids", [])
     action_type = payload.get("action_type", "percent_add")
     amount = float(payload.get("amount", 0.0))
@@ -284,12 +298,14 @@ async def gremios_price_bulk_update_endpoint(payload: Dict[str, Any]):
     return {"status": "ok", "message": f"Se actualizaron {updated_count} precios exitosamente.", "updated_count": updated_count}
 
 @app.post("/api/gremios/price-list/seed-iphone")
-async def gremios_seed_iphone_endpoint():
+async def gremios_seed_iphone_endpoint(request: Request):
+    verify_admin_header_permission(request)
     inserted = seed_iphone_gremio_items_db(overwrite=False)
     return {"status": "ok", "message": f"Se sincronizaron los precios de mano de obra para iPhone 11 a 17 Pro Max ({inserted} ítems nuevos agregados)."}
 
 @app.post("/api/gremios/price-list/import-ilab")
-async def gremios_import_ilab_endpoint(payload: Optional[Dict[str, Any]] = None):
+async def gremios_import_ilab_endpoint(request: Request, payload: Optional[Dict[str, Any]] = None):
+    verify_admin_header_permission(request)
     rate = 1300.0
     if payload and payload.get("usd_rate"):
         try:

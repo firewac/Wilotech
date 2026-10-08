@@ -49,7 +49,7 @@ def save_gremio_user_supabase(user_data: Dict[str, Any]) -> Optional[Dict[str, A
     if not client:
         return None
     try:
-        res = client.table("gremio_users").insert(user_data).execute()
+        res = client.table("gremio_users").upsert(user_data, on_conflict="email").execute()
         return res.data[0] if res.data else None
     except Exception as e:
         logger.error(f"Supabase save gremio_user error: {e}")
