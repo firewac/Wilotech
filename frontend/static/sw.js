@@ -1,14 +1,15 @@
 // WILOTECH Service Worker — Cache & Offline Shell
-const CACHE_NAME = 'wilotech-v1.1';
+const CACHE_NAME = 'wilotech-v2.0';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/comparador.html',
+  '/admin.html',
   '/gremios.html',
-  '/static/css/styles.css',
-  '/static/app.js',
-  '/static/assets/logo.png',
-  '/static/manifest.json'
+  '/css/styles.css',
+  '/app.js',
+  '/assets/logo.png',
+  '/manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
@@ -43,10 +44,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network First para comparador, admin y scripts principales para evitar estados desactualizados
+  if (
+    event.request.url.includes('comparador') ||
+    event.request.url.includes('admin') ||
+    event.request.url.includes('app.js')
+  ) {
+    event.respondWith(
+      fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return networkResponse;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Cache First con actualización en segundo plano para assets estáticos
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Network in background to update cache
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));

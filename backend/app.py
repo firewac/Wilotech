@@ -139,6 +139,27 @@ for sub in ["js", "css", "assets"]:
 
 PAGE_NO_CACHE_HEADERS = {"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"}
 
+@app.get("/app.js")
+async def get_app_js():
+    file_path = STATIC_DIR / "app.js"
+    if file_path.exists():
+        return FileResponse(str(file_path), media_type="application/javascript", headers=PAGE_NO_CACHE_HEADERS)
+    raise HTTPException(status_code=404, detail="Archivo app.js no encontrado")
+
+@app.get("/sw.js")
+async def get_sw_js():
+    file_path = STATIC_DIR / "sw.js"
+    if file_path.exists():
+        return FileResponse(str(file_path), media_type="application/javascript", headers=PAGE_NO_CACHE_HEADERS)
+    raise HTTPException(status_code=404, detail="Archivo sw.js no encontrado")
+
+@app.get("/manifest.json")
+async def get_manifest_json():
+    file_path = STATIC_DIR / "manifest.json"
+    if file_path.exists():
+        return FileResponse(str(file_path), media_type="application/json")
+    raise HTTPException(status_code=404, detail="Archivo manifest.json no encontrado")
+
 @app.get("/")
 @app.get("/index.html")
 @app.get("/index")
