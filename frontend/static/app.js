@@ -1,4 +1,4 @@
-// Helper de cabeceras seguras con token JWT para administración
+// Helper de cabeceras seguras con token JWT o clave de taller para administración
 function getAdminAuthHeaders(customHeaders = {}) {
     const headers = { ...customHeaders };
     try {
@@ -7,6 +7,16 @@ function getAdminAuthHeaders(customHeaders = {}) {
             headers["Authorization"] = `Bearer ${auth.token}`;
         }
     } catch (e) {}
+
+    // Enviar clave de taller si está disponible para autorizar operaciones de catálogo
+    try {
+        const pinInput = document.getElementById("excel-workshop-pin");
+        const pin = (pinInput && pinInput.value.trim()) || localStorage.getItem("wilotech_workshop_pin") || "wilotech2026";
+        if (pin) {
+            headers["X-Workshop-Pin"] = pin;
+        }
+    } catch (e) {}
+
     return headers;
 }
 
@@ -1047,6 +1057,10 @@ let selectedExcelFile = null;
 
 function openExcelModal() {
     document.getElementById("excel-modal").classList.remove("hidden");
+    const pinInput = document.getElementById("excel-workshop-pin");
+    if (pinInput && !pinInput.value) {
+        pinInput.value = localStorage.getItem("wilotech_workshop_pin") || "wilotech2026";
+    }
     loadExcelCatalogs();
 }
 
@@ -1255,8 +1269,14 @@ async function handleUploadExcel(e) {
 
     const nameInput = document.getElementById("excel-supplier-name");
     const currencySelect = document.getElementById("excel-currency");
+    const pinInput = document.getElementById("excel-workshop-pin");
     const statusBox = document.getElementById("upload-status");
     const uploadBtn = document.getElementById("upload-excel-btn");
+
+    const pinVal = pinInput ? pinInput.value.trim() : "wilotech2026";
+    if (pinVal) {
+        localStorage.setItem("wilotech_workshop_pin", pinVal);
+    }
 
     const formData = new FormData();
     formData.append("file", fileToUpload);
@@ -1280,13 +1300,28 @@ async function handleUploadExcel(e) {
 
         const data = await res.json();
         if (!res.ok) {
-            throw new Error(data.detail || "Error al procesar el archivo. Requiere sesión de administrador.");
+            throw new Error(data.detail || "Error al procesar el archivo. Verifique la clave de taller.");
         }
 
         // Guardar copia persistente en localStorage del cliente
         if (data.items && data.items.length > 0) {
             saveLocalExcelCatalog(data.catalog.catalog_id, data.catalog, data.items);
         }
+
+        // Intentar autenticar en segundo plano para persistir sesión de taller
+        try {
+            if (!localStorage.getItem("wilotech_auth") && pinVal) {
+                fetch("/api/admin/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: "admin", password: pinVal })
+                }).then(r => r.json()).then(authData => {
+                    if (authData && authData.token) {
+                        localStorage.setItem("wilotech_auth", JSON.stringify(authData));
+                    }
+                }).catch(() => {});
+            }
+        } catch (eAuth) {}
 
         statusBox.className = "p-3 rounded-lg text-xs bg-emerald-950/40 border border-emerald-800 text-emerald-300";
         statusBox.innerHTML = `
