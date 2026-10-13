@@ -54,6 +54,19 @@
       background-color: rgba(0, 210, 255, 0.05);
       border-color: rgba(0, 245, 160, 0.4);
     }
+    body.counter-mode .hide-in-counter-mode {
+      display: none !important;
+    }
+    body.counter-mode .blur-in-counter-mode {
+      filter: blur(8px) !important;
+      user-select: none !important;
+      pointer-events: none !important;
+    }
+    body.counter-mode #btnToggleCounterMode {
+      background-color: rgba(0, 245, 160, 0.15) !important;
+      border-color: rgba(0, 245, 160, 0.5) !important;
+      color: #00f5a0 !important;
+    }
   </style>
 </head>
 <body class="lab-grid-bg min-h-screen text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30">
@@ -76,73 +89,147 @@
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1" title="Sistema Operativo Activo"></span>
       </div>
 
-      <!-- Ítems de Navegación Horizontal (Organizados arriba) -->
-      <nav class="hidden xl:flex items-center gap-1 overflow-x-auto custom-scrollbar px-2">
+      <!-- Navegación con Menú Desplegable (Compacto, elegante y sin barras de desplazamiento) -->
+      <div class="flex items-center gap-2">
         
-        <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-cyan-400 bg-slate-900 border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.1)]">
-          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-          <span>Dashboard</span>
-        </button>
+        <!-- Botón Desplegable Principal -->
+        <div class="relative" id="navDropdownWrapper">
+          <button 
+            type="button"
+            id="navDropdownTrigger" 
+            onclick="toggleNavDropdown(event)" 
+            class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-cyan-500/50 text-white font-brand text-xs font-bold transition-all shadow-md cursor-pointer select-none"
+            title="Cambiar módulo / sección"
+          >
+            <div id="navDropdownCurrentIcon" class="text-cyan-400 flex items-center">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+            </div>
+            <span id="navDropdownCurrentText" class="tracking-wide">Dashboard</span>
+            <i data-lucide="chevron-down" id="navDropdownChevron" class="w-3.5 h-3.5 text-slate-400 transition-transform"></i>
+          </button>
 
-        <button onclick="navigateTo('repairs')" id="nav-repairs" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
-          <i data-lucide="wrench" class="w-4 h-4 text-emerald-400"></i>
-          <span>Reparaciones</span>
-          <span id="navRepairsBadge" class="px-1.5 py-0.5 text-[10px] font-mono rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30 font-bold">0</span>
-        </button>
+          <!-- Menú Flotante Desplegable con Todos los Módulos -->
+          <div 
+            id="navDropdownMenu" 
+            class="hidden absolute left-0 top-full mt-2 w-72 rounded-2xl bg-[#070b14]/95 backdrop-blur-xl border border-cyan-500/30 shadow-2xl p-2 z-50 divide-y divide-slate-800/60 font-brand animate-in fade-in zoom-in-95 duration-100"
+          >
+            <div class="py-1">
+              <span class="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-500 block">Operaciones & Taller</span>
+              <button type="button" onclick="selectNavDropdown('dashboard')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer">
+                <span class="flex items-center gap-2.5">
+                  <i data-lucide="layout-dashboard" class="w-4 h-4 text-cyan-400"></i>
+                  <span>Dashboard Principal</span>
+                </span>
+              </button>
+              <button type="button" onclick="selectNavDropdown('repairs')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer">
+                <span class="flex items-center gap-2.5">
+                  <i data-lucide="wrench" class="w-4 h-4 text-emerald-400"></i>
+                  <span>Reparaciones Técnicas</span>
+                </span>
+                <span id="navRepairsBadge" class="px-1.5 py-0.5 text-[10px] font-mono rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30 font-bold">0</span>
+              </button>
+              <button type="button" onclick="selectNavDropdown('new-order')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-[#00f5a0] hover:bg-[#00f5a0]/10 transition-all cursor-pointer">
+                <span class="flex items-center gap-2.5">
+                  <i data-lucide="plus-circle" class="w-4 h-4 text-[#00f5a0]"></i>
+                  <span>+ Nueva Orden de Ingreso</span>
+                </span>
+              </button>
+            </div>
 
-        <button onclick="navigateTo('customers')" id="nav-customers" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
-          <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
-          <span>Clientes</span>
-        </button>
+            <div class="py-1">
+              <span class="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-500 block">Gestión & Stock</span>
+              <button type="button" onclick="selectNavDropdown('customers')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer">
+                <span class="flex items-center gap-2.5">
+                  <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
+                  <span>Directorio de Clientes</span>
+                </span>
+              </button>
+              <button type="button" onclick="selectNavDropdown('inventory')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer">
+                <span class="flex items-center gap-2.5">
+                  <i data-lucide="package" class="w-4 h-4 text-amber-400"></i>
+                  <span>Inventario & Repuestos</span>
+                </span>
+                <span id="navStockAlertBadge" class="hidden px-1.5 py-0.5 text-[9px] font-mono rounded bg-rose-950 text-rose-300 border border-rose-800 font-bold">⚠️</span>
+              </button>
+              <button type="button" onclick="selectNavDropdown('tariff')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer">
+                <span class="flex items-center gap-2.5">
+                  <i data-lucide="coins" class="w-4 h-4 text-cyan-400"></i>
+                  <span>Tarifario de Reparaciones</span>
+                </span>
+              </button>
+              <button type="button" onclick="selectNavDropdown('gremios')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer">
+                <span class="flex items-center gap-2.5">
+                  <i data-lucide="handshake" class="w-4 h-4 text-blue-400"></i>
+                  <span>Portal Gremios / Colegas</span>
+                </span>
+              </button>
+            </div>
 
-        <button onclick="navigateTo('inventory')" id="nav-inventory" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
-          <i data-lucide="package" class="w-4 h-4 text-amber-400"></i>
-          <span>Inventario</span>
-          <span id="navStockAlertBadge" class="hidden px-1.5 py-0.5 text-[9px] font-mono rounded bg-rose-950 text-rose-300 border border-rose-800">1 ⚠️</span>
-        </button>
+            <div class="py-1">
+              <span class="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-500 block">Finanzas & Herramientas</span>
+              <button type="button" onclick="selectNavDropdown('finances')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer">
+                <span class="flex items-center gap-2.5">
+                  <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-400"></i>
+                  <span>Finanzas & Rentabilidad</span>
+                </span>
+              </button>
+              <button type="button" onclick="selectNavDropdown('tools')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer">
+                <span class="flex items-center gap-2.5">
+                  <i data-lucide="box" class="w-4 h-4 text-indigo-400"></i>
+                  <span>Herramientas de Banco</span>
+                </span>
+              </button>
+              <button type="button" onclick="selectNavDropdown('settings')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer">
+                <span class="flex items-center gap-2.5">
+                  <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i>
+                  <span>Configuración & Respaldos</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
 
-        <button onclick="navigateTo('tariff')" id="nav-tariff" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
-          <i data-lucide="coins" class="w-4 h-4 text-cyan-400"></i>
-          <span>Tarifario</span>
-        </button>
+        <!-- Accesos directos rápidos para pantallas medianas/grandes -->
+        <div class="hidden lg:flex items-center gap-1.5 border-l border-slate-800/80 pl-2">
+          <button onclick="navigateTo('repairs')" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all border border-transparent hover:border-slate-800 cursor-pointer">
+            <i data-lucide="wrench" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>Reparaciones</span>
+          </button>
+          <button onclick="navigateTo('new-order')" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#00f5a0] bg-[#00f5a0]/10 border border-[#00f5a0]/30 hover:bg-[#00f5a0]/20 transition-all cursor-pointer">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+            <span>+ Orden</span>
+          </button>
+        </div>
 
-        <button onclick="navigateTo('gremios')" id="nav-gremios" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
-          <i data-lucide="handshake" class="w-4 h-4 text-blue-400"></i>
-          <span>Gremios</span>
-        </button>
-
-        <button onclick="navigateTo('finances')" id="nav-finances" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
-          <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-400"></i>
-          <span>Finanzas</span>
-        </button>
-
-        <button onclick="navigateTo('tools')" id="nav-tools" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
-          <i data-lucide="box" class="w-4 h-4 text-indigo-400"></i>
-          <span>Herramientas</span>
-        </button>
-
-        <button onclick="navigateTo('settings')" id="nav-settings" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-900/80">
-          <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i>
-          <span>Configuración</span>
-        </button>
-
-      </nav>
+      </div>
 
       <!-- Acciones Rápidas & Búsqueda Derecha -->
-      <div class="flex items-center gap-3 shrink-0">
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
         
         <!-- Buscador Global -->
-        <div class="relative w-48 sm:w-64">
+        <div class="relative w-36 sm:w-56 md:w-64">
           <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400"></i>
           <input type="text" id="headerGlobalSearch" onkeyup="handleGlobalSearch(event)" placeholder="Buscar orden, IMEI, cliente..."
             class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-400 rounded-xl py-1.5 pl-8 pr-3 text-xs text-white focus:outline-none placeholder:text-slate-500">
         </div>
 
-        <!-- Dólar Blue Indicator -->
-        <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono">
+        <!-- Dólar Taller / Blue Indicator -->
+        <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono cursor-pointer" onclick="navigateTo('settings')" title="Cotización de cambio configurada para presupuestos">
           <span class="text-slate-400">USD:</span>
-          <span id="headerDolarRate" class="text-emerald-400 font-bold">$1300</span>
+          <span id="headerDolarRate" class="text-emerald-400 font-bold">$1350</span>
         </div>
+
+        <!-- Modo Mostrador (Privacidad ante clientes) -->
+        <button id="btnToggleCounterMode" onclick="toggleCounterMode()" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all" title="Modo Mostrador: Oculta costos internos y márgenes para que el cliente no los vea">
+          <i data-lucide="eye" id="counterModeIcon" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span class="hidden xl:inline" id="counterModeText">Modo Mostrador</span>
+        </button>
+
+        <!-- Escáner QR con Cámara -->
+        <button onclick="openQRScannerModal()" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all" title="Escanear ticket QR con la cámara">
+          <i data-lucide="scan" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span class="hidden lg:inline">Escanear QR</span>
+        </button>
 
         <!-- Botón Nueva Reparación -->
         <button onclick="openCreateRepairModal()" class="btn-cyber px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md">
@@ -153,26 +240,13 @@
         <!-- Perfil Usuario & Logout -->
         <div class="flex items-center gap-2 border-l border-slate-800 pl-3">
           <div class="w-7 h-7 rounded-full bg-cyan-950 border border-cyan-400/50 flex items-center justify-center font-brand font-bold text-[10px] text-cyan-300">WC</div>
-          <button onclick="handleLogout()" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors" title="Cerrar Sesión">
+          <button onclick="handleLogout()" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors cursor-pointer" title="Cerrar Sesión">
             <i data-lucide="log-out" class="w-4 h-4"></i>
           </button>
         </div>
 
       </div>
 
-    </div>
-
-    <!-- Menú Secundario Móvil/Tablet si la pantalla es estrecha -->
-    <div class="xl:hidden border-t border-slate-800/60 px-4 py-2 flex items-center gap-2 overflow-x-auto custom-scrollbar bg-slate-950">
-      <button onclick="navigateTo('dashboard')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-cyan-400 bg-slate-900">Dashboard</button>
-      <button onclick="navigateTo('repairs')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Reparaciones</button>
-      <button onclick="navigateTo('customers')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Clientes</button>
-      <button onclick="navigateTo('inventory')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Inventario</button>
-      <button onclick="navigateTo('tariff')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Tarifario</button>
-      <button onclick="navigateTo('gremios')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Gremios</button>
-      <button onclick="navigateTo('finances')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Finanzas</button>
-      <button onclick="navigateTo('tools')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Herramientas</button>
-      <button onclick="navigateTo('settings')" class="text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Configuración</button>
     </div>
 
   </header>
@@ -434,6 +508,503 @@
     </section>
 
     <!-- ==================================================================== -->
+    <!-- PANTALLA: 📋 REGISTRAR / EDITAR REPARACIÓN (RECEPCIÓN DE EQUIPOS) -->
+    <!-- ==================================================================== -->
+    <section id="screen-new-order" class="screen-view hidden space-y-6">
+      <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-[#00f5a0]/30 max-w-5xl mx-auto space-y-6 shadow-2xl">
+        
+        <!-- Encabezado con estado (Recepción / Modo Edición) -->
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+          <div>
+            <span id="form-repair-badge" class="font-brand text-[10px] font-bold uppercase tracking-widest text-[#00f5a0] bg-[#00f5a0]/10 border border-[#00f5a0]/30 px-3 py-1 rounded-full">
+              Recepción de Equipos
+            </span>
+            <h2 id="form-repair-title" class="font-brand text-2xl font-extrabold text-white mt-2">Registrar Nueva Orden de Servicio Técnico</h2>
+            <p id="form-repair-desc" class="text-xs text-slate-400 mt-1">Completa los datos de ingreso con auto-detección por IMEI, validación por DNI y generación de ticket instantáneo.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="navigateTo('repairs')" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-brand border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span>Volver a Reparaciones</span>
+            </button>
+          </div>
+        </div>
+
+        <form id="form-create-repair" onsubmit="handleCreateRepair(event)" class="space-y-6">
+          <input type="hidden" id="edit-ticket-id" name="editingTicketId" value="">
+
+          <!-- Datalists para autocompletado -->
+          <datalist id="customer-dni-list"></datalist>
+          <datalist id="customer-phone-list"></datalist>
+          <datalist id="brand-options">
+            <option value="Apple">
+            <option value="Samsung">
+            <option value="Motorola">
+            <option value="Xiaomi">
+            <option value="Sony">
+            <option value="Nintendo">
+            <option value="Microsoft">
+            <option value="Google">
+            <option value="Huawei">
+          </datalist>
+          <datalist id="color-options">
+            <option value="Space Black">
+            <option value="Titanium Natural">
+            <option value="Silver / Plata">
+            <option value="Gold / Oro">
+            <option value="Deep Purple">
+            <option value="Midnight / Azul Noche">
+            <option value="Blanco Estrella">
+            <option value="Negro">
+          </datalist>
+          <datalist id="storage-options">
+            <option value="64 GB">
+            <option value="128 GB">
+            <option value="256 GB">
+            <option value="512 GB">
+            <option value="1 TB">
+          </datalist>
+
+          <!-- BLOQUE 1: DATOS DEL CLIENTE -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+              <h3 class="font-brand text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="user" class="w-4 h-4 text-purple-400"></i>
+                <span>1. Datos del Cliente & Contacto</span>
+              </h3>
+              <span class="text-[11px] text-slate-400 font-mono">Ingresa DNI o Teléfono para autocompletar</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+              <div>
+                <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Nombre y Apellido *</label>
+                <input type="text" id="repair-client-name" name="clientName" required placeholder="Ej: Marcos Benítez" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#00f5a0] focus:ring-1 focus:ring-[#00f5a0]">
+              </div>
+              <div>
+                <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Tipo de Cliente *</label>
+                <select id="repair-client-type" name="clientType" required class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#00f5a0]">
+                  <option value="Público" selected>Público</option>
+                  <option value="Gremio">Gremio ⭐</option>
+                  <option value="Gremio Mayorista">Gremio Mayorista ⭐⭐</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">DNI / CUIT *</label>
+                <input type="text" id="repair-client-dni" name="clientDni" required list="customer-dni-list" oninput="handleCustomerLookup(this)" placeholder="Ej: 38942105 (Busca en BD)" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:border-[#00f5a0]">
+              </div>
+              <div>
+                <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Teléfono / WhatsApp *</label>
+                <input type="text" id="repair-client-phone" name="clientPhone" required list="customer-phone-list" oninput="handleCustomerLookup(this)" placeholder="Ej: 2235914163" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:border-[#00f5a0]">
+              </div>
+              <div>
+                <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Dirección / Localidad</label>
+                <input type="text" id="repair-client-address" name="clientAddress" placeholder="Ej: Colón 1475, Mar del Plata" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#00f5a0]">
+              </div>
+            </div>
+
+            <!-- Badge de cliente autocompletado en tiempo real -->
+            <div id="customer-auto-badge" class="hidden p-3 rounded-xl bg-[#00f5a0]/10 border border-[#00f5a0]/40 text-[#00f5a0] text-xs font-brand flex items-center justify-between transition-all shadow-md">
+              <div class="flex items-center gap-2">
+                <i data-lucide="user-check" class="w-4 h-4 text-[#00f5a0]"></i>
+                <span id="customer-auto-text">Cliente frecuente detectado. Datos autocompletados desde Base de Datos.</span>
+              </div>
+              <button type="button" onclick="clearCustomerAutoFill()" class="text-slate-400 hover:text-white text-[10px] underline cursor-pointer">Limpiar</button>
+            </div>
+          </div>
+
+          <!-- BLOQUE 2: DISPOSITIVO & AUTO-DETECCIÓN POR IMEI -->
+          <div class="p-5 rounded-2xl bg-[#070b14]/90 border border-[#00f5a0]/30 space-y-4 shadow-xl shadow-black/40">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#00f5a0] animate-pulse"></span>
+                <h3 class="font-brand text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="smartphone" class="w-4 h-4 text-[#00f5a0]"></i>
+                  <span>2. Identificación y Trazabilidad del Equipo (IMEI / Serial)</span>
+                </h3>
+              </div>
+              <span class="text-[11px] text-slate-400 font-mono">
+                Escribe o pega el <strong class="text-[#00f5a0]">IMEI</strong> para autocompletar el modelo
+              </span>
+            </div>
+
+            <!-- Campo Principal de IMEI -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block font-brand text-xs font-bold text-slate-200 uppercase tracking-wider">
+                  N° de Serie / IMEI (15 dígitos) *
+                </label>
+                <span id="imei-luhn-badge" class="text-[10px] font-brand font-bold px-2.5 py-0.5 rounded-full border border-slate-700 text-slate-400 bg-slate-900/80 transition-all font-mono">
+                  Esperando IMEI...
+                </span>
+              </div>
+
+              <div class="relative flex items-center">
+                <i data-lucide="qr-code" class="w-4 h-4 absolute left-3.5 text-slate-400"></i>
+                <input 
+                  type="text" 
+                  id="input-repair-imei"
+                  name="serialOrImei" 
+                  placeholder="Ej: 352874119482015 (*#06# para consultar en equipo)" 
+                  class="w-full bg-[#05070d] border-2 border-slate-700 focus:border-[#00f5a0] rounded-xl px-4 py-3 text-sm text-white font-mono tracking-wider focus:outline-none transition-all pl-11 pr-4 sm:pr-40"
+                  autocomplete="off"
+                  maxlength="18"
+                >
+                <div class="hidden sm:flex absolute right-2 items-center gap-1.5">
+                  <button 
+                    type="button" 
+                    id="btn-paste-imei"
+                    onclick="handlePasteIMEI()"
+                    title="Pegar IMEI del portapapeles"
+                    class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-brand flex items-center gap-1 transition-colors border border-slate-700 cursor-pointer"
+                  >
+                    <i data-lucide="clipboard" class="w-3.5 h-3.5"></i>
+                    <span>Pegar</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    id="btn-lookup-imei"
+                    onclick="handleManualIMEILookup()"
+                    title="Detectar equipo inmediatamente"
+                    class="px-3 py-1.5 rounded-lg bg-[#00f5a0]/20 hover:bg-[#00f5a0]/30 text-[#00f5a0] border border-[#00f5a0]/40 text-xs font-brand font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    <span>Detectar</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Botones móviles -->
+              <div class="flex sm:hidden items-center gap-2 mt-2">
+                <button 
+                  type="button" 
+                  onclick="handlePasteIMEI()"
+                  class="flex-1 py-2 px-3 rounded-xl bg-slate-800 text-slate-300 text-xs font-brand font-bold flex items-center justify-center gap-1 border border-slate-700"
+                >
+                  <i data-lucide="clipboard" class="w-3.5 h-3.5"></i>
+                  <span>Pegar IMEI</span>
+                </button>
+                <button 
+                  type="button" 
+                  onclick="handleManualIMEILookup()"
+                  class="flex-1 py-2 px-3 rounded-xl bg-[#00f5a0]/20 text-[#00f5a0] text-xs font-brand font-bold flex items-center justify-center gap-1 border border-[#00f5a0]/40"
+                >
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                  <span>Detectar</span>
+                </button>
+              </div>
+
+              <!-- Cartel de Feedback Dinámico -->
+              <div id="imei-detection-feedback" class="mt-2 text-xs p-2.5 rounded-xl border border-slate-800 bg-[#05070d]/70 text-slate-400 flex items-center gap-2 transition-all">
+                <i id="imei-feedback-icon" data-lucide="info" class="w-4 h-4 text-[#00d2ff] shrink-0"></i>
+                <span id="imei-feedback-text">Al ingresar el IMEI, los campos <strong>Marca</strong>, <strong>Modelo</strong>, <strong>Color</strong> y <strong>Almacenamiento</strong> se autocompletarán de inmediato.</span>
+              </div>
+            </div>
+
+            <!-- Campos del Dispositivo -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
+              <div>
+                <label class="block font-brand text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">Categoría *</label>
+                <select id="repair-device-type" name="deviceType" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:border-[#00f5a0] transition-all">
+                  <option value="Celular">Celular / Smartphone</option>
+                  <option value="Tablet">Tablet / iPad</option>
+                  <option value="Consola">Consola de Videojuegos</option>
+                  <option value="Joystick">Joystick / Mando</option>
+                  <option value="Notebook">Laptop Gamer / Notebook</option>
+                  <option value="PC Escritorio">PC de Escritorio / Servidor</option>
+                  <option value="Smartwatch">Smartwatch</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-brand text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Marca *</span>
+                  <span id="badge-auto-brand" class="hidden text-[9px] text-[#00f5a0] font-brand font-bold uppercase">AUTO</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="repair-device-brand"
+                  name="deviceBrand" 
+                  required 
+                  placeholder="Ej: Apple" 
+                  class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-medium focus:border-[#00f5a0] transition-all"
+                  list="brand-options"
+                >
+              </div>
+
+              <div>
+                <label class="block font-brand text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Modelo *</span>
+                  <span id="badge-auto-model" class="hidden text-[9px] text-[#00f5a0] font-brand font-bold uppercase">AUTO</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="repair-device-model"
+                  name="deviceModel" 
+                  required 
+                  placeholder="Ej: iPhone 14 Pro Max" 
+                  class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-medium focus:border-[#00f5a0] transition-all"
+                >
+              </div>
+
+              <div>
+                <label class="block font-brand text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Color *</span>
+                  <span id="badge-auto-color" class="hidden text-[9px] text-[#00f5a0] font-brand font-bold uppercase">AUTO</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="repair-device-color"
+                  name="deviceColor" 
+                  placeholder="Ej: Space Black" 
+                  class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-medium focus:border-[#00f5a0] transition-all"
+                  list="color-options"
+                >
+              </div>
+
+              <div>
+                <label class="block font-brand text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Almacenamiento *</span>
+                  <span id="badge-auto-storage" class="hidden text-[9px] text-[#00f5a0] font-brand font-bold uppercase">AUTO</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="repair-device-storage"
+                  name="deviceStorage" 
+                  placeholder="Ej: 256 GB" 
+                  class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-medium focus:border-[#00f5a0] transition-all"
+                  list="storage-options"
+                >
+              </div>
+            </div>
+
+            <!-- Sección de Seguridad y Clave de Bloqueo -->
+            <div class="p-4 sm:p-5 rounded-2xl bg-[#05070d]/90 border border-cyan-500/30 space-y-4 shadow-lg mt-3">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="lock" class="w-4 h-4 text-cyan-400"></i>
+                  <h3 class="font-brand text-xs sm:text-sm font-bold text-white uppercase tracking-wider">Seguridad & Clave de Desbloqueo</h3>
+                </div>
+                <span class="text-[11px] text-slate-400 font-mono">Requerido para control de calidad tras reparación</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                <div>
+                  <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Tipo de Bloqueo *</label>
+                  <select 
+                    id="repair-lock-type" 
+                    name="deviceLockType" 
+                    onchange="handleLockTypeChange()" 
+                    class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-brand focus:border-cyan-400 transition-all"
+                  >
+                    <option value="Sin Bloqueo" selected>🔓 Sin Bloqueo / Sin Clave</option>
+                    <option value="PIN">🔢 PIN Numérico</option>
+                    <option value="Contraseña">🔑 Contraseña Alfanumérica</option>
+                    <option value="Patrón de Desbloqueo">🎨 Patrón de Desbloqueo (Puntos 3x3)</option>
+                  </select>
+                </div>
+
+                <div id="lock-code-container" class="space-y-2">
+                  <label id="lock-code-label" class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 font-mono">
+                    Clave / PIN (No requerida)
+                  </label>
+                  <div class="relative flex items-center">
+                    <input 
+                      type="text" 
+                      id="repair-lock-code" 
+                      name="deviceLockCode" 
+                      placeholder="Sin clave de bloqueo" 
+                      readonly
+                      class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white font-mono tracking-wider focus:border-cyan-400 transition-all pr-24"
+                    >
+                    <button 
+                      type="button" 
+                      id="btn-clear-pattern" 
+                      onclick="resetPatternMatrix()" 
+                      class="hidden absolute right-2 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-brand transition-colors border border-slate-700 cursor-pointer"
+                    >
+                      Limpiar Patrón
+                    </button>
+                  </div>
+
+                  <!-- Matriz Interactiva de Patrón 3x3 -->
+                  <div id="pattern-matrix-wrapper" class="hidden pt-2">
+                    <div class="text-[10px] font-brand text-slate-400 mb-1.5">Toca los puntos en orden para marcar el patrón:</div>
+                    <div class="inline-grid grid-cols-3 gap-2.5 p-3.5 bg-[#0a101c] border border-slate-800 rounded-xl shadow-inner">
+                      <button type="button" onclick="clickPatternDot(1)" id="pdot-1" class="pattern-dot w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all">1</button>
+                      <button type="button" onclick="clickPatternDot(2)" id="pdot-2" class="pattern-dot w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all">2</button>
+                      <button type="button" onclick="clickPatternDot(3)" id="pdot-3" class="pattern-dot w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all">3</button>
+                      <button type="button" onclick="clickPatternDot(4)" id="pdot-4" class="pattern-dot w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all">4</button>
+                      <button type="button" onclick="clickPatternDot(5)" id="pdot-5" class="pattern-dot w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all">5</button>
+                      <button type="button" onclick="clickPatternDot(6)" id="pdot-6" class="pattern-dot w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all">6</button>
+                      <button type="button" onclick="clickPatternDot(7)" id="pdot-7" class="pattern-dot w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all">7</button>
+                      <button type="button" onclick="clickPatternDot(8)" id="pdot-8" class="pattern-dot w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all">8</button>
+                      <button type="button" onclick="clickPatternDot(9)" id="pdot-9" class="pattern-dot w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all">9</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BLOQUE 3: CHECKLIST DE RECEPCIÓN FÍSICA -->
+          <div class="p-5 rounded-2xl bg-[#070b14]/90 border border-emerald-500/30 space-y-4 shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2">
+                <i data-lucide="clipboard-check" class="w-4 h-4 text-[#00f5a0]"></i>
+                <h3 class="font-brand text-xs sm:text-sm font-bold text-white uppercase tracking-wider">3. Checklist de Recepción & Estado Preexistente</h3>
+              </div>
+              <span class="text-[11px] text-slate-400 font-mono">Inspección de ingreso para deslinde y comprobante</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5" id="reception-checklist-container">
+              <!-- Renderizado dinámicamente con JavaScript -->
+            </div>
+
+            <div>
+              <label class="block font-brand text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">Detalles Estéticos y Daños Preexistentes (Rayaduras, golpes, fisuras)</label>
+              <input 
+                type="text" 
+                id="repair-condition-notes" 
+                name="deviceConditionNotes" 
+                placeholder="Ej: Tapa trasera con fisura en esquina superior. Módulo despegado del marco." 
+                class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#00f5a0] transition-all"
+              >
+            </div>
+          </div>
+
+          <!-- BLOQUE 4: FALLA & DIAGNÓSTICO -->
+          <div class="space-y-4">
+            <div>
+              <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Falla Manifestada por el Cliente *</label>
+              <textarea id="repair-issue" name="issueDescription" rows="2" required placeholder="Ej: No enciende luego de una sobretensión / Sin imagen por puerto HDMI..." class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#00f5a0]"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Estado Inicial *</label>
+                <select id="repair-status" name="status" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:border-[#00f5a0]">
+                  <option value="received">1. En Recepción</option>
+                  <option value="diagnosing">2. En Diagnóstico</option>
+                  <option value="waiting_parts">3. Esperando Repuestos</option>
+                  <option value="repairing">4. En Reparación</option>
+                  <option value="ready">5. Listo para Retiro</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Técnico Responsable</label>
+                <input type="text" id="repair-tech" name="technician" value="Laboratorio WILOTECH" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#00f5a0]">
+              </div>
+              <div>
+                <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Garantía del Servicio</label>
+                <input type="text" id="repair-warranty" name="warranty" value="30 días de garantía por escrito" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#00f5a0]">
+              </div>
+            </div>
+
+            <!-- BLOQUE 4 & FINANZAS: PRESUPUESTO, SEÑA & CONDICIONES DE PAGO -->
+            <div class="p-5 rounded-2xl bg-[#05070d]/90 border border-slate-700 space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-brand text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="receipt" class="w-4 h-4 text-emerald-400"></i>
+                  <span>Presupuesto, Seña & Finanzas de la Orden</span>
+                </h3>
+                <span class="text-[11px] text-slate-400 font-mono">Dólar Taller: <strong id="orderFormDolarRate" class="text-cyan-300">$1350 ARS</strong></span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Presupuesto Estimado (USD) *</label>
+                  <input type="number" id="repair-cost" name="finalCost" value="65" oninput="calculateOrderFinanceTotals()" required class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-brand font-bold text-[#00f5a0] focus:border-[#00f5a0]">
+                  <span id="repair-cost-ars-preview" class="block text-[10px] text-slate-400 font-mono mt-1">Equivale a: ~$87.750 ARS</span>
+                </div>
+
+                <div>
+                  <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Seña / Anticipo Entregado (USD)</label>
+                  <input type="number" id="repair-deposit" name="depositAmount" value="0" min="0" oninput="calculateOrderFinanceTotals()" placeholder="0" class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-cyan-300 focus:border-cyan-400">
+                  <span id="repair-deposit-ars-preview" class="block text-[10px] text-slate-400 font-mono mt-1">Abonado en recepción</span>
+                </div>
+
+                <div>
+                  <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Método de Pago de la Seña</label>
+                  <select id="repair-payment-method" name="paymentMethod" class="w-full bg-[#0a101c] border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:border-cyan-400">
+                    <option value="Efectivo" selected>💵 Efectivo (Pesos)</option>
+                    <option value="Transferencia / Alias">📱 Transferencia / Alias MP</option>
+                    <option value="Dólar Billete">💵 Dólar Billete (USD Cash)</option>
+                    <option value="Tarjeta Débito">💳 Tarjeta de Débito</option>
+                    <option value="Tarjeta Crédito">💳 Tarjeta de Crédito</option>
+                    <option value="Cripto / USDT">🪙 USDT / Cripto</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Saldo Pendiente de Cobro -->
+              <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between font-mono text-xs">
+                <div>
+                  <span class="text-slate-400 block text-[11px]">SALDO PENDIENTE A COBRAR EN ENTREGA:</span>
+                  <span id="orderBalancePendingText" class="text-sm font-bold text-amber-300">$65.00 USD (~$87.750 ARS)</span>
+                </div>
+                <input type="hidden" id="repair-balance-pending" name="balancePending" value="65">
+                <span class="text-[10px] text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-bold">Cobrar al entregar</span>
+              </div>
+            </div>
+
+            <!-- BLOQUE: FIRMA DIGITAL DEL CLIENTE -->
+            <div class="p-5 rounded-2xl bg-[#05070d]/90 border border-purple-500/30 space-y-3">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="pen-tool" class="w-4 h-4 text-purple-400"></i>
+                  <h3 class="font-brand text-xs sm:text-sm font-bold text-white uppercase tracking-wider">Firma Digital del Cliente (Conformidad de Ingreso)</h3>
+                </div>
+                <button type="button" onclick="clearSignatureCanvas()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-brand cursor-pointer border border-slate-700">Limpiar Firma</button>
+              </div>
+
+              <p class="text-[11px] text-slate-400 font-mono">Firma del cliente aceptando el estado preexistente del checklist y las condiciones de servicio técnico:</p>
+              
+              <div class="relative rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-950">
+                <canvas id="signatureCanvas" width="700" height="140" class="w-full h-28 cursor-crosshair touch-none bg-[#03060c]"></canvas>
+                <input type="hidden" id="repair-client-signature" name="clientSignature" value="">
+                <div id="signaturePlaceholderText" class="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-600 text-xs font-mono">
+                  ✍️ Firme aquí con el dedo o puntero táctil
+                </div>
+              </div>
+            </div>
+
+            <!-- Campos ocultos RMA -->
+            <input type="hidden" id="repair-is-rma" name="isRma" value="0">
+            <input type="hidden" id="repair-original-ticket-id" name="originalTicketId" value="">
+            <input type="hidden" id="repair-rma-reason" name="rmaReason" value="">
+
+            <div>
+              <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Notas Técnicas Iniciales de Banco</label>
+              <input type="text" id="repair-notes" name="technicianNotes" value="Equipo ingresado para inspección en microscopio y control de líneas." class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#00f5a0]">
+            </div>
+          </div>
+
+          <!-- BOTONES DE ACCIÓN -->
+          <div class="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <button 
+              type="button" 
+              id="btn-cancel-edit-ticket" 
+              onclick="cancelEditTicket()" 
+              class="hidden py-3 px-6 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-brand uppercase tracking-wider transition-colors border border-slate-700 cursor-pointer"
+            >
+              Cancelar Edición
+            </button>
+            <div class="flex items-center gap-3 ml-auto">
+              <button 
+                type="submit" 
+                class="btn-cyber py-3.5 px-8 rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-lg shadow-[#00f5a0]/20 font-bold"
+              >
+                <i data-lucide="check" class="w-4 h-4 text-slate-950"></i>
+                <span id="form-repair-submit-text">CREAR ORDEN Y GUARDAR EN SISTEMA</span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+      </div>
+    </section>
+
+    <!-- ==================================================================== -->
     <!-- PANTALLA 3: 🔬 FICHA DE REPARACIÓN DETALLADA (WT-XXXX) -->
     <!-- ==================================================================== -->
     <section id="screen-repair-detail" class="screen-view hidden space-y-6">
@@ -453,12 +1024,24 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button onclick="triggerWhatsAppModal()" class="px-3.5 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5">
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="openRMAModal(currentDetailTicketId)" class="px-3 py-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer" title="Registrar Reingreso por Garantía (RMA)">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-purple-400"></i> Garantía RMA
+          </button>
+          <button onclick="handleEditTicket(currentDetailTicketId)" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer" title="Editar orden">
+            <i data-lucide="edit" class="w-4 h-4"></i> Editar
+          </button>
+          <button onclick="triggerWhatsAppModal()" class="px-3 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5" title="Enviar novedad por WhatsApp">
             <i data-lucide="message-square" class="w-4 h-4"></i> WhatsApp
           </button>
-          <button onclick="copyBudgetApprovalLink()" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-800 text-xs font-bold flex items-center gap-1.5">
+          <button onclick="copyBudgetApprovalLink()" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-800 text-xs font-bold flex items-center gap-1.5" title="Copiar enlace de presupuesto">
             <i data-lucide="link" class="w-4 h-4"></i> Presupuesto
+          </button>
+          <button onclick="printThermalTicketSelected('80mm')" class="px-3 py-2 rounded-xl bg-cyan-950/70 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/40 text-xs font-bold flex items-center gap-1.5" title="Imprimir etiqueta térmica autoadhesiva (80mm / 58mm) con QR">
+            <i data-lucide="printer" class="w-4 h-4"></i> Térmica QR
+          </button>
+          <button onclick="printStandardReceiptSelected()" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5" title="Imprimir comprobante técnico para cliente">
+            <i data-lucide="file-text" class="w-4 h-4"></i> Recibo
           </button>
         </div>
       </div>
@@ -480,6 +1063,10 @@
               <div><span class="text-slate-500 block">Nombre:</span><p id="detailClientName" class="font-bold text-white">--</p></div>
               <div><span class="text-slate-500 block">WhatsApp:</span><p id="detailClientPhone" class="font-bold text-cyan-400">--</p></div>
               <div><span class="text-slate-500 block">DNI / CUIT:</span><p id="detailClientDni" class="font-bold text-slate-300">--</p></div>
+            </div>
+            <div id="detailClientSignatureBlock" class="hidden pt-2 border-t border-slate-800/80">
+              <span class="text-slate-500 block text-[10px] font-mono mb-1">FIRMA DIGITAL DE CONFORMIDAD:</span>
+              <img id="detailClientSignatureImg" src="" alt="Firma del Cliente" class="h-14 bg-black border border-slate-700 rounded-lg p-1 object-contain">
             </div>
           </div>
 
@@ -608,12 +1195,22 @@
             </h3>
 
             <div class="space-y-2 font-mono text-xs">
-              <div class="flex justify-between text-slate-400"><span>Diagnóstico:</span><span>$20 USD</span></div>
-              <div class="flex justify-between text-slate-400"><span>Repuesto:</span><span id="detailPresPart">$80 USD</span></div>
-              <div class="flex justify-between text-slate-400"><span>Mano de Obra:</span><span id="detailPresLabor">$60 USD</span></div>
+              <div class="flex justify-between text-slate-400 hide-in-counter-mode"><span>Repuesto (Costo taller):</span><span id="detailPresPart">$0 USD</span></div>
+              <div class="flex justify-between text-slate-400"><span>Mano de Obra & Diagnóstico:</span><span id="detailPresLabor">$60 USD</span></div>
               <div class="flex justify-between text-white font-bold text-sm border-t border-slate-800 pt-2">
-                <span>TOTAL:</span>
-                <span id="detailPresTotal" class="text-emerald-400">$160 USD</span>
+                <span>TOTAL PRESUPUESTO:</span>
+                <div class="text-right">
+                  <span id="detailPresTotal" class="text-emerald-400">$65 USD</span>
+                  <span id="detailPresTotalArs" class="block text-[10px] text-slate-400 font-normal">~$87.750 ARS</span>
+                </div>
+              </div>
+              <div class="flex justify-between text-cyan-300 border-t border-slate-800/60 pt-1.5">
+                <span>Seña Abonada:</span>
+                <span id="detailPresDeposit">$0 USD (Efectivo)</span>
+              </div>
+              <div class="flex justify-between text-amber-300 font-bold border-t border-slate-800/60 pt-1.5 bg-amber-950/20 p-2 rounded-xl">
+                <span>SALDO A COBRAR EN ENTREGA:</span>
+                <span id="detailPresBalance">$65 USD (~$87.750 ARS)</span>
               </div>
             </div>
 
@@ -725,6 +1322,7 @@
               <th class="p-4">Mínimo</th>
               <th class="p-4">Costo</th>
               <th class="p-4">Ubicación Física</th>
+              <th class="p-4 text-right">Reposición Mayorista</th>
             </tr>
           </thead>
           <tbody id="inventoryFullTableBody" class="divide-y divide-slate-800/60 text-slate-300">
@@ -874,7 +1472,106 @@
     <!-- PANTALLA 10: ⚙️ CONFIGURACIÓN & ROLES -->
     <!-- ==================================================================== -->
     <section id="screen-settings" class="screen-view hidden space-y-6">
-      <h1 class="text-2xl font-brand font-bold text-white">CONFIGURACIÓN & ROLES</h1>
+      <h1 class="text-2xl font-brand font-bold text-white">CONFIGURACIÓN & MANTENIMIENTO</h1>
+      
+      <!-- DATOS DE LA EMPRESA & COMPROBANTES DE TALLER -->
+      <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="font-bold text-white text-base flex items-center gap-2">
+              <i data-lucide="store" class="w-5 h-5 text-cyan-400"></i>
+              Datos de la Empresa & Configuración de Comprobantes
+            </h3>
+            <p class="text-xs text-slate-400 font-mono">Personaliza los datos que se imprimen en los comprobantes A4, tickets térmicos y cotización de caja.</p>
+          </div>
+          <button onclick="saveWorkshopBusinessSettings()" class="btn-cyber px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="save" class="w-4 h-4"></i> Guardar Cambios
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono text-xs">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Nombre Comercial:</label>
+            <input type="text" id="setting-business-name" value="WILOTECH" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Subtítulo / Especialidad:</label>
+            <input type="text" id="setting-business-subtitle" value="Laboratorio de Microelectrónica & Reparaciones" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Teléfono / WhatsApp:</label>
+            <input type="text" id="setting-business-phone" value="+54 223 591-4163" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Cotización Dólar Taller ($ ARS):</label>
+            <input type="number" id="setting-dolar-rate" value="1350" oninput="document.getElementById('headerDolarRate').textContent = '$' + this.value" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-bold">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Dirección del Local / Taller:</label>
+            <input type="text" id="setting-business-address" value="Colón 1475, Mar del Plata, Bs. As., Argentina" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Condiciones Generales & Garantía (Comprobantes):</label>
+            <textarea id="setting-business-terms" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white">CONDICIONES GENERALES: El cliente declara conocer y aceptar que equipos con sulfato, daño por líquidos o golpes pueden presentar fallas ocultas preexistentes. Transcurridos 60 días desde la notificación de finalización, los equipos no retirados devengarán costos de guarda o pasarán a desarme de acuerdo a la legislación vigente. Garantía de 30 días válida únicamente sobre componentes reparados.</textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- COPIAS DE SEGURIDAD Y RESPALDOS (PREVENCIÓN DE PÉRDIDA DE DATOS) -->
+      <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-5">
+        <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="font-bold text-white text-base flex items-center gap-2">
+              <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400"></i>
+              Copias de Seguridad & Respaldo de Base de Datos
+            </h3>
+            <p class="text-xs text-slate-400 font-mono">Descarga y restaura la base completa SQLite (órdenes, clientes, inventario y gremios) en 1 clic.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btnDownloadBackup" onclick="downloadDatabaseBackup()" class="px-4 py-2.5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all shadow-lg shadow-cyan-950/50 cursor-pointer">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>DESCARGAR BACKUP (.ZIP)</span>
+            </button>
+            <label class="px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-cyan-300 font-bold text-xs border border-slate-700 flex items-center gap-2 cursor-pointer transition-all">
+              <i data-lucide="upload" class="w-4 h-4"></i>
+              <span>RESTAURAR BACKUP</span>
+              <input type="file" accept=".zip" class="hidden" onchange="restoreDatabaseBackup(event)">
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-mono font-bold text-slate-400 uppercase mb-2">Respaldos Locales Recientes en Servidor:</h4>
+          <div id="localBackupsList" class="space-y-2">
+            <p class="text-xs font-mono text-slate-500 py-2">Consultando respaldos...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCESO MULTI-DISPOSITIVO EN RED LOCAL (WI-FI) -->
+      <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-4">
+        <h3 class="font-bold text-white text-base flex items-center gap-2">
+          <i data-lucide="wifi" class="w-5 h-5 text-cyan-400"></i>
+          Acceso Multi-Dispositivo en Red Local (Taller & Mostrador)
+        </h3>
+        <p class="text-xs text-slate-400 font-mono">
+          Wilotech escucha en toda la red local (<span class="text-cyan-300 font-bold">0.0.0.0:8000</span>). Puedes ingresar simultáneamente desde tablets en recepción o celulares en el microscopio conectándote al mismo Wi-Fi:
+        </p>
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 font-mono text-xs flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <span class="text-slate-500 block text-[10px]">DIRECCIÓN EN RED LOCAL:</span>
+            <code class="text-emerald-300 font-bold text-sm" id="lanNetworkUrl">http://192.168.0.88:8000</code>
+          </div>
+          <button onclick="navigator.clipboard.writeText(document.getElementById('lanNetworkUrl').innerText); alert('Enlace de red copiado al portapapeles');" class="px-3.5 py-2 rounded-xl bg-slate-950 text-slate-300 border border-slate-700 text-xs hover:text-white cursor-pointer">
+            📋 Copiar Enlace
+          </button>
+        </div>
+      </div>
+
+      <!-- Roles y Permisos -->
       <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-4">
         <h3 class="font-bold text-white text-base">Roles y Permisos del Taller</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
@@ -898,6 +1595,142 @@
     </div>
   </div>
 
+  <!-- MODAL DE ÉXITO DE ORDEN REGISTRADA -->
+  <div id="orderSuccessModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass-panel-glow rounded-3xl p-6 sm:p-8 max-w-lg w-full relative space-y-5 border border-[#00f5a0]/40 shadow-2xl">
+      <div class="flex justify-between items-start">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-[#00f5a0]/15 border border-[#00f5a0]/40 flex items-center justify-center text-[#00f5a0]">
+            <i data-lucide="check-circle-2" class="w-7 h-7"></i>
+          </div>
+          <div>
+            <span class="text-[10px] font-brand font-bold uppercase tracking-wider text-[#00f5a0] bg-[#00f5a0]/10 px-2.5 py-0.5 rounded-full border border-[#00f5a0]/30">Orden Ingresada con Éxito</span>
+            <h3 id="modalSuccessTicketId" class="font-brand text-2xl font-black text-white mt-1">WT-0000</h3>
+          </div>
+        </div>
+        <button onclick="closeOrderSuccessModal()" class="text-slate-400 hover:text-white p-1 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 font-mono text-xs space-y-1.5">
+        <div class="flex justify-between"><span class="text-slate-500">Cliente:</span><strong id="modalSuccessClient" class="text-white">--</strong></div>
+        <div class="flex justify-between"><span class="text-slate-500">Equipo:</span><strong id="modalSuccessDevice" class="text-[#00f5a0]">--</strong></div>
+        <div class="flex justify-between"><span class="text-slate-500">IMEI:</span><span id="modalSuccessImei" class="text-cyan-300">--</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Presupuesto Estimado:</span><span id="modalSuccessCost" class="text-emerald-400 font-bold">$0 USD</span></div>
+      </div>
+
+      <div class="space-y-2.5">
+        <span class="text-[11px] font-brand font-bold uppercase tracking-wider text-slate-400 block">Acciones Instantáneas:</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <button onclick="printThermalTicketSelected('80mm')" class="w-full py-3 px-4 rounded-xl bg-cyan-950/60 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/40 text-xs font-brand font-bold flex items-center justify-center gap-2 transition-all cursor-pointer">
+            <i data-lucide="printer" class="w-4 h-4 text-cyan-400"></i>
+            <span>Térmica QR (80mm)</span>
+          </button>
+          <button onclick="printStandardReceiptSelected()" class="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-brand font-bold flex items-center justify-center gap-2 transition-all cursor-pointer">
+            <i data-lucide="file-text" class="w-4 h-4 text-amber-400"></i>
+            <span>Comprobante A4</span>
+          </button>
+          <button onclick="triggerWhatsAppModal()" class="w-full py-3 px-4 rounded-xl bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-brand font-bold flex items-center justify-center gap-2 transition-all cursor-pointer">
+            <i data-lucide="message-square" class="w-4 h-4 text-[#00f5a0]"></i>
+            <span>WhatsApp Ingreso</span>
+          </button>
+          <button onclick="openRepairDetailFromSuccess()" class="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 text-xs font-brand font-bold flex items-center justify-center gap-2 transition-all cursor-pointer">
+            <i data-lucide="eye" class="w-4 h-4 text-purple-400"></i>
+            <span>Ver Ficha Completa</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-slate-800 flex justify-end gap-2">
+        <button onclick="closeOrderSuccessModal()" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-brand border border-slate-800 cursor-pointer">
+          Cerrar
+        </button>
+        <button onclick="createNewOrderFromSuccess()" class="btn-cyber px-5 py-2.5 rounded-xl text-xs font-brand font-bold flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>+ Nueva Orden</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ESCÁNER QR POR CÁMARA (ETIQUETAS TÉRMICAS) -->
+  <div id="qrScannerModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass-panel-glow rounded-3xl p-6 sm:p-8 max-w-md w-full relative space-y-4 border border-cyan-500/40 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+            <i data-lucide="scan-line" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-brand text-base font-bold text-white">Escáner QR Térmico</h3>
+            <p class="text-[11px] text-slate-400 font-mono">Cámara en tiempo real para etiquetas</p>
+          </div>
+        </div>
+        <button onclick="closeQRScannerModal()" class="text-slate-400 hover:text-white p-1.5 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="relative rounded-2xl overflow-hidden bg-black aspect-video flex items-center justify-center border border-slate-800">
+        <video id="qrScannerVideo" playsinline class="w-full h-full object-cover"></video>
+        <canvas id="qrScannerCanvas" class="hidden"></canvas>
+        <div class="absolute inset-0 pointer-events-none border-2 border-cyan-400/60 rounded-2xl m-6 animate-pulse"></div>
+        <div id="qrScannerLoading" class="absolute inset-0 flex items-center justify-center bg-black/70 text-slate-300 text-xs font-mono">
+          Iniciando cámara...
+        </div>
+      </div>
+
+      <div id="qrScannerStatus" class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs font-mono text-cyan-300">
+        Apunte la cámara a la etiqueta térmica del equipo (WT-XXXX o QR).
+      </div>
+
+      <div class="pt-2 border-t border-slate-800 flex gap-2">
+        <input type="text" id="manualQrInput" placeholder="O tipear código (ej: WT-4521)..." class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-cyan-400">
+        <button onclick="submitManualQrSearch()" class="btn-cyber px-4 py-2 rounded-xl text-xs font-bold">Buscar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE REINGRESO POR GARANTÍA (RMA) -->
+  <div id="rmaModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass-panel-glow rounded-3xl p-6 sm:p-8 max-w-lg w-full relative space-y-4 border border-purple-500/40 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/40 flex items-center justify-center text-purple-400">
+            <i data-lucide="shield-alert" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-brand text-base font-bold text-white">Reingreso por Garantía (RMA)</h3>
+            <p class="text-[11px] text-slate-400 font-mono">Genera orden vinculada sin costo adicional</p>
+          </div>
+        </div>
+        <button onclick="closeRMAModal()" class="text-slate-400 hover:text-white p-1.5 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-3.5 rounded-2xl bg-purple-950/30 border border-purple-500/30 font-mono text-xs space-y-1">
+        <div class="flex justify-between"><span class="text-slate-400">Orden Original:</span><strong id="rmaOriginalTicketBadge" class="text-purple-300">WT-0000</strong></div>
+        <div class="flex justify-between"><span class="text-slate-400">Cliente:</span><span id="rmaClientSpan" class="text-white">--</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Equipo:</span><span id="rmaDeviceSpan" class="text-slate-300">--</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Costo Base Reingreso:</span><span class="text-emerald-400 font-bold">$0 USD (Garantía)</span></div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider">Motivo de Reclamo o Falla Reincidente *</label>
+        <textarea id="rmaReasonInput" rows="3" placeholder="Detalla el problema que presenta el cliente, síntoma o por qué reingresa bajo garantía..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white font-mono focus:border-purple-400 focus:outline-none"></textarea>
+      </div>
+
+      <div class="pt-2 border-t border-slate-800 flex justify-end gap-2">
+        <button onclick="closeRMAModal()" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-brand border border-slate-800 cursor-pointer">Cancelar</button>
+        <button onclick="submitRMAOrder()" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-brand font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-purple-950/50 cursor-pointer">
+          <i data-lucide="check" class="w-4 h-4"></i> Crear Reingreso RMA ($0)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/data.js"></script>
+  <script src="/js/imei-service.js"></script>
   <script src="/js/admin.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {

@@ -1,0 +1,21 @@
+services:
+  wilotech:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: wilotech-app:latest
+    container_name: wilotech-server
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persistencia de datos locales: base de datos SQLite, backups y credenciales
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

@@ -128,7 +128,7 @@ class PartMatcher:
         Evalúa si un repuesto es relevante para la búsqueda y calcula un puntaje de 0 a 100.
         Retorna (is_valid, score).
         """
-        if item.price < 0:
+        if item.price <= 0:
             return False, 0.0
 
         query_norm = normalize_text(query)
@@ -182,6 +182,22 @@ class PartMatcher:
         return True, min(score, 100.0)
 
     @classmethod
+    def detect_quality(cls, description: str) -> str:
+        """Clasifica la calidad del repuesto a partir de su descripción."""
+        d = normalize_text(description)
+        if any(w in d for w in ["service pack", "100 original", "original", "genuino", "oem"]):
+            return "Original / Service Pack"
+        if any(w in d for w in ["hard oled", "soft oled", "super amoled", "amoled", "oled"]):
+            return "OLED"
+        if any(w in d for w in ["incell", "in cell", "copia", "aaa", "tft", "metal"]):
+            return "Incell / Copia"
+        if any(w in d for w in ["bateria", "battery", "pila"]):
+            return "Batería"
+        if any(w in d for w in ["pin de carga", "subplaca", "flex de carga"]):
+            return "Pin de Carga"
+        return "Estándar"
+
+    @classmethod
     def filter_and_rank_results(cls, parts: List[PartResult], query: str) -> List[PartResult]:
         """
         Filtra los resultados eliminando repuestos no pertinentes o con precios inválidos,
@@ -190,6 +206,7 @@ class PartMatcher:
         scored_parts: List[Tuple[PartResult, float]] = []
 
         for p in parts:
+            p.quality = cls.detect_quality(p.description)
             valid, score = cls.evaluate_relevance(p, query)
             if valid:
                 scored_parts.append((p, score))
@@ -199,6 +216,7 @@ class PartMatcher:
         if not scored_parts and parts:
             tokens = [t for t in normalize_text(query).split() if len(t) > 1]
             for p in parts:
+                p.quality = cls.detect_quality(p.description)
                 if p.price >= 0:
                     d_norm = normalize_text(p.description)
                     if any(t in d_norm for t in tokens):

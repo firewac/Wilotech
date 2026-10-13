@@ -10,8 +10,14 @@ env/
 
 # Datos locales sensibles (credenciales cifradas y cookies de sesión)
 data/secret.key
+data/jwt_secret.key
+data/*.key
 data/repuestos.db
+*.db
+*.sqlite
+*.sqlite3
 data/sessions/
+data/backups/
 *.log
 
 # IDE & Editor

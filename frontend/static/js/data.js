@@ -572,7 +572,7 @@ const TECH_CATALOG = {
       technicianNotes: "Se desoldó puerto dañado con estación de aire caliente a 380°C. Limpieza de pistas con malla desoldadora. Se instaló puerto HDMI original reforzado con aleación Sn-Pb para mayor resistencia mecánica. Prueba en 4K 120Hz con HDR durante 45 minutos superada con éxito.",
       partsUsed: ["Puerto HDMI original OEM PS5 Rev. 3", "Estaño Mechanic 183°C", "Flux Amtech NC-559-ASM"],
       finalCost: 65,
-      warranty: "90 días de garantía por escrito"
+      warranty: "30 días de garantía por escrito"
     },
     {
       id: "TF-7310",
@@ -636,19 +636,20 @@ const TECH_CATALOG = {
       technicianNotes: "Se midieron los capacitores perimetrales del integrado M92T36 (Gestor de Power Delivery). Dos líneas de 3.3V y VDDIO se encuentran a tierra. Se aguarda arribo de integrado original Rohm M92T36 para sustitución por soldadura BGA.",
       partsUsed: ["Circuito Integrado Rohm M92T36 Original"],
       finalCost: 60,
-      warranty: "90 días de garantía"
+      warranty: "30 días de garantía"
     }
   ],
 
   // Stock de repuestos críticos del taller para el módulo administrativo
   stockInventory: [
-    { code: "REP-HDMI-PS5", name: "Puertos HDMI Originales Sony PS5 (Rev 1-3)", qty: 14, min: 5, unitCost: 8 },
-    { code: "REP-PTM-7950", name: "Honeywell PTM7950 Láminas 80x40mm", qty: 22, min: 6, unitCost: 9 },
-    { code: "REP-IC-M92T36", name: "IC Carga Nintendo Switch Rohm M92T36", qty: 8, min: 4, unitCost: 11 },
-    { code: "REP-IC-HYDRA", name: "IC Tristar / Hydra Apple iPhone 12/13/14", qty: 6, min: 3, unitCost: 14 },
-    { code: "REP-HALL-JOYCON", name: "Módulos Análogos Electromagnéticos Hall Effect Switch", qty: 30, min: 10, unitCost: 4 },
-    { code: "REP-OLED-IP13", name: "Módulos Pantalla iPhone 13 OLED GX Hard", qty: 5, min: 2, unitCost: 42 },
-    { code: "REP-PASTA-MX6", name: "Pasta Térmica Arctic MX-6 Jeringa 8g", qty: 12, min: 4, unitCost: 12 }
+    { code: "REP-HDMI-PS5", name: "Puertos HDMI Originales Sony PS5 (Rev 1-3)", qty: 14, min: 5, unitCost: 8, location: "Estante C → Cajón 3" },
+    { code: "REP-PTM-7950", name: "Honeywell PTM7950 Láminas 80x40mm", qty: 22, min: 6, unitCost: 9, location: "Estante A → Gaveta 1" },
+    { code: "REP-IC-M92T36", name: "IC Carga Nintendo Switch Rohm M92T36", qty: 8, min: 4, unitCost: 11, location: "Estante B → Cajón 2" },
+    { code: "REP-IC-HYDRA", name: "IC Tristar / Hydra Apple iPhone 12/13/14", qty: 1, min: 4, unitCost: 14, location: "Estante A → Cajón 2 → Compartimento 1" },
+    { code: "REP-HALL-JOYCON", name: "Módulos Análogos Electromagnéticos Hall Effect Switch", qty: 30, min: 10, unitCost: 4, location: "Estante D → Cajón 1" },
+    { code: "REP-OLED-IP15P", name: "Pantalla iPhone 15 Pro OLED OEM", qty: 1, min: 3, unitCost: 80, location: "Estante B → Cajón 4 → Compartimento 2" },
+    { code: "REP-OLED-IP13", name: "Módulos Pantalla iPhone 13 OLED GX Hard", qty: 4, min: 2, unitCost: 42, location: "Estante B → Cajón 4" },
+    { code: "REP-PASTA-MX6", name: "Pasta Térmica Arctic MX-6 Jeringa 8g", qty: 12, min: 4, unitCost: 12, location: "Estante A → Estante Superior" }
   ]
 };
 

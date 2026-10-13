@@ -4,6 +4,18 @@
  * Persistencia total en LocalStorage
  */
 
+function getAdminAuthHeaders(customHeaders = {}) {
+  const headers = { ...customHeaders };
+  try {
+    const auth = JSON.parse(localStorage.getItem("wilotech_auth") || "{}");
+    if (auth && auth.token) {
+      headers["Authorization"] = `Bearer ${auth.token}`;
+    }
+  } catch (e) {}
+  return headers;
+}
+window.getAdminAuthHeaders = getAdminAuthHeaders;
+
 const TechAdmin = (function () {
   const STORAGE_KEYS = {
     TICKETS: "wilotech_tickets_v3",
@@ -236,7 +248,7 @@ const TechAdmin = (function () {
     try {
       await fetch('/api/tickets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(ticket)
       });
     } catch (e) {
@@ -247,7 +259,10 @@ const TechAdmin = (function () {
   async function syncDeleteTicketWithBackend(ticketId) {
     if (!ticketId) return;
     try {
-      await fetch(`/api/tickets/${encodeURIComponent(ticketId)}`, { method: 'DELETE' });
+      await fetch(`/api/tickets/${encodeURIComponent(ticketId)}`, {
+        method: 'DELETE',
+        headers: getAdminAuthHeaders()
+      });
     } catch (e) {
       console.warn('[TechAdmin] No se pudo eliminar ticket en el servidor:', e);
     }
@@ -255,7 +270,9 @@ const TechAdmin = (function () {
 
   async function fetchTicketsFromBackend() {
     try {
-      const resp = await fetch('/api/tickets');
+      const resp = await fetch('/api/tickets', {
+        headers: getAdminAuthHeaders()
+      });
       if (resp.ok) {
         const serverTickets = await resp.json();
         const existingMap = new Map();
@@ -287,7 +304,7 @@ const TechAdmin = (function () {
         if (tickets.length > 0) {
           await fetch('/api/tickets/bulk', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(tickets)
           });
         }
@@ -354,7 +371,16 @@ const TechAdmin = (function () {
       devicePhotos: data.devicePhotos || [],
       finalCost: parseFloat(data.finalCost) || 0,
       partCost: parseFloat(data.partCost) || 0,
-      warranty: data.warranty || "90 días de garantía por escrito"
+      warranty: data.warranty || "30 días de garantía por escrito",
+      depositAmount: parseFloat(data.depositAmount) || 0,
+      paymentMethod: data.paymentMethod || "Efectivo",
+      balancePending: (data.balancePending !== undefined && !isNaN(parseFloat(data.balancePending))) ? parseFloat(data.balancePending) : Math.max(0, (parseFloat(data.finalCost) || 0) - (parseFloat(data.depositAmount) || 0)),
+      currency: data.currency || "USD",
+      currencyRate: parseFloat(data.currencyRate) || (window.currentDolarRate || 1350),
+      clientSignature: data.clientSignature || "",
+      isRma: Boolean(data.isRma),
+      originalTicketId: data.originalTicketId || "",
+      rmaReason: data.rmaReason || ""
     };
 
     tickets.unshift(newTicket);
@@ -426,6 +452,15 @@ const TechAdmin = (function () {
     if (data.finalCost !== undefined) ticket.finalCost = parseFloat(data.finalCost) || 0;
     if (data.partCost !== undefined) ticket.partCost = parseFloat(data.partCost) || 0;
     if (data.warranty !== undefined) ticket.warranty = data.warranty;
+    if (data.depositAmount !== undefined) ticket.depositAmount = parseFloat(data.depositAmount) || 0;
+    if (data.paymentMethod !== undefined) ticket.paymentMethod = data.paymentMethod;
+    if (data.balancePending !== undefined) ticket.balancePending = parseFloat(data.balancePending) || 0;
+    if (data.currency !== undefined) ticket.currency = data.currency;
+    if (data.currencyRate !== undefined) ticket.currencyRate = parseFloat(data.currencyRate) || 1350;
+    if (data.clientSignature !== undefined) ticket.clientSignature = data.clientSignature;
+    if (data.isRma !== undefined) ticket.isRma = Boolean(data.isRma);
+    if (data.originalTicketId !== undefined) ticket.originalTicketId = data.originalTicketId;
+    if (data.rmaReason !== undefined) ticket.rmaReason = data.rmaReason;
 
     saveTickets();
     syncTicketWithBackend(ticket);
@@ -483,6 +518,18 @@ const TechAdmin = (function () {
       ticket.status = newStatus;
       ticket.statusStep = getStepNumber(newStatus);
       if (newNotes) ticket.technicianNotes = newNotes;
+
+      // Deducción automática de repuestos del inventario al finalizar la reparación
+      if ((newStatus === 'ready' || newStatus === 'delivered') && !ticket.inventoryDeducted) {
+        if (Array.isArray(ticket.partsUsed) && ticket.partsUsed.length > 0) {
+          const deducted = deductPartsFromInventory(ticket.partsUsed);
+          ticket.inventoryDeducted = true;
+          if (deducted && deducted.length > 0) {
+            console.log(`[Inventario] Stock deducido para orden #${ticket.id}:`, deducted);
+          }
+        }
+      }
+
       saveTickets();
       syncTicketWithBackend(ticket);
       return true;
@@ -512,7 +559,7 @@ const TechAdmin = (function () {
     saveTickets();
     fetch('/api/tickets/bulk', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify([])
     }).catch(() => {});
   }
@@ -557,7 +604,7 @@ const TechAdmin = (function () {
         break;
       case "ready":
         statusText = "¡YA ESTÁ REPARADO Y LISTO PARA RETIRAR! 🎉";
-        callToAction = `Puedes pasar por nuestro laboratorio en Colón 1475. Presupuesto final: $${ticket.finalCost} USD (Garantía: ${ticket.warranty || '90 días'}).`;
+        callToAction = `Puedes pasar por nuestro laboratorio en Colón 1475. Presupuesto final: $${ticket.finalCost} USD (Garantía: ${ticket.warranty || '30 días'}).`;
         break;
       case "delivered":
         statusText = "ha sido entregado.";
@@ -576,7 +623,12 @@ const TechAdmin = (function () {
       `📝 *Detalle:* ${callToAction}\n\n` +
       `Seguí tu reparación en tiempo real en nuestra web. ¡Saludos!`;
 
-    const cleanPhone = (ticket.clientPhone || "").replace(/[^0-9]/g, "");
+    let cleanPhone = (ticket.clientPhone || "").replace(/[^0-9]/g, "");
+    if (cleanPhone.length === 10 && !cleanPhone.startsWith("54")) {
+      cleanPhone = "549" + cleanPhone; // e.g. 1155556666 -> 5491155556666
+    } else if (cleanPhone.startsWith("54") && !cleanPhone.startsWith("549") && cleanPhone.length === 12) {
+      cleanPhone = "549" + cleanPhone.slice(2);
+    }
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, "_blank");
   }
@@ -587,6 +639,19 @@ const TechAdmin = (function () {
   function printTicketReceipt(ticketId) {
     const ticket = tickets.find(t => t.id === ticketId);
     if (!ticket) return;
+
+    const settings = window.currentWorkshopSettings || {
+      business_name: "WILOTECH",
+      business_subtitle: "Laboratorio de Microelectrónica & Reparaciones",
+      business_address: "Colón 1475, Mar del Plata, Bs. As., Argentina",
+      business_phone: "+54 223 591-4163",
+      business_terms: "CONDICIONES GENERALES: El cliente declara conocer y aceptar que equipos con sulfato, daño por líquidos o golpes pueden presentar fallas ocultas preexistentes. Transcurridos 60 días desde la notificación de finalización, los equipos no retirados devengarán costos de guarda o pasarán a desarme de acuerdo a la legislación vigente. Garantía de 30 días válida únicamente sobre componentes reparados.",
+      dolar_rate: 1350
+    };
+    const rate = ticket.currencyRate || settings.dolar_rate || 1350;
+    const finalCostUsd = parseFloat(ticket.finalCost) || 0;
+    const depositUsd = parseFloat(ticket.depositAmount) || 0;
+    const balanceUsd = ticket.balancePending !== undefined ? parseFloat(ticket.balancePending) : Math.max(0, finalCostUsd - depositUsd);
 
     function formatCheckStateLabel(st) {
       if (st === 'damaged') return '<span style="color:#b91c1c; font-weight:bold;">⚠️ ROTO / DAÑADO</span>';
@@ -599,7 +664,7 @@ const TechAdmin = (function () {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Comprobante de Servicio #${ticket.id} - WILOTECH</title>
+        <title>Comprobante de Servicio #${ticket.id} - ${settings.business_name || 'WILOTECH'}</title>
         <style>
           body { font-family: 'Courier New', Courier, monospace; color: #111; padding: 25px; max-width: 650px; margin: auto; }
           .header { text-align: center; border-bottom: 2px dashed #333; padding-bottom: 12px; margin-bottom: 15px; }
@@ -617,11 +682,17 @@ const TechAdmin = (function () {
       </head>
       <body>
         <div class="header">
-          <h1 class="title">WILOTECH</h1>
-          <div class="sub">Laboratorio de Microelectrónica & Reparaciones</div>
-          <div>Colón 1475, Mar del Plata, Bs. As., Argentina</div>
-          <div>Tel / WhatsApp: +54 223 591-4163</div>
+          <h1 class="title">${settings.business_name || 'WILOTECH'}</h1>
+          <div class="sub">${settings.business_subtitle || 'Laboratorio de Microelectrónica & Reparaciones'}</div>
+          <div>${settings.business_address || 'Colón 1475, Mar del Plata, Bs. As., Argentina'}</div>
+          <div>Tel / WhatsApp: ${settings.business_phone || '+54 223 591-4163'}</div>
           <div class="ticket-id">ORDEN TÉCNICA #${ticket.id}</div>
+          ${ticket.isRma ? `
+            <div style="background: #f3e8ff; border: 1px solid #a855f7; color: #6b21a8; font-weight: bold; padding: 6px; text-align: center; margin-top: 8px; border-radius: 4px; font-size: 11px;">
+              🛡️ REINGRESO POR GARANTÍA (RMA) — Ref: #${ticket.originalTicketId || 'N/A'}
+              ${ticket.rmaReason ? `<br><small style="font-weight: normal;">Motivo: ${ticket.rmaReason}</small>` : ''}
+            </div>
+          ` : ''}
         </div>
 
         <div class="section">
@@ -663,9 +734,11 @@ const TechAdmin = (function () {
         </div>
 
         <div class="section">
-          <div class="section-title">Diagnóstico & Presupuesto</div>
+          <div class="section-title">Diagnóstico, Pagos & Saldo</div>
           <div class="row"><span>Informe Taller:</span><span>${ticket.technicianNotes}</span></div>
-          <div class="row"><span>Costo Total:</span><strong>$${ticket.finalCost} USD</strong></div>
+          <div class="row"><span>Presupuesto Total:</span><strong>$${finalCostUsd} USD (~$${(finalCostUsd * rate).toLocaleString('es-AR')} ARS)</strong></div>
+          <div class="row"><span>Seña Abonada:</span><span style="color: #059669; font-weight: bold;">$${depositUsd} USD (${ticket.paymentMethod || 'Efectivo'}) (~$${(depositUsd * rate).toLocaleString('es-AR')} ARS)</span></div>
+          <div class="row"><span>SALDO A COBRAR EN ENTREGA:</span><strong style="color: #d97706; font-size: 13px;">$${balanceUsd} USD (~$${(balanceUsd * rate).toLocaleString('es-AR')} ARS)</strong></div>
           <div class="row"><span>Garantía:</span><span>${ticket.warranty}</span></div>
         </div>
 
@@ -685,12 +758,15 @@ const TechAdmin = (function () {
         ` : ''}
 
         <div class="terms">
-          CONDICIONES GENERALES: El cliente declara conocer y aceptar que equipos con sulfato, daño por líquidos o golpes pueden presentar fallas ocultas preexistentes. Transcurridos 60 días desde la notificación de finalización, los equipos no retirados devengarán costos de guarda o pasarán a desarme de acuerdo a la legislación vigente. Garantía válida únicamente sobre componentes reparados.
+          ${settings.business_terms || 'CONDICIONES GENERALES: El cliente declara conocer y aceptar que equipos con sulfato, daño por líquidos o golpes pueden presentar fallas ocultas preexistentes. Transcurridos 60 días desde la notificación de finalización, los equipos no retirados devengarán costos de guarda o pasarán a desarme de acuerdo a la legislación vigente. Garantía de 30 días válida únicamente sobre componentes reparados.'}
         </div>
 
         <div class="signatures">
-          <div class="sig-line">Firma del Cliente</div>
-          <div class="sig-line">Firma y Sello WILOTECH</div>
+          <div class="sig-line">
+            ${ticket.clientSignature ? `<img src="${ticket.clientSignature}" style="max-height: 48px; display: block; margin: 0 auto 4px auto;" alt="Firma">` : ''}
+            Firma del Cliente
+          </div>
+          <div class="sig-line">Firma y Sello ${settings.business_name || 'WILOTECH'}</div>
         </div>
 
         <script>
@@ -705,6 +781,18 @@ const TechAdmin = (function () {
   function printThermalTicket(ticketId, width = "80mm") {
     const ticket = tickets.find(t => t.id === ticketId);
     if (!ticket) return;
+
+    const settings = window.currentWorkshopSettings || {
+      business_name: "WILOTECH",
+      business_subtitle: "LABORATORIO DE REPARACIONES",
+      business_address: "Colón 1475",
+      business_phone: "223 591-4163",
+      dolar_rate: 1350
+    };
+    const rate = ticket.currencyRate || settings.dolar_rate || 1350;
+    const finalCostUsd = parseFloat(ticket.finalCost) || 0;
+    const depositUsd = parseFloat(ticket.depositAmount) || 0;
+    const balanceUsd = ticket.balancePending !== undefined ? parseFloat(ticket.balancePending) : Math.max(0, finalCostUsd - depositUsd);
 
     const trackingUrl = encodeURIComponent(`${window.location.origin}/index.html?ticket=${ticket.id}`);
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${trackingUrl}`;
@@ -740,10 +828,11 @@ const TechAdmin = (function () {
       </head>
       <body>
         <div class="header">
-          <div class="logo">WILOTECH</div>
-          <div style="font-size: 9px;">LABORATORIO DE REPARACIONES</div>
+          <div class="logo">${settings.business_name || 'WILOTECH'}</div>
+          <div style="font-size: 9px;">${settings.business_subtitle || 'LABORATORIO DE REPARACIONES'}</div>
           <div class="ticket-id">#${ticket.id}</div>
           <div style="font-size: 9px;">${ticket.dateReceived}</div>
+          ${ticket.isRma ? `<div style="text-align: center; font-weight: bold; background: #000; color: #fff; padding: 2px; margin: 3px 0; font-size: 9px;">*** REINGRESO GARANTÍA RMA ***</div>` : ''}
         </div>
 
         <div><span class="bold">CLIENTE:</span> ${ticket.clientName}</div>
@@ -761,6 +850,10 @@ const TechAdmin = (function () {
           </div>
         ` : ''}
         <div class="line"></div>
+        <div><span class="bold">TOTAL:</span> $${finalCostUsd} USD (~$${(finalCostUsd * rate).toLocaleString('es-AR')} ARS)</div>
+        ${depositUsd > 0 ? `<div><span class="bold">SEÑA:</span> $${depositUsd} USD (${ticket.paymentMethod || 'Efvo'})</div>` : ''}
+        <div><span class="bold">SALDO PENDIENTE:</span> $${balanceUsd} USD (~$${(balanceUsd * rate).toLocaleString('es-AR')} ARS)</div>
+        <div class="line"></div>
 
         <div class="qr-container">
           <img src="${qrApiUrl}" alt="QR Tracking">
@@ -768,7 +861,7 @@ const TechAdmin = (function () {
         </div>
 
         <div style="text-align: center; font-size: 8px; margin-top: 6px;">
-          WILOTECH • Colón 1475 • Tel: 223 591-4163
+          ${settings.business_name || 'WILOTECH'} • ${settings.business_address || 'Colón 1475'} • Tel: ${settings.business_phone || '223 591-4163'}
         </div>
 
         <script>
@@ -812,6 +905,28 @@ const TechAdmin = (function () {
       inventory[index].qty = Math.max(0, inventory[index].qty + delta);
       saveInventory();
     }
+  }
+
+  function deductPartsFromInventory(partsUsed) {
+    if (!Array.isArray(partsUsed) || partsUsed.length === 0) return [];
+    loadInventory();
+    const deducted = [];
+    partsUsed.forEach(partStr => {
+      if (!partStr) return;
+      const lowerPart = partStr.toLowerCase();
+      const foundIdx = inventory.findIndex(inv => {
+        const itemLower = (inv.item || inv.name || "").toLowerCase();
+        return lowerPart.includes(itemLower) || itemLower.includes(lowerPart.split(" - ")[0]);
+      });
+      if (foundIdx >= 0 && inventory[foundIdx].qty > 0) {
+        inventory[foundIdx].qty = Math.max(0, inventory[foundIdx].qty - 1);
+        deducted.push({ item: inventory[foundIdx].item, remaining: inventory[foundIdx].qty });
+      }
+    });
+    if (deducted.length > 0) {
+      saveInventory();
+    }
+    return deducted;
   }
 
   // -------------------------------------------------------------
@@ -921,6 +1036,7 @@ const TechAdmin = (function () {
     printThermalTicket: printThermalTicket,
     getInventory: getInventory,
     adjustStock: adjustStock,
+    deductPartsFromInventory: deductPartsFromInventory,
     getAllCustomers: getAllCustomers,
     findCustomerByDniOrPhone: findCustomerByDniOrPhone,
     upsertCustomer: upsertCustomer,
@@ -937,8 +1053,74 @@ let currentDetailTicketId = null;
 let currentRepairsFilter = 'all';
 let isPinVisible = false;
 
+const NAV_MODULES_META = {
+  'dashboard': { label: 'Dashboard Principal', icon: 'layout-dashboard', color: 'text-cyan-400' },
+  'repairs': { label: 'Reparaciones Técnicas', icon: 'wrench', color: 'text-emerald-400' },
+  'new-order': { label: 'Nueva Orden de Ingreso', icon: 'plus-circle', color: 'text-[#00f5a0]' },
+  'customers': { label: 'Directorio de Clientes', icon: 'users', color: 'text-purple-400' },
+  'inventory': { label: 'Inventario & Repuestos', icon: 'package', color: 'text-amber-400' },
+  'tariff': { label: 'Tarifario de Reparaciones', icon: 'coins', color: 'text-cyan-400' },
+  'gremios': { label: 'Portal Gremios / Colegas', icon: 'handshake', color: 'text-blue-400' },
+  'finances': { label: 'Finanzas & Rentabilidad', icon: 'bar-chart-3', color: 'text-emerald-400' },
+  'tools': { label: 'Herramientas de Banco', icon: 'box', color: 'text-indigo-400' },
+  'settings': { label: 'Configuración & Respaldos', icon: 'settings', color: 'text-slate-400' }
+};
+
+function toggleNavDropdown(event) {
+  if (event) event.stopPropagation();
+  const menu = document.getElementById('navDropdownMenu');
+  const chevron = document.getElementById('navDropdownChevron');
+  if (!menu) return;
+  const isHidden = menu.classList.contains('hidden');
+  if (isHidden) {
+    menu.classList.remove('hidden');
+    if (chevron) chevron.classList.add('rotate-180');
+  } else {
+    menu.classList.add('hidden');
+    if (chevron) chevron.classList.remove('rotate-180');
+  }
+}
+
+function closeNavDropdown() {
+  const menu = document.getElementById('navDropdownMenu');
+  const chevron = document.getElementById('navDropdownChevron');
+  if (menu && !menu.classList.contains('hidden')) {
+    menu.classList.add('hidden');
+    if (chevron) chevron.classList.remove('rotate-180');
+  }
+}
+
+function selectNavDropdown(screenId) {
+  closeNavDropdown();
+  navigateTo(screenId);
+}
+
+function updateNavDropdownUI(screenId) {
+  const meta = NAV_MODULES_META[screenId] || { label: screenId, icon: 'layout-dashboard', color: 'text-cyan-400' };
+  const iconContainer = document.getElementById('navDropdownCurrentIcon');
+  const textEl = document.getElementById('navDropdownCurrentText');
+
+  if (iconContainer) {
+    iconContainer.className = `${meta.color} flex items-center`;
+    iconContainer.innerHTML = `<i data-lucide="${meta.icon}" class="w-4 h-4"></i>`;
+  }
+  if (textEl) {
+    textEl.innerText = meta.label;
+  }
+}
+
+// Cierre automático del menú desplegable al hacer clic fuera del control
+document.addEventListener('click', function(e) {
+  const wrapper = document.getElementById('navDropdownWrapper');
+  if (wrapper && !wrapper.contains(e.target)) {
+    closeNavDropdown();
+  }
+});
+
 function navigateTo(screenId) {
   currentActiveScreen = screenId;
+  closeNavDropdown();
+  updateNavDropdownUI(screenId);
 
   // Hide all screens
   document.querySelectorAll('.screen-view').forEach(el => el.classList.add('hidden'));
@@ -960,12 +1142,17 @@ function navigateTo(screenId) {
 
   // Execute Screen-Specific Renderer
   if (screenId === 'dashboard') renderDashboardScreen();
+  else if (screenId === 'new-order') initNewOrderScreen();
   else if (screenId === 'repairs') renderRepairsScreen();
   else if (screenId === 'customers') renderCustomersScreen();
   else if (screenId === 'inventory') renderInventoryScreen();
   else if (screenId === 'tariff') renderTariffScreen();
   else if (screenId === 'finances') renderFinancesScreen();
   else if (screenId === 'gremios') renderAdminGremiosUsers();
+  else if (screenId === 'settings') {
+    loadBackupsList();
+    loadWorkshopBusinessSettings();
+  }
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -1000,6 +1187,18 @@ function renderDashboardScreen() {
   // Badge en el menú
   const badgeRepairs = document.getElementById('navRepairsBadge');
   if (badgeRepairs) badgeRepairs.innerText = activeTickets.length;
+
+  const badgeStock = document.getElementById('navStockAlertBadge');
+  if (badgeStock) {
+    const inv = TechAdmin.getInventory() || [];
+    const lowCount = inv.filter(i => (parseInt(i.qty) || 0) <= (parseInt(i.min) || 0)).length;
+    if (lowCount > 0) {
+      badgeStock.innerText = `${lowCount} BAJO`;
+      badgeStock.classList.remove('hidden');
+    } else {
+      badgeStock.classList.add('hidden');
+    }
+  }
 
   // 2. 🚨 Atención Requerida
   renderAttentionRequiredList(tickets);
@@ -1131,16 +1330,24 @@ function renderRepairsTable() {
     const timeInWorkshop = formatTimeInWorkshop(t.dateReceived);
     return `
       <tr onclick="openRepairDetail('${t.id}')" class="cursor-pointer hover:bg-slate-900/80 transition-colors">
-        <td class="p-4 font-mono font-bold text-cyan-400">#${t.id}</td>
+        <td class="p-4 font-mono font-bold text-cyan-400">#${t.id}${t.isRma ? ' <span class="bg-purple-900/80 text-purple-200 border border-purple-500/50 text-[9px] px-1.5 py-0.5 rounded-full font-sans">RMA</span>' : ''}</td>
         <td class="p-4 font-semibold text-white">${t.deviceBrand || ''} ${t.deviceModel || 'Dispositivo'}<br><span class="text-slate-500 font-mono text-[10px]">SN/IMEI: ${t.serialOrImei || 'N/A'}</span></td>
         <td class="p-4">${t.clientName || 'Cliente'}<br><span class="text-slate-500 font-mono text-[10px]">${t.clientPhone || ''}</span></td>
         <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold ${getStatusBadgeClass(t.status)}">${formatStatusLabel(t.status)}</span></td>
         <td class="p-4 font-mono text-slate-300">${t.technician || 'Wilson'}</td>
         <td class="p-4 font-mono text-xs font-bold ${timeInWorkshop.includes('⚠️') ? 'text-amber-400' : 'text-emerald-400'}">${timeInWorkshop}</td>
         <td class="p-4 text-right">
-          <button onclick="event.stopPropagation(); openRepairDetail('${t.id}');" class="px-3 py-1 rounded-xl bg-slate-900 hover:bg-cyan-950 text-cyan-300 font-mono text-[11px] border border-slate-800">
-            👁️ Ficha
-          </button>
+          <div class="flex items-center justify-end gap-1.5" onclick="event.stopPropagation()">
+            <button onclick="TechAdmin.notifyClientWhatsApp('${t.id}')" class="p-1.5 rounded-xl bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 text-xs transition-all hover:scale-105" title="Enviar novedad por WhatsApp">
+              📲
+            </button>
+            <button onclick="TechAdmin.printThermalTicket('${t.id}', '80mm')" class="p-1.5 rounded-xl bg-cyan-950/70 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/30 text-xs transition-all hover:scale-105" title="Imprimir etiqueta térmica autoadhesiva con QR">
+              🖨️
+            </button>
+            <button onclick="openRepairDetail('${t.id}');" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-cyan-950 text-cyan-300 font-mono text-[11px] border border-slate-800 transition-all hover:border-cyan-500/40" title="Ver ficha técnica completa">
+              👁️ Ficha
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -1235,7 +1442,7 @@ function openRepairDetail(ticketId) {
 
   navigateTo('repair-detail');
 
-  document.getElementById('detailTicketId').innerText = `WT-${ticket.id.replace('WT-', '')}`;
+  document.getElementById('detailTicketId').innerText = ticket.isRma ? `WT-${ticket.id.replace('WT-', '')} 🛡️ [RMA]` : `WT-${ticket.id.replace('WT-', '')}`;
   document.getElementById('detailStatusBadge').innerText = formatStatusLabel(ticket.status).toUpperCase();
   document.getElementById('detailDeviceSub').innerText = `${ticket.deviceBrand || ''} ${ticket.deviceModel || ''} • IMEI: ${ticket.serialOrImei || 'N/A'}`;
 
@@ -1243,6 +1450,18 @@ function openRepairDetail(ticketId) {
   document.getElementById('detailClientName').innerText = ticket.clientName || 'Cliente Mostrador';
   document.getElementById('detailClientPhone').innerText = ticket.clientPhone || 'No registrado';
   document.getElementById('detailClientDni').innerText = ticket.clientDni || 'No registrado';
+
+  // Firma Digital del Cliente
+  const sigBlock = document.getElementById('detailClientSignatureBlock');
+  const sigImg = document.getElementById('detailClientSignatureImg');
+  if (sigBlock && sigImg) {
+    if (ticket.clientSignature) {
+      sigImg.src = ticket.clientSignature;
+      sigBlock.classList.remove('hidden');
+    } else {
+      sigBlock.classList.add('hidden');
+    }
+  }
 
   // Bloque 2 — Equipo
   document.getElementById('detailModel').innerText = `${ticket.deviceBrand || ''} ${ticket.deviceModel || ''}`;
@@ -1259,15 +1478,28 @@ function openRepairDetail(ticketId) {
   // Bloque 5 — Repuestos Utilizados
   renderDetailParts(ticket);
 
-  // Bloque 6 & 8 — Presupuesto
-  const partC = parseFloat(ticket.partCost) || 80;
-  const finalC = parseFloat(ticket.finalCost) || 160;
-  const laborC = finalC - partC - 20;
+  // Bloque 6 & 8 — Presupuesto, Seña y Saldo
+  const partC = parseFloat(ticket.partCost) || 0;
+  const finalC = parseFloat(ticket.finalCost) || 0;
+  const laborC = Math.max(0, finalC - partC);
+  const rate = ticket.currencyRate || (window.currentWorkshopSettings ? window.currentWorkshopSettings.dolar_rate : 1350);
+  const deposit = parseFloat(ticket.depositAmount) || 0;
+  const balance = ticket.balancePending !== undefined ? parseFloat(ticket.balancePending) : Math.max(0, finalC - deposit);
 
   document.getElementById('detailPresPart').innerText = `$${partC} USD`;
-  document.getElementById('detailPresLabor').innerText = `$${Math.max(0, laborC)} USD`;
+  document.getElementById('detailPresLabor').innerText = `$${laborC} USD`;
   document.getElementById('detailPresTotal').innerText = `$${finalC} USD`;
-  document.getElementById('detailPresStatus').innerText = ticket.status === 'approved' ? '🟢 APROBADO' : '🟡 Pendiente de aprobación';
+
+  const presTotalArs = document.getElementById('detailPresTotalArs');
+  if (presTotalArs) presTotalArs.innerText = `~$${Math.round(finalC * rate).toLocaleString('es-AR')} ARS`;
+
+  const presDeposit = document.getElementById('detailPresDeposit');
+  if (presDeposit) presDeposit.innerText = `$${deposit} USD (${ticket.paymentMethod || 'Efectivo'}) (~$${Math.round(deposit * rate).toLocaleString('es-AR')} ARS)`;
+
+  const presBalance = document.getElementById('detailPresBalance');
+  if (presBalance) presBalance.innerText = `$${balance} USD (~$${Math.round(balance * rate).toLocaleString('es-AR')} ARS)`;
+
+  document.getElementById('detailPresStatus').innerText = ticket.status === 'approved' ? '🟢 APROBADO' : (ticket.status === 'ready' || ticket.status === 'delivered' ? '✅ FINALIZADO' : '🟡 Pendiente de aprobación');
 
   // Bloque 9 — Historial Timeline
   renderDetailTimeline(ticket);
@@ -1389,37 +1621,72 @@ function renderInventoryScreen() {
   const tbody = document.getElementById('inventoryFullTableBody');
   if (!tbody) return;
 
-  const inventory = [
-    { code: 'SCR15', name: 'Pantalla iPhone 15 Pro OLED OEM', qty: 4, min: 2, cost: 80, location: 'Estante B → Cajón 4 → Compartimento 2' },
-    { code: 'IC01', name: 'IC USB Hydra Tristar Type-C', qty: 1, min: 5, cost: 12, location: 'Estante A → Cajón 2 → Compartimento 1 ⚠️' },
-    { code: 'BAT14P', name: 'Batería iPhone 14 Pro Original', qty: 6, min: 3, cost: 35, location: 'Estante B → Cajón 1' },
-    { code: 'HDMI-PS5', name: 'Puerto HDMI PlayStation 5 OEM', qty: 10, min: 4, cost: 8, location: 'Estante C → Cajón 3' }
-  ];
+  const inventory = TechAdmin.getInventory();
 
   let totalQty = 0;
   let lowQty = 0;
   let totalVal = 0;
 
   inventory.forEach(i => {
-    totalQty += i.qty;
-    if (i.qty <= i.min) lowQty++;
-    totalVal += (i.qty * i.cost);
+    const cost = i.unitCost || i.cost || 0;
+    const qty = i.qty || 0;
+    const min = i.min || 2;
+    totalQty += qty;
+    if (qty <= min) lowQty++;
+    totalVal += (qty * cost);
   });
 
-  document.getElementById('invTotalCount').innerText = totalQty;
-  document.getElementById('invLowCount').innerText = lowQty;
-  document.getElementById('invTotalValue').innerText = `$${totalVal} USD`;
+  const totalEl = document.getElementById('invTotalCount');
+  const lowEl = document.getElementById('invLowCount');
+  const valEl = document.getElementById('invTotalValue');
 
-  tbody.innerHTML = inventory.map(i => `
-    <tr class="hover:bg-slate-900/80 transition-colors">
-      <td class="p-4 font-mono font-bold text-cyan-400">${i.code}</td>
-      <td class="p-4 font-semibold text-white">${i.name}</td>
-      <td class="p-4 font-mono font-bold ${i.qty <= i.min ? 'text-rose-400' : 'text-emerald-400'}">${i.qty}</td>
-      <td class="p-4 font-mono text-slate-400">${i.min}</td>
-      <td class="p-4 font-mono text-emerald-300">$${i.cost} USD</td>
-      <td class="p-4 font-mono font-semibold text-amber-300 bg-slate-900/60">${i.location}</td>
-    </tr>
-  `).join('');
+  if (totalEl) totalEl.innerText = totalQty;
+  if (lowEl) lowEl.innerText = lowQty;
+  if (valEl) valEl.innerText = `$${totalVal} USD`;
+
+  tbody.innerHTML = inventory.map((i, idx) => {
+    const qty = i.qty || 0;
+    const min = i.min || 2;
+    const isLow = qty <= min;
+    const cost = i.unitCost || i.cost || 0;
+    const location = i.location || 'Estante A → Gaveta 1';
+
+    // Simplificar nombre para búsqueda automática en distribuidoras
+    const cleanSearchQuery = (i.name || i.code || '')
+      .replace(/\(.*?\)/g, '')
+      .replace(/Originales|Original|OEM|Hard/gi, '')
+      .trim();
+
+    return `
+      <tr class="hover:bg-slate-900/80 transition-colors ${isLow ? 'bg-rose-950/10' : ''}">
+        <td class="p-4 font-mono font-bold text-cyan-400">${i.code || '-'}</td>
+        <td class="p-4">
+          <div class="font-semibold text-white">${i.name}</div>
+          ${isLow ? `
+            <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+              ⚠️ Stock Crítico (≤ ${min})
+            </span>
+          ` : ''}
+        </td>
+        <td class="p-4">
+          <div class="flex items-center gap-2">
+            <button onclick="TechAdmin.adjustStock(${idx}, -1); renderInventoryScreen();" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center transition-colors" title="Restar 1 unidad">-</button>
+            <span class="font-mono font-bold text-sm ${isLow ? 'text-rose-400 font-bold' : 'text-emerald-400'} min-w-[20px] text-center">${qty}</span>
+            <button onclick="TechAdmin.adjustStock(${idx}, 1); renderInventoryScreen();" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center transition-colors" title="Sumar 1 unidad">+</button>
+          </div>
+        </td>
+        <td class="p-4 font-mono text-slate-400">${min}</td>
+        <td class="p-4 font-mono text-emerald-300">$${cost} USD</td>
+        <td class="p-4 font-mono text-xs font-semibold text-amber-300 bg-slate-900/60">${location}</td>
+        <td class="p-4 text-right">
+          <a href="/comparador.html?q=${encodeURIComponent(cleanSearchQuery)}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-300 text-xs font-semibold font-tech transition-all shadow-sm hover:border-cyan-400 hover:shadow-cyan-950/50" title="Consultar cotización y stock en todas las distribuidoras">
+            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <span>Buscar en Mayoristas</span>
+          </a>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 // ----------------------------------------------------------------------------
@@ -1485,11 +1752,7 @@ function openEditTariffModal() {
 
   fetch("/api/gremios/price-list", {
     method: "POST",
-    headers: { 
-      "Content-Type": "application/json",
-      "X-Admin-Role": "admin",
-      "X-Admin-Auth": "true"
-    },
+    headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       title: name,
       category: category,
@@ -1603,22 +1866,815 @@ function handleGlobalSearch(e) {
   }
 }
 
-function openCreateRepairModal() {
-  const name = prompt("Nombre del Cliente:");
-  if (!name) return;
-  const phone = prompt("WhatsApp / Teléfono:");
-  const model = prompt("Modelo del Dispositivo (ej: iPhone 15 Pro):");
-  const issue = prompt("Falla reportada:");
+// ----------------------------------------------------------------------------
+// PANTALLA: REGISTRAR / EDITAR REPARACIÓN (RECEPCIÓN TÉCNICA)
+// ----------------------------------------------------------------------------
+const CHECKLIST_ITEMS_CONFIG = [
+  { id: 'display', label: '📱 Pantalla / Touch / OLED' },
+  { id: 'backCover', label: '🖼️ Tapa / Vidrio Trasero' },
+  { id: 'battery', label: '🔋 Batería / Puerto Carga' },
+  { id: 'cameras', label: '📷 Cámaras Frontal/Trasera' },
+  { id: 'audio', label: '🔊 Audio / Parlante / Mic' },
+  { id: 'housing', label: '🔲 Marco / Chasis / Botones' },
+  { id: 'signal', label: '📶 Wi-Fi / Bluetooth / Señal' },
+  { id: 'liquid', label: '💧 Daño por Agua / Sulfato' }
+];
 
-  const ticket = TechAdmin.createNewTicket({
-    clientName: name,
-    clientPhone: phone,
-    deviceModel: model,
-    issueDescription: issue
+let currentChecklistState = {
+  display: 'ok',
+  backCover: 'ok',
+  battery: 'ok',
+  cameras: 'ok',
+  audio: 'ok',
+  housing: 'ok',
+  signal: 'ok',
+  liquid: 'ok'
+};
+
+let currentPatternSequence = [];
+let imeiDebounceTimer = null;
+let lastCreatedTicket = null;
+
+function showToast(message, type = "info") {
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    container.className = "fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none";
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement("div");
+  const bgColors = {
+    info: "bg-slate-900 border-cyan-500/40 text-cyan-300",
+    success: "bg-slate-900 border-emerald-500/40 text-emerald-300",
+    warning: "bg-slate-900 border-amber-500/40 text-amber-300",
+    error: "bg-slate-900 border-rose-500/40 text-rose-300"
+  };
+
+  const icons = {
+    info: "info",
+    success: "check-circle",
+    warning: "alert-triangle",
+    error: "x-circle"
+  };
+
+  toast.className = `toast pointer-events-auto flex items-center gap-3 p-4 rounded-xl border shadow-2xl ${bgColors[type] || bgColors.info} max-w-sm text-sm z-50 transition-all`;
+  toast.innerHTML = `
+    <i data-lucide="${icons[type] || 'info'}" class="w-5 h-5 shrink-0"></i>
+    <span class="flex-1 font-medium">${message}</span>
+  `;
+
+  container.appendChild(toast);
+  if (window.lucide) lucide.createIcons();
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(100%)";
+    toast.style.transition = "all 0.3s ease";
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+function openCreateRepairModal() {
+  navigateTo('new-order');
+  initNewOrderScreen();
+}
+
+function initNewOrderScreen() {
+  const form = document.getElementById("form-create-repair");
+  if (!form) return;
+
+  const editingId = (document.getElementById("edit-ticket-id")?.value || "").trim();
+  if (!editingId) {
+    form.reset();
+    resetPatternMatrix();
+    handleLockTypeChange();
+    clearCustomerAutoFill();
+    resetIMEIFeedback();
+    resetChecklistState();
+
+    const badge = document.getElementById("form-repair-badge");
+    const title = document.getElementById("form-repair-title");
+    const desc = document.getElementById("form-repair-desc");
+    const cancelBtn = document.getElementById("btn-cancel-edit-ticket");
+    const submitText = document.getElementById("form-repair-submit-text");
+
+    if (badge) badge.textContent = "Recepción de Equipos";
+    if (title) title.textContent = "Registrar Nueva Orden de Servicio Técnico";
+    if (desc) desc.textContent = "Completa los datos de ingreso con auto-detección por IMEI, validación por DNI y generación de ticket instantáneo.";
+    if (cancelBtn) cancelBtn.classList.add("hidden");
+    if (submitText) submitText.textContent = "CREAR ORDEN Y GUARDAR EN SISTEMA";
+
+    clearSignatureCanvas();
+    if (form.elements["warranty"]) form.elements["warranty"].value = "30 días de garantía por escrito";
+    calculateOrderFinanceTotals();
+  }
+
+  initSignatureCanvas();
+  renderChecklistUI();
+  initIMEIAutoDetection();
+  updateCustomerDatalists();
+  if (window.lucide) lucide.createIcons();
+}
+
+function initIMEIAutoDetection() {
+  const imeiInput = document.getElementById("input-repair-imei");
+  if (!imeiInput || imeiInput._imeiInitialized) return;
+  imeiInput._imeiInitialized = true;
+
+  imeiInput.addEventListener("input", () => {
+    clearTimeout(imeiDebounceTimer);
+    const clean = (imeiInput.value || "").replace(/\D/g, "");
+    updateIMEIBadge(clean);
+
+    if (clean.length >= 8) {
+      imeiDebounceTimer = setTimeout(() => {
+        performIMEILookup(clean);
+      }, 150);
+    } else if (clean.length === 0) {
+      resetIMEIFeedback();
+    } else {
+      setIMEIFeedback(`Ingresa al menos 8 dígitos para consultar el modelo (actual: ${clean.length} de 15)`, "info");
+    }
   });
 
-  renderDashboardScreen();
-  openRepairDetail(ticket.id);
+  imeiInput.addEventListener("paste", () => {
+    setTimeout(() => {
+      const clean = (imeiInput.value || "").replace(/\D/g, "");
+      updateIMEIBadge(clean);
+      if (clean.length >= 8) {
+        performIMEILookup(clean);
+      }
+    }, 60);
+  });
+}
+
+function updateIMEIBadge(clean) {
+  const badge = document.getElementById("imei-luhn-badge");
+  if (!badge) return;
+
+  if (!clean || clean.length === 0) {
+    badge.textContent = "Esperando IMEI...";
+    badge.className = "text-[10px] font-brand font-bold px-2.5 py-0.5 rounded-full border border-slate-700 text-slate-400 bg-slate-900/80 transition-all font-mono";
+    return;
+  }
+
+  if (clean.length < 8) {
+    badge.textContent = `${clean.length}/15 dígitos`;
+    badge.className = "text-[10px] font-brand font-bold px-2.5 py-0.5 rounded-full border border-amber-500/40 text-amber-400 bg-amber-950/40 transition-all font-mono";
+    return;
+  }
+
+  if (clean.length < 15) {
+    badge.textContent = `TAC ${clean.slice(0, 8)} (${clean.length}/15)`;
+    badge.className = "text-[10px] font-brand font-bold px-2.5 py-0.5 rounded-full border border-[#00d2ff]/40 text-[#00d2ff] bg-[#00d2ff]/10 transition-all font-mono";
+    return;
+  }
+
+  const isValid = window.IMEIService ? IMEIService.isValidLuhn(clean) : true;
+  if (isValid) {
+    badge.textContent = "✓ IMEI Válido (15 dígitos)";
+    badge.className = "text-[10px] font-brand font-bold px-2.5 py-0.5 rounded-full border border-[#00f5a0]/50 text-[#00f5a0] bg-[#00f5a0]/20 shadow-sm shadow-[#00f5a0]/20 transition-all animate-pulse font-mono";
+  } else {
+    badge.textContent = "15 dígitos (Luhn no verificado)";
+    badge.className = "text-[10px] font-brand font-bold px-2.5 py-0.5 rounded-full border border-amber-500/50 text-amber-300 bg-amber-950/40 transition-all font-mono";
+  }
+}
+
+async function performIMEILookup(cleanImei) {
+  if (!window.IMEIService) return;
+
+  setIMEIFeedback(`Consultando base de datos oficial (TAC ${cleanImei.slice(0, 8)})...`, "loading");
+
+  try {
+    const res = await IMEIService.lookup(cleanImei);
+    if (res && res.found) {
+      applyDetectedData(res);
+    } else if (res && res.suggestedBrand) {
+      const brandInput = document.getElementById("repair-device-brand");
+      if (brandInput && !brandInput.value) {
+        brandInput.value = res.suggestedBrand;
+      }
+      setIMEIFeedback(`TAC ${res.tac} reconocido (${res.suggestedBrand}). Puedes completar el modelo específico.`, "info");
+    } else {
+      setIMEIFeedback(`TAC ${cleanImei.slice(0, 8)} no identificado automáticamente. Puedes ingresar los datos manualmente.`, "warning");
+    }
+  } catch (err) {
+    console.error("Error en lookup IMEI:", err);
+  }
+}
+
+function applyDetectedData(data) {
+  const brandInput = document.getElementById("repair-device-brand");
+  const modelInput = document.getElementById("repair-device-model");
+  const colorInput = document.getElementById("repair-device-color");
+  const storageInput = document.getElementById("repair-device-storage");
+  const typeSelect = document.getElementById("repair-device-type");
+
+  if (brandInput && data.brand) brandInput.value = data.brand;
+  if (modelInput && data.model) modelInput.value = data.model;
+  if (colorInput && data.color) colorInput.value = data.color;
+  if (storageInput && data.storage) storageInput.value = data.storage;
+  if (typeSelect && data.deviceType) typeSelect.value = data.deviceType;
+
+  if (data.availableColors && data.availableColors.length > 0) {
+    const colorDl = document.getElementById("color-options");
+    if (colorDl) {
+      colorDl.innerHTML = data.availableColors.map(c => `<option value="${c}">`).join("");
+    }
+    if (colorInput && !colorInput.value) {
+      colorInput.placeholder = `Ej: ${data.availableColors[0]} (${data.availableColors.length} colores disponibles)`;
+    }
+  }
+
+  if (data.availableStorages && data.availableStorages.length > 0) {
+    const storageDl = document.getElementById("storage-options");
+    if (storageDl) {
+      storageDl.innerHTML = data.availableStorages.map(s => `<option value="${s}">`).join("");
+    }
+  }
+
+  [brandInput, modelInput, storageInput].forEach(el => {
+    if (el) {
+      el.classList.add("ring-2", "ring-[#00f5a0]", "bg-[#00f5a0]/15");
+      setTimeout(() => {
+        el.classList.remove("ring-2", "ring-[#00f5a0]", "bg-[#00f5a0]/15");
+      }, 1400);
+    }
+  });
+  if (colorInput && (data.color || colorInput.value)) {
+    colorInput.classList.add("ring-2", "ring-[#00f5a0]", "bg-[#00f5a0]/15");
+    setTimeout(() => {
+      colorInput.classList.remove("ring-2", "ring-[#00f5a0]", "bg-[#00f5a0]/15");
+    }, 1400);
+  }
+
+  ["badge-auto-brand", "badge-auto-model", "badge-auto-storage"].forEach(id => {
+    const badge = document.getElementById(id);
+    if (badge) {
+      badge.classList.remove("hidden");
+      setTimeout(() => badge.classList.add("hidden"), 3500);
+    }
+  });
+  const colorBadge = document.getElementById("badge-auto-color");
+  if (colorBadge) {
+    colorBadge.textContent = data.color ? "AUTO" : "OPCIONES CARGADAS";
+    colorBadge.classList.remove("hidden");
+    setTimeout(() => colorBadge.classList.add("hidden"), 4500);
+  }
+
+  const feedbackBox = document.getElementById("imei-detection-feedback");
+  const feedbackText = document.getElementById("imei-feedback-text");
+  if (feedbackBox && feedbackText) {
+    const displayColor = data.color || (colorInput && colorInput.value) || (data.availableColors && data.availableColors.length > 0 ? `Seleccionar (${data.availableColors.length} colores)` : "A especificar");
+    feedbackBox.className = "mt-2 text-xs p-2.5 rounded-xl border border-[#00f5a0]/40 bg-[#00f5a0]/10 text-slate-200 flex items-center gap-2 transition-all";
+    feedbackText.innerHTML = `✓ <strong>${data.brand} ${data.model}</strong> detectado por IMEI • Color: <strong class="text-[#00f5a0]">${displayColor}</strong> • Memoria: <strong class="text-[#00f5a0]">${data.storage || 'N/D'}</strong>`;
+  }
+
+  showToast(`✓ Detectado por IMEI: ${data.brand} ${data.model}`, "success");
+}
+
+function setIMEIFeedback(text, type = "info") {
+  const box = document.getElementById("imei-detection-feedback");
+  const span = document.getElementById("imei-feedback-text");
+  if (!box || !span) return;
+
+  span.textContent = text;
+  if (type === "loading") {
+    box.className = "mt-2 text-xs p-2.5 rounded-xl border border-[#00d2ff]/40 bg-[#00d2ff]/10 text-[#00d2ff] flex items-center gap-2 animate-pulse";
+  } else if (type === "warning") {
+    box.className = "mt-2 text-xs p-2.5 rounded-xl border border-amber-500/40 bg-amber-950/30 text-amber-300 flex items-center gap-2";
+  } else {
+    box.className = "mt-2 text-xs p-2.5 rounded-xl border border-slate-800 bg-[#05070d]/70 text-slate-400 flex items-center gap-2";
+  }
+}
+
+function resetIMEIFeedback() {
+  setIMEIFeedback("Al ingresar el IMEI, los campos Marca, Modelo, Color y Almacenamiento se autocompletarán de inmediato.", "info");
+  updateIMEIBadge("");
+}
+
+async function handlePasteIMEI() {
+  try {
+    const text = await navigator.clipboard.readText();
+    const imeiInput = document.getElementById("input-repair-imei");
+    if (imeiInput && text) {
+      imeiInput.value = text.trim();
+      imeiInput.dispatchEvent(new Event("input"));
+      showToast("IMEI pegado desde el portapapeles", "info");
+    }
+  } catch (err) {
+    const manual = prompt("Pega el número de IMEI aquí:");
+    if (manual) {
+      const imeiInput = document.getElementById("input-repair-imei");
+      if (imeiInput) {
+        imeiInput.value = manual.trim();
+        imeiInput.dispatchEvent(new Event("input"));
+      }
+    }
+  }
+}
+
+function handleManualIMEILookup() {
+  const imeiInput = document.getElementById("input-repair-imei");
+  if (!imeiInput || !imeiInput.value) {
+    showToast("Por favor escribe o pega un IMEI primero", "warning");
+    return;
+  }
+  const clean = imeiInput.value.replace(/\D/g, "");
+  if (clean.length < 8) {
+    showToast("El IMEI debe tener al menos 8 dígitos", "warning");
+    return;
+  }
+  performIMEILookup(clean);
+}
+
+function handleLockTypeChange() {
+  const lockTypeSelect = document.getElementById("repair-lock-type");
+  if (!lockTypeSelect) return;
+  const lockType = lockTypeSelect.value;
+  const codeInput = document.getElementById("repair-lock-code");
+  const codeLabel = document.getElementById("lock-code-label");
+  const matrixWrapper = document.getElementById("pattern-matrix-wrapper");
+  const clearBtn = document.getElementById("btn-clear-pattern");
+
+  resetPatternMatrix();
+
+  if (lockType === "Sin Bloqueo") {
+    if (codeInput) {
+      codeInput.value = "";
+      codeInput.placeholder = "Sin clave de bloqueo";
+      codeInput.readOnly = true;
+    }
+    if (codeLabel) codeLabel.textContent = "Clave / PIN (No requerida)";
+    if (matrixWrapper) matrixWrapper.classList.add("hidden");
+    if (clearBtn) clearBtn.classList.add("hidden");
+  } else if (lockType === "PIN") {
+    if (codeInput) {
+      codeInput.value = "";
+      codeInput.placeholder = "Ej: 1472";
+      codeInput.readOnly = false;
+    }
+    if (codeLabel) codeLabel.textContent = "PIN Numérico de Acceso *";
+    if (matrixWrapper) matrixWrapper.classList.add("hidden");
+    if (clearBtn) clearBtn.classList.add("hidden");
+  } else if (lockType === "Contraseña") {
+    if (codeInput) {
+      codeInput.value = "";
+      codeInput.placeholder = "Ej: miClave2026";
+      codeInput.readOnly = false;
+    }
+    if (codeLabel) codeLabel.textContent = "Contraseña Alfanumérica *";
+    if (matrixWrapper) matrixWrapper.classList.add("hidden");
+    if (clearBtn) clearBtn.classList.add("hidden");
+  } else if (lockType === "Patrón de Desbloqueo") {
+    if (codeInput) {
+      codeInput.value = "";
+      codeInput.placeholder = "Toca la matriz de puntos abajo (Ej: 1-2-3-6-9)";
+      codeInput.readOnly = true;
+    }
+    if (codeLabel) codeLabel.textContent = "Patrón de Desbloqueo (Secuencia de Puntos 3x3) *";
+    if (matrixWrapper) matrixWrapper.classList.remove("hidden");
+    if (clearBtn) clearBtn.classList.remove("hidden");
+  }
+}
+
+function clickPatternDot(num) {
+  if (currentPatternSequence.includes(num)) return;
+  currentPatternSequence.push(num);
+
+  const codeInput = document.getElementById("repair-lock-code");
+  if (codeInput) codeInput.value = currentPatternSequence.join("-");
+
+  const dotBtn = document.getElementById(`pdot-${num}`);
+  if (dotBtn) {
+    dotBtn.classList.remove("bg-slate-800", "border-slate-700", "text-slate-300");
+    dotBtn.classList.add("bg-cyan-500/20", "border-cyan-400", "text-cyan-300", "ring-2", "ring-cyan-500/40");
+    dotBtn.innerHTML = `${num} <span class="text-[8px] block text-cyan-400 font-bold">${currentPatternSequence.length}°</span>`;
+  }
+}
+
+function resetPatternMatrix() {
+  currentPatternSequence = [];
+  const codeInput = document.getElementById("repair-lock-code");
+  const lockTypeSelect = document.getElementById("repair-lock-type");
+  if (codeInput && lockTypeSelect && lockTypeSelect.value === "Patrón de Desbloqueo") {
+    codeInput.value = "";
+  }
+
+  for (let i = 1; i <= 9; i++) {
+    const dotBtn = document.getElementById(`pdot-${i}`);
+    if (dotBtn) {
+      dotBtn.className = "pattern-dot w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm font-bold flex items-center justify-center hover:border-cyan-400 active:scale-95 transition-all";
+      dotBtn.textContent = i;
+    }
+  }
+}
+
+function renderChecklistUI() {
+  const container = document.getElementById("reception-checklist-container");
+  if (!container) return;
+
+  container.innerHTML = CHECKLIST_ITEMS_CONFIG.map(item => {
+    const state = currentChecklistState[item.id] || 'ok';
+    let badgeClass = "bg-emerald-950/80 text-[#00f5a0] border-emerald-500/40";
+    let badgeText = "✓ OK";
+
+    if (state === 'damaged') {
+      badgeClass = "bg-rose-950/90 text-rose-300 border-rose-500/50";
+      badgeText = "⚠️ Roto";
+    } else if (state === 'untested') {
+      badgeClass = "bg-cyan-950/80 text-cyan-300 border-cyan-500/40";
+      badgeText = "❓ S/Probar";
+    }
+
+    return `
+      <div class="p-2 rounded-xl bg-[#05070d] border border-slate-800 space-y-1.5 transition-all">
+        <div class="flex items-center justify-between gap-1">
+          <span class="text-[11px] font-brand font-bold text-slate-200 truncate" title="${item.label}">${item.label}</span>
+          <span class="text-[9px] font-brand font-bold px-1.5 py-0.5 rounded border ${badgeClass} shrink-0">${badgeText}</span>
+        </div>
+        <div class="grid grid-cols-3 gap-1 text-[10px] font-brand font-bold">
+          <button 
+            type="button" 
+            onclick="setChecklistState('${item.id}', 'ok')" 
+            class="py-1 rounded transition-all cursor-pointer ${state === 'ok' ? 'bg-[#00f5a0]/20 text-[#00f5a0] border border-[#00f5a0]/50 font-black' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800'}"
+          >
+            OK
+          </button>
+          <button 
+            type="button" 
+            onclick="setChecklistState('${item.id}', 'damaged')" 
+            class="py-1 rounded transition-all cursor-pointer ${state === 'damaged' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/50 font-black' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800'}"
+          >
+            ROTO
+          </button>
+          <button 
+            type="button" 
+            onclick="setChecklistState('${item.id}', 'untested')" 
+            class="py-1 rounded transition-all cursor-pointer ${state === 'untested' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-black' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800'}"
+          >
+            S/TEST
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function setChecklistState(itemId, state) {
+  currentChecklistState[itemId] = state;
+  renderChecklistUI();
+}
+
+function resetChecklistState() {
+  CHECKLIST_ITEMS_CONFIG.forEach(item => {
+    currentChecklistState[item.id] = 'ok';
+  });
+  const notes = document.getElementById("repair-condition-notes");
+  if (notes) notes.value = "";
+  renderChecklistUI();
+}
+
+function populateChecklistFromTicket(t) {
+  if (t && t.deviceChecklist) {
+    currentChecklistState = { ...currentChecklistState, ...t.deviceChecklist };
+  } else {
+    CHECKLIST_ITEMS_CONFIG.forEach(item => {
+      currentChecklistState[item.id] = 'ok';
+    });
+  }
+  const notes = document.getElementById("repair-condition-notes");
+  if (notes) notes.value = t && t.deviceConditionNotes ? t.deviceConditionNotes : "";
+  renderChecklistUI();
+}
+
+function updateCustomerDatalists() {
+  if (typeof TechAdmin === "undefined") return;
+  const customers = TechAdmin.getAllCustomers();
+  let dniDatalist = document.getElementById("customer-dni-list");
+  let phoneDatalist = document.getElementById("customer-phone-list");
+  if (!dniDatalist) {
+    dniDatalist = document.createElement("datalist");
+    dniDatalist.id = "customer-dni-list";
+    document.body.appendChild(dniDatalist);
+  }
+  if (!phoneDatalist) {
+    phoneDatalist = document.createElement("datalist");
+    phoneDatalist.id = "customer-phone-list";
+    document.body.appendChild(phoneDatalist);
+  }
+
+  dniDatalist.innerHTML = customers
+    .filter(c => c.dni)
+    .map(c => `<option value="${c.dni}">${c.name} (${c.type || 'Público'})</option>`)
+    .join("");
+
+  phoneDatalist.innerHTML = customers
+    .filter(c => c.phone)
+    .map(c => `<option value="${c.phone}">${c.name} (${c.type || 'Público'})</option>`)
+    .join("");
+}
+
+function handleCustomerLookup(inputEl) {
+  if (!inputEl || typeof TechAdmin === "undefined") return;
+  const val = inputEl.value;
+  if (!val || val.trim().length < 4) {
+    clearCustomerAutoFill();
+    return;
+  }
+
+  const customer = TechAdmin.findCustomerByDniOrPhone(val);
+  if (customer) {
+    const form = inputEl.closest("form");
+    if (form) {
+      if (form.clientName) form.clientName.value = customer.name;
+      if (form.clientType) form.clientType.value = customer.type || "Público";
+      if (form.clientDni) form.clientDni.value = customer.dni || "";
+      if (form.clientPhone) form.clientPhone.value = customer.phone || "";
+      if (form.clientAddress && customer.address) form.clientAddress.value = customer.address;
+
+      showCustomerAutoBadge(customer);
+    }
+  }
+}
+
+function showCustomerAutoBadge(c) {
+  const badge = document.getElementById("customer-auto-badge");
+  const text = document.getElementById("customer-auto-text");
+  if (badge && text) {
+    text.innerHTML = `Cliente Frecuente Detectado: <strong>${c.name}</strong> (${c.type || 'Público'}) — Datos autocompletados desde Base de Datos.`;
+    badge.classList.remove("hidden");
+  }
+}
+
+function clearCustomerAutoFill() {
+  const badge = document.getElementById("customer-auto-badge");
+  if (badge) badge.classList.add("hidden");
+}
+
+function handleCreateRepair(e) {
+  e.preventDefault();
+  const form = document.getElementById("form-create-repair");
+  if (!form) return;
+  const formData = new FormData(form);
+
+  const editingId = (formData.get("editingTicketId") || document.getElementById("edit-ticket-id")?.value || "").trim();
+
+  const brand = formData.get("deviceBrand") || "";
+  const model = formData.get("deviceModel") || "";
+  const color = formData.get("deviceColor") || "";
+  const storage = formData.get("deviceStorage") || "";
+
+  const ticketData = {
+    clientName: formData.get("clientName"),
+    clientType: formData.get("clientType") || "Público",
+    clientDni: formData.get("clientDni"),
+    clientPhone: formData.get("clientPhone"),
+    clientAddress: formData.get("clientAddress"),
+    deviceType: formData.get("deviceType") || "Celular",
+    deviceBrand: brand,
+    deviceModel: model,
+    deviceColor: color,
+    deviceStorage: storage,
+    serialOrImei: formData.get("serialOrImei"),
+    deviceLockType: formData.get("deviceLockType") || "Sin Bloqueo",
+    deviceLockCode: formData.get("deviceLockCode") || "",
+    deviceLockPattern: formData.get("deviceLockType") === "Patrón de Desbloqueo" ? (formData.get("deviceLockCode") || "") : "",
+    deviceChecklist: { ...currentChecklistState },
+    deviceConditionNotes: formData.get("deviceConditionNotes") || "",
+    issueDescription: formData.get("issueDescription"),
+    status: formData.get("status") || "received",
+    technician: formData.get("technician"),
+    finalCost: formData.get("finalCost"),
+    technicianNotes: formData.get("technicianNotes"),
+    depositAmount: parseFloat(formData.get("depositAmount")) || 0,
+    paymentMethod: formData.get("paymentMethod") || "Efectivo",
+    balancePending: parseFloat(document.getElementById("repair-balance-pending")?.value) || 0,
+    currency: "USD",
+    currencyRate: parseFloat(document.getElementById("repair-dolar-rate")?.value) || 1350,
+    clientSignature: document.getElementById("repair-client-signature")?.value || "",
+    warranty: formData.get("warranty") || "30 días de garantía por escrito",
+    isRma: document.getElementById("repair-is-rma")?.value === "true",
+    originalTicketId: document.getElementById("repair-original-ticket-id")?.value || "",
+    rmaReason: document.getElementById("repair-rma-reason")?.value || ""
+  };
+
+  if (editingId) {
+    const updated = TechAdmin.updateTicket(editingId, ticketData);
+    cancelEditTicket();
+    updateCustomerDatalists();
+    if (updated) {
+      showToast(`¡Orden #${editingId} actualizada exitosamente!`, "success");
+      openRepairDetail(editingId);
+    } else {
+      showToast(`Error al actualizar la orden #${editingId}`, "error");
+      navigateTo("repairs");
+    }
+  } else {
+    const newOrder = TechAdmin.createNewTicket(ticketData);
+    form.reset();
+    resetPatternMatrix();
+    handleLockTypeChange();
+    clearCustomerAutoFill();
+    resetIMEIFeedback();
+    resetChecklistState();
+    clearSignatureCanvas();
+    calculateOrderFinanceTotals();
+    updateCustomerDatalists();
+    showToast(`¡Orden #${newOrder.id} registrada exitosamente!`, "success");
+
+    showOrderSuccessModal(newOrder);
+  }
+}
+
+function handleEditTicket(ticketId) {
+  const t = TechAdmin.getTicketById(ticketId);
+  if (!t) {
+    showToast("No se encontró la orden solicitada.", "warning");
+    return;
+  }
+
+  navigateTo("new-order");
+
+  const form = document.getElementById("form-create-repair");
+  if (!form) return;
+
+  const editIdInput = document.getElementById("edit-ticket-id");
+  if (editIdInput) editIdInput.value = t.id;
+
+  if (form.elements["clientName"]) form.elements["clientName"].value = t.clientName || "";
+  if (form.elements["clientType"]) form.elements["clientType"].value = t.clientType || "Público";
+  if (form.elements["clientDni"]) form.elements["clientDni"].value = t.clientDni || "";
+  if (form.elements["clientPhone"]) form.elements["clientPhone"].value = t.clientPhone || "";
+  if (form.elements["clientAddress"]) form.elements["clientAddress"].value = t.clientAddress || "";
+
+  if (form.elements["serialOrImei"]) form.elements["serialOrImei"].value = t.serialOrImei || "";
+  if (form.elements["deviceType"]) form.elements["deviceType"].value = t.deviceType || "Celular";
+  if (form.elements["deviceBrand"]) form.elements["deviceBrand"].value = t.deviceBrand || "";
+  if (form.elements["deviceModel"]) form.elements["deviceModel"].value = t.deviceModel || "";
+  if (form.elements["deviceColor"]) form.elements["deviceColor"].value = t.deviceColor || "";
+  if (form.elements["deviceStorage"]) form.elements["deviceStorage"].value = t.deviceStorage || "";
+
+  if (form.elements["deviceLockType"]) form.elements["deviceLockType"].value = t.deviceLockType || "Sin Bloqueo";
+  handleLockTypeChange();
+  if (form.elements["deviceLockCode"]) form.elements["deviceLockCode"].value = t.deviceLockCode || "";
+
+  if (t.deviceLockType === "Patrón de Desbloqueo" && t.deviceLockCode) {
+    const dots = t.deviceLockCode.split("-").map(d => parseInt(d.trim())).filter(n => !isNaN(n));
+    currentPatternSequence = [];
+    dots.forEach(d => clickPatternDot(d));
+  }
+
+  populateChecklistFromTicket(t);
+
+  if (form.elements["issueDescription"]) form.elements["issueDescription"].value = t.issueDescription || "";
+  if (form.elements["status"]) form.elements["status"].value = t.status || "received";
+  if (form.elements["technician"]) form.elements["technician"].value = t.technician || "Laboratorio WILOTECH";
+  if (form.elements["finalCost"]) form.elements["finalCost"].value = t.finalCost || 0;
+  if (form.elements["technicianNotes"]) form.elements["technicianNotes"].value = t.technicianNotes || "";
+  if (form.elements["warranty"]) form.elements["warranty"].value = t.warranty || "30 días de garantía por escrito";
+
+  // Finanzas y Seña
+  if (form.elements["depositAmount"]) form.elements["depositAmount"].value = t.depositAmount || 0;
+  if (form.elements["paymentMethod"]) form.elements["paymentMethod"].value = t.paymentMethod || "Efectivo";
+  if (document.getElementById("repair-dolar-rate")) {
+    document.getElementById("repair-dolar-rate").value = t.currencyRate || (window.currentDolarRate || 1350);
+  }
+  calculateOrderFinanceTotals();
+
+  // Firma
+  const sigHidden = document.getElementById("repair-client-signature");
+  if (sigHidden) {
+    sigHidden.value = t.clientSignature || "";
+    if (t.clientSignature) renderSignaturePreviewOnCanvas(t.clientSignature);
+    else clearSignatureCanvas();
+  }
+
+  // RMA
+  const isRmaEl = document.getElementById("repair-is-rma");
+  if (isRmaEl) isRmaEl.value = t.isRma ? "true" : "false";
+  const origIdEl = document.getElementById("repair-original-ticket-id");
+  if (origIdEl) origIdEl.value = t.originalTicketId || "";
+  const rmaReasonEl = document.getElementById("repair-rma-reason");
+  if (rmaReasonEl) rmaReasonEl.value = t.rmaReason || "";
+
+  const badge = document.getElementById("form-repair-badge");
+  const title = document.getElementById("form-repair-title");
+  const desc = document.getElementById("form-repair-desc");
+  const cancelBtn = document.getElementById("btn-cancel-edit-ticket");
+  const submitText = document.getElementById("form-repair-submit-text");
+
+  if (badge) badge.textContent = `Modo Edición — #${t.id}`;
+  if (title) title.textContent = `Editar Orden Técnica #${t.id}`;
+  if (desc) desc.textContent = `Actualiza los datos del cliente, checklist, patrón de seguridad o diagnóstico del equipo.`;
+  if (cancelBtn) cancelBtn.classList.remove("hidden");
+  if (submitText) submitText.textContent = `GUARDAR CAMBIOS EN ORDEN #${t.id}`;
+
+  const cleanImei = (t.serialOrImei || "").replace(/\D/g, "");
+  updateIMEIBadge(cleanImei);
+}
+
+function cancelEditTicket() {
+  const editIdInput = document.getElementById("edit-ticket-id");
+  if (editIdInput) editIdInput.value = "";
+
+  const form = document.getElementById("form-create-repair");
+  if (form) form.reset();
+
+  resetPatternMatrix();
+  handleLockTypeChange();
+  clearCustomerAutoFill();
+  resetIMEIFeedback();
+  resetChecklistState();
+  clearSignatureCanvas();
+  if (form && form.elements["warranty"]) form.elements["warranty"].value = "30 días de garantía por escrito";
+  calculateOrderFinanceTotals();
+
+  const isRmaEl = document.getElementById("repair-is-rma");
+  if (isRmaEl) isRmaEl.value = "false";
+  const origIdEl = document.getElementById("repair-original-ticket-id");
+  if (origIdEl) origIdEl.value = "";
+  const rmaReasonEl = document.getElementById("repair-rma-reason");
+  if (rmaReasonEl) rmaReasonEl.value = "";
+
+  const badge = document.getElementById("form-repair-badge");
+  const title = document.getElementById("form-repair-title");
+  const desc = document.getElementById("form-repair-desc");
+  const cancelBtn = document.getElementById("btn-cancel-edit-ticket");
+  const submitText = document.getElementById("form-repair-submit-text");
+
+  if (badge) badge.textContent = "Recepción de Equipos";
+  if (title) title.textContent = "Registrar Nueva Orden de Servicio Técnico";
+  if (desc) desc.textContent = "Completa los datos de ingreso con auto-detección por IMEI, validación por DNI y generación de ticket instantáneo.";
+  if (cancelBtn) cancelBtn.classList.add("hidden");
+  if (submitText) submitText.textContent = "CREAR ORDEN Y GUARDAR EN SISTEMA";
+}
+
+function showOrderSuccessModal(ticket) {
+  lastCreatedTicket = ticket;
+  currentDetailTicketId = ticket.id;
+
+  const modal = document.getElementById("orderSuccessModal");
+  if (!modal) return;
+
+  const idEl = document.getElementById("modalSuccessTicketId");
+  const clientEl = document.getElementById("modalSuccessClient");
+  const deviceEl = document.getElementById("modalSuccessDevice");
+  const imeiEl = document.getElementById("modalSuccessImei");
+  const costEl = document.getElementById("modalSuccessCost");
+
+  if (idEl) idEl.textContent = ticket.id;
+  if (clientEl) clientEl.textContent = `${ticket.clientName} (${ticket.clientType || 'Público'})`;
+  if (deviceEl) deviceEl.textContent = `${ticket.deviceBrand || ''} ${ticket.deviceModel || ''} ${ticket.deviceStorage ? '• ' + ticket.deviceStorage : ''}`.trim();
+  if (imeiEl) imeiEl.textContent = ticket.serialOrImei || 'N/A';
+  if (costEl) costEl.textContent = `$${ticket.finalCost || 0} USD`;
+
+  modal.classList.remove("hidden");
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeOrderSuccessModal() {
+  const modal = document.getElementById("orderSuccessModal");
+  if (modal) modal.classList.add("hidden");
+  navigateTo("repairs");
+}
+
+function openRepairDetailFromSuccess() {
+  const modal = document.getElementById("orderSuccessModal");
+  if (modal) modal.classList.add("hidden");
+  if (lastCreatedTicket) {
+    openRepairDetail(lastCreatedTicket.id);
+  } else {
+    navigateTo("repairs");
+  }
+}
+
+function createNewOrderFromSuccess() {
+  const modal = document.getElementById("orderSuccessModal");
+  if (modal) modal.classList.add("hidden");
+  navigateTo("new-order");
+  initNewOrderScreen();
+}
+
+function openCreateCustomerModal() {
+  const name = prompt("Nombre y Apellido del Cliente:");
+  if (!name) return;
+  const phone = prompt("Teléfono / WhatsApp:");
+  const dni = prompt("DNI / CUIT:");
+  const type = prompt("Tipo de Cliente (Público / Gremio):", "Público");
+
+  TechAdmin.upsertCustomer({
+    name: name.trim(),
+    phone: phone ? phone.trim() : "",
+    dni: dni ? dni.trim() : "",
+    type: type ? type.trim() : "Público"
+  });
+
+  renderCustomersScreen();
+  updateCustomerDatalists();
+  showToast(`Cliente ${name} guardado correctamente`, "success");
 }
 
 function sendWhatsAppBudget() {
@@ -1653,7 +2709,9 @@ async function renderAdminGremiosUsers() {
   `;
 
   try {
-    const res = await fetch("/api/gremios/users");
+    const res = await fetch("/api/gremios/users", {
+      headers: getAdminAuthHeaders()
+    });
     if (!res.ok) throw new Error("No se pudieron cargar los usuarios de gremios");
     const users = await res.json();
 
@@ -1742,11 +2800,7 @@ async function updateGremioUserStatusAdmin(userId, newStatus, defaultRole = 'gre
 
     const res = await fetch(`/api/gremios/users/${userId}/status`, {
       method: "PUT",
-      headers: { 
-        "Content-Type": "application/json",
-        "X-Admin-Role": "admin",
-        "X-Admin-Auth": "true"
-      },
+      headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ status: newStatus, role: selectedRole })
     });
     if (!res.ok) {
@@ -1765,11 +2819,7 @@ async function updateGremioUserRoleAdmin(userId, newRole, currentStatus = 'activ
   try {
     const res = await fetch(`/api/gremios/users/${userId}/status`, {
       method: "PUT",
-      headers: { 
-        "Content-Type": "application/json",
-        "X-Admin-Role": "admin",
-        "X-Admin-Auth": "true"
-      },
+      headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ status: currentStatus, role: newRole })
     });
     if (!res.ok) {
@@ -1783,6 +2833,607 @@ async function updateGremioUserRoleAdmin(userId, newRole, currentStatus = 'activ
   } catch (err) {
     alert(`Error: ${err.message}`);
   }
+}
+
+// ----------------------------------------------------------------------------
+// IMPRESIÓN DIRECTA DESDE LA FICHA TÉCNICA
+// ----------------------------------------------------------------------------
+function printThermalTicketSelected(width = '80mm') {
+  if (currentDetailTicketId) {
+    TechAdmin.printThermalTicket(currentDetailTicketId, width);
+  }
+}
+
+function printStandardReceiptSelected() {
+  if (currentDetailTicketId) {
+    TechAdmin.printTicketReceipt(currentDetailTicketId);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// GESTIÓN DE COPIAS DE SEGURIDAD (BACKUP & RESTORE)
+// ----------------------------------------------------------------------------
+async function downloadDatabaseBackup() {
+  const btn = document.getElementById("btnDownloadBackup");
+  const originalText = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="inline-block animate-spin mr-1">⏳</span> Generando backup...`;
+  }
+  try {
+    const res = await fetch("/api/backup/download", {
+      headers: getAdminAuthHeaders()
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "No se pudo generar la copia de seguridad.");
+    }
+    const blob = await res.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    const nowStr = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
+    a.download = `wilotech_backup_${nowStr}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+    alert("✅ Copia de seguridad descargada exitosamente en formato ZIP con la base de datos completa.");
+    loadBackupsList();
+  } catch (err) {
+    alert(`Error al descargar respaldo: ${err.message}`);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+}
+
+async function restoreDatabaseBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (!confirm(`⚠️ ATENCIÓN:\n¿Estás seguro de que deseas restaurar la base de datos desde "${file.name}"?\nSe reemplazará la información actual por el contenido del respaldo (se guardará una copia previa de seguridad automática).`)) {
+    event.target.value = "";
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch("/api/backup/restore", {
+      method: "POST",
+      headers: getAdminAuthHeaders(),
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || "Error al restaurar la base de datos.");
+    }
+
+    alert(`🎉 ¡Base de datos restaurada con éxito!\n\nÓrdenes: ${data.stats ? data.stats.tickets : 'OK'}\nClientes Gremio: ${data.stats ? data.stats.gremio_users : 'OK'}\nEl panel se reiniciará para cargar los nuevos datos.`);
+    window.location.reload();
+  } catch (err) {
+    alert(`Error al restaurar: ${err.message}`);
+  } finally {
+    event.target.value = "";
+  }
+}
+
+async function loadBackupsList() {
+  const container = document.getElementById("localBackupsList");
+  if (!container) return;
+
+  try {
+    const res = await fetch("/api/backup/list", {
+      headers: getAdminAuthHeaders()
+    });
+    if (!res.ok) return;
+    const backups = await res.json();
+
+    if (!Array.isArray(backups) || backups.length === 0) {
+      container.innerHTML = `<p class="text-xs font-mono text-slate-500 py-2">Sin respaldos locales todavía. Clic en 'Descargar Backup' para generar el primero.</p>`;
+      return;
+    }
+
+    container.innerHTML = backups.slice(0, 5).map(b => {
+      const dateStr = new Date(b.created_at).toLocaleString("es-AR");
+      return `
+        <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs font-mono">
+          <div class="flex items-center gap-2">
+            <span class="text-cyan-400 font-bold">💾</span>
+            <div>
+              <p class="font-bold text-white">${b.filename}</p>
+              <p class="text-slate-500 text-[10px]">${dateStr} • ${b.size_kb} KB</p>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">GUARDADO</span>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    console.error("Error al cargar lista de backups:", e);
+  }
+}
+
+// ============================================================================
+// 1. LIENZO DE FIRMA DIGITAL TÁCTIL (TOUCH SIGNATURE CANVAS)
+// ============================================================================
+let signatureCtx = null;
+let isDrawingSignature = false;
+let hasSignatureDrawn = false;
+
+function initSignatureCanvas() {
+  const canvas = document.getElementById("signatureCanvas");
+  if (!canvas) return;
+  if (canvas._sigInitialized) return;
+  canvas._sigInitialized = true;
+
+  signatureCtx = canvas.getContext("2d");
+  const container = canvas.parentElement;
+  canvas.width = container ? (container.clientWidth || 320) : 320;
+  canvas.height = 110;
+
+  signatureCtx.lineWidth = 2.5;
+  signatureCtx.lineCap = "round";
+  signatureCtx.lineJoin = "round";
+  signatureCtx.strokeStyle = "#00f5a0";
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height)
+    };
+  }
+
+  function startDraw(e) {
+    e.preventDefault();
+    isDrawingSignature = true;
+    hasSignatureDrawn = true;
+    const pos = getPos(e);
+    signatureCtx.beginPath();
+    signatureCtx.moveTo(pos.x, pos.y);
+  }
+
+  function draw(e) {
+    if (!isDrawingSignature) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    signatureCtx.lineTo(pos.x, pos.y);
+    signatureCtx.stroke();
+  }
+
+  function endDraw(e) {
+    if (!isDrawingSignature) return;
+    isDrawingSignature = false;
+    signatureCtx.closePath();
+    const hidden = document.getElementById("repair-client-signature");
+    if (hidden && hasSignatureDrawn) {
+      hidden.value = canvas.toDataURL("image/png");
+    }
+  }
+
+  canvas.addEventListener("mousedown", startDraw);
+  canvas.addEventListener("mousemove", draw);
+  window.addEventListener("mouseup", endDraw);
+
+  canvas.addEventListener("touchstart", startDraw, { passive: false });
+  canvas.addEventListener("touchmove", draw, { passive: false });
+  window.addEventListener("touchend", endDraw);
+}
+
+function clearSignatureCanvas() {
+  const canvas = document.getElementById("signatureCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  hasSignatureDrawn = false;
+  const hidden = document.getElementById("repair-client-signature");
+  if (hidden) hidden.value = "";
+}
+
+function renderSignaturePreviewOnCanvas(dataUrl) {
+  const canvas = document.getElementById("signatureCanvas");
+  if (!canvas || !dataUrl) return;
+  const ctx = canvas.getContext("2d");
+  const img = new Image();
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    hasSignatureDrawn = true;
+  };
+  img.src = dataUrl;
+}
+
+// ============================================================================
+// 2. CONVERSIÓN EN VIVO USD ↔ ARS & CÁLCULO DE SEÑA / SALDO
+// ============================================================================
+function calculateOrderFinanceTotals() {
+  const costEl = document.getElementById("repair-final-cost");
+  const depositEl = document.getElementById("repair-deposit-amount");
+  const rateEl = document.getElementById("repair-dolar-rate");
+  const balanceEl = document.getElementById("repair-balance-pending");
+
+  const totalCost = parseFloat(costEl?.value) || 0;
+  const depositAmount = parseFloat(depositEl?.value) || 0;
+  const rate = parseFloat(rateEl?.value) || (window.currentDolarRate || 1350);
+
+  const balancePending = Math.max(0, totalCost - depositAmount);
+  if (balanceEl) balanceEl.value = balancePending;
+
+  const costArsEl = document.getElementById("span-cost-ars");
+  const depositArsEl = document.getElementById("span-deposit-ars");
+  const balanceArsEl = document.getElementById("span-balance-ars");
+
+  if (costArsEl) costArsEl.textContent = `~$${Math.round(totalCost * rate).toLocaleString('es-AR')} ARS`;
+  if (depositArsEl) depositArsEl.textContent = `~$${Math.round(depositAmount * rate).toLocaleString('es-AR')} ARS`;
+  if (balanceArsEl) balanceArsEl.textContent = `~$${Math.round(balancePending * rate).toLocaleString('es-AR')} ARS`;
+}
+
+// ============================================================================
+// 3. MODO MOSTRADOR (PRIVACIDAD DE COSTOS Y MÁRGENES ANTE EL CLIENTE)
+// ============================================================================
+function initCounterMode() {
+  if (localStorage.getItem("wilotech_counter_mode") === "1") {
+    document.body.classList.add("counter-mode");
+    const label = document.getElementById("counterModeText");
+    if (label) label.textContent = "Modo Mostrador (ACTIVO)";
+  }
+}
+
+function toggleCounterMode() {
+  document.body.classList.toggle("counter-mode");
+  const isCounter = document.body.classList.contains("counter-mode");
+  localStorage.setItem("wilotech_counter_mode", isCounter ? "1" : "0");
+  const label = document.getElementById("counterModeText");
+  if (label) label.textContent = isCounter ? "Modo Mostrador (ACTIVO)" : "Modo Mostrador";
+  showToast(isCounter ? "Modo Mostrador activado: Costos de repuestos y márgenes ocultos" : "Modo Mostrador desactivado", "info");
+}
+
+// ============================================================================
+// 4. ESCÁNER QR POR CÁMARA (APUNTAR Y ABRIR REPARACIÓN INSTANTÁNEA)
+// ============================================================================
+let qrScannerStream = null;
+let qrScannerAnimFrame = null;
+
+async function openQRScannerModal() {
+  const modal = document.getElementById("qrScannerModal");
+  const video = document.getElementById("qrScannerVideo");
+  const loading = document.getElementById("qrScannerLoading");
+  const status = document.getElementById("qrScannerStatus");
+  if (!modal || !video) return;
+
+  modal.classList.remove("hidden");
+  if (loading) loading.classList.remove("hidden");
+  if (status) status.textContent = "Iniciando cámara trasera...";
+
+  try {
+    qrScannerStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } }
+    });
+    video.srcObject = qrScannerStream;
+    await video.play();
+    if (loading) loading.classList.add("hidden");
+    if (status) status.textContent = "Alinee el código QR de la etiqueta térmica dentro del recuadro.";
+
+    scanQRFrame();
+  } catch (err) {
+    console.warn("No se pudo acceder a la cámara:", err);
+    if (loading) loading.classList.add("hidden");
+    if (status) status.textContent = "Cámara no disponible (" + err.message + "). Ingrese el código manualmente.";
+  }
+}
+
+function closeQRScannerModal() {
+  const modal = document.getElementById("qrScannerModal");
+  if (modal) modal.classList.add("hidden");
+
+  if (qrScannerStream) {
+    qrScannerStream.getTracks().forEach(track => track.stop());
+    qrScannerStream = null;
+  }
+  if (qrScannerAnimFrame) {
+    cancelAnimationFrame(qrScannerAnimFrame);
+    qrScannerAnimFrame = null;
+  }
+}
+
+async function scanQRFrame() {
+  const video = document.getElementById("qrScannerVideo");
+  if (!video || !qrScannerStream) return;
+
+  if (window.BarcodeDetector && video.readyState >= 2) {
+    try {
+      const barcodeDetector = new BarcodeDetector({ formats: ["qr_code", "code_128", "ean_13"] });
+      const barcodes = await barcodeDetector.detect(video);
+      if (barcodes.length > 0) {
+        const rawValue = barcodes[0].rawValue;
+        handleDetectedQRValue(rawValue);
+        return;
+      }
+    } catch (e) {}
+  }
+
+  qrScannerAnimFrame = requestAnimationFrame(scanQRFrame);
+}
+
+function handleDetectedQRValue(rawValue) {
+  if (!rawValue) return;
+  let ticketId = null;
+  const match = rawValue.match(/WT-\d{4,6}/i);
+  if (match) {
+    ticketId = match[0].toUpperCase();
+  } else if (rawValue.includes("ticket=")) {
+    const parts = rawValue.split("ticket=");
+    if (parts[1]) ticketId = parts[1].split("&")[0].trim().toUpperCase();
+  }
+
+  if (ticketId) {
+    closeQRScannerModal();
+    showToast(`¡Código QR detectado: #${ticketId}!`, "success");
+    openRepairDetail(ticketId);
+  } else {
+    submitManualQrSearch(rawValue);
+  }
+}
+
+function submitManualQrSearch(manualVal) {
+  const input = document.getElementById("manualQrInput");
+  const query = (manualVal || (input ? input.value : "")).trim();
+  if (!query) return;
+
+  const clean = query.toUpperCase();
+  const ticket = TechAdmin.getTicketById(clean) || TechAdmin.getAllTickets().find(t => (t.serialOrImei || "").includes(query));
+  if (ticket) {
+    closeQRScannerModal();
+    if (input) input.value = "";
+    showToast(`¡Orden encontrada: #${ticket.id}!`, "success");
+    openRepairDetail(ticket.id);
+  } else {
+    showToast(`No se encontró ninguna orden para "${query}"`, "warning");
+  }
+}
+
+// ============================================================================
+// 5. FLUJO DE GARANTÍA & REINGRESO TÉCNICO (RMA A COSTO $0)
+// ============================================================================
+let rmaTargetTicket = null;
+
+function openRMAModal(ticketId) {
+  const t = TechAdmin.getTicketById(ticketId);
+  if (!t) {
+    showToast("No se encontró la orden técnica", "warning");
+    return;
+  }
+  rmaTargetTicket = t;
+
+  const modal = document.getElementById("rmaModal");
+  if (!modal) return;
+
+  const originalBadge = document.getElementById("rmaOriginalTicketBadge");
+  const clientSpan = document.getElementById("rmaClientSpan");
+  const deviceSpan = document.getElementById("rmaDeviceSpan");
+  const reasonInput = document.getElementById("rmaReasonInput");
+
+  if (originalBadge) originalBadge.textContent = `#${t.id}`;
+  if (clientSpan) clientSpan.textContent = `${t.clientName} (${t.clientPhone || ''})`;
+  if (deviceSpan) deviceSpan.textContent = `${t.deviceBrand || ''} ${t.deviceModel || ''} • IMEI: ${t.serialOrImei || 'N/A'}`;
+  if (reasonInput) reasonInput.value = "";
+
+  modal.classList.remove("hidden");
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeRMAModal() {
+  const modal = document.getElementById("rmaModal");
+  if (modal) modal.classList.add("hidden");
+  rmaTargetTicket = null;
+}
+
+function submitRMAOrder() {
+  if (!rmaTargetTicket) return;
+  const reason = (document.getElementById("rmaReasonInput")?.value || "").trim();
+  if (!reason) {
+    alert("Por favor detalla el motivo del reclamo o falla reincidente para la garantía.");
+    return;
+  }
+
+  const rmaData = {
+    clientName: rmaTargetTicket.clientName,
+    clientType: rmaTargetTicket.clientType,
+    clientDni: rmaTargetTicket.clientDni,
+    clientPhone: rmaTargetTicket.clientPhone,
+    clientAddress: rmaTargetTicket.clientAddress,
+    deviceType: rmaTargetTicket.deviceType,
+    deviceBrand: rmaTargetTicket.deviceBrand,
+    deviceModel: rmaTargetTicket.deviceModel,
+    deviceColor: rmaTargetTicket.deviceColor,
+    deviceStorage: rmaTargetTicket.deviceStorage,
+    serialOrImei: rmaTargetTicket.serialOrImei,
+    deviceLockType: rmaTargetTicket.deviceLockType,
+    deviceLockCode: rmaTargetTicket.deviceLockCode,
+    deviceLockPattern: rmaTargetTicket.deviceLockPattern,
+    deviceChecklist: rmaTargetTicket.deviceChecklist ? { ...rmaTargetTicket.deviceChecklist } : {},
+    deviceConditionNotes: `[REINGRESO POR GARANTÍA DE #${rmaTargetTicket.id}] ${rmaTargetTicket.deviceConditionNotes || ''}`,
+    issueDescription: `[GARANTÍA RMA s/ #${rmaTargetTicket.id}] ${reason}`,
+    status: "received",
+    technician: rmaTargetTicket.technician || "Laboratorio WILOTECH",
+    technicianNotes: `Reingreso por garantía vinculado a la orden original #${rmaTargetTicket.id}. Motivo reportado: ${reason}`,
+    finalCost: 0,
+    partCost: 0,
+    depositAmount: 0,
+    paymentMethod: "Garantía RMA ($0)",
+    balancePending: 0,
+    warranty: "Garantía de reparación previa (30 días)",
+    isRma: true,
+    originalTicketId: rmaTargetTicket.id,
+    rmaReason: reason
+  };
+
+  const newTicket = TechAdmin.createNewTicket(rmaData);
+  closeRMAModal();
+  showToast(`¡Reingreso RMA #${newTicket.id} creado con éxito ($0 USD)!`, "success");
+  openRepairDetail(newTicket.id);
+}
+
+// ============================================================================
+// 6. PERFIL DINÁMICO DE EMPRESA Y CONFIGURACIÓN DE COMPROBANTES
+// ============================================================================
+window.currentWorkshopSettings = {
+  business_name: "WILOTECH",
+  business_subtitle: "Laboratorio de Microelectrónica & Reparaciones",
+  business_address: "Colón 1475, Mar del Plata, Bs. As., Argentina",
+  business_phone: "+54 223 591-4163",
+  business_terms: "CONDICIONES GENERALES: El cliente declara conocer y aceptar que equipos con sulfato, daño por líquidos o golpes pueden presentar fallas ocultas preexistentes. Transcurridos 60 días desde la notificación de finalización, los equipos no retirados devengarán costos de guarda o pasarán a desarme de acuerdo a la legislación vigente. Garantía de 30 días válida únicamente sobre componentes reparados.",
+  dolar_rate: 1350
+};
+window.currentDolarRate = 1350;
+
+async function loadWorkshopBusinessSettings() {
+  try {
+    const res = await fetch("/api/settings", { headers: getAdminAuthHeaders() });
+    if (res.ok) {
+      const data = await res.json();
+      window.currentWorkshopSettings = { ...window.currentWorkshopSettings, ...data };
+      if (data.dolar_rate) window.currentDolarRate = parseFloat(data.dolar_rate);
+    }
+  } catch (e) {
+    const saved = localStorage.getItem("wilotech_workshop_settings");
+    if (saved) {
+      try {
+        window.currentWorkshopSettings = JSON.parse(saved);
+        if (window.currentWorkshopSettings.dolar_rate) window.currentDolarRate = parseFloat(window.currentWorkshopSettings.dolar_rate);
+      } catch (err) {}
+    }
+  }
+
+  const s = window.currentWorkshopSettings;
+  const nameInput = document.getElementById("setting-business-name");
+  const subInput = document.getElementById("setting-business-subtitle");
+  const phoneInput = document.getElementById("setting-business-phone");
+  const rateInput = document.getElementById("setting-dolar-rate");
+  const addrInput = document.getElementById("setting-business-address");
+  const termsInput = document.getElementById("setting-business-terms");
+
+  if (nameInput && s.business_name) nameInput.value = s.business_name;
+  if (subInput && s.business_subtitle) subInput.value = s.business_subtitle;
+  if (phoneInput && s.business_phone) phoneInput.value = s.business_phone;
+  if (rateInput && s.dolar_rate) rateInput.value = s.dolar_rate;
+  if (addrInput && s.business_address) addrInput.value = s.business_address;
+  if (termsInput && s.business_terms) termsInput.value = s.business_terms;
+
+  const headerDolar = document.getElementById("headerDolarRate");
+  if (headerDolar) headerDolar.textContent = `$${s.dolar_rate || 1350}`;
+
+  const repairDolar = document.getElementById("repair-dolar-rate");
+  if (repairDolar) repairDolar.value = s.dolar_rate || 1350;
+
+  calculateOrderFinanceTotals();
+}
+
+async function saveWorkshopBusinessSettings() {
+  const payload = {
+    business_name: document.getElementById("setting-business-name")?.value.trim() || "WILOTECH",
+    business_subtitle: document.getElementById("setting-business-subtitle")?.value.trim() || "Laboratorio de Microelectrónica & Reparaciones",
+    business_phone: document.getElementById("setting-business-phone")?.value.trim() || "+54 223 591-4163",
+    dolar_rate: parseFloat(document.getElementById("setting-dolar-rate")?.value) || 1350,
+    business_address: document.getElementById("setting-business-address")?.value.trim() || "Colón 1475, Mar del Plata, Bs. As., Argentina",
+    business_terms: document.getElementById("setting-business-terms")?.value.trim() || ""
+  };
+
+  window.currentWorkshopSettings = payload;
+  window.currentDolarRate = payload.dolar_rate;
+  localStorage.setItem("wilotech_workshop_settings", JSON.stringify(payload));
+
+  const headerDolar = document.getElementById("headerDolarRate");
+  if (headerDolar) headerDolar.textContent = `$${payload.dolar_rate}`;
+  const repairDolar = document.getElementById("repair-dolar-rate");
+  if (repairDolar) repairDolar.value = payload.dolar_rate;
+
+  try {
+    const res = await fetch("/api/settings", {
+      method: "POST",
+      headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      showToast("¡Configuración de la empresa y comprobantes guardada exitosamente!", "success");
+    } else {
+      showToast("Guardado en almacenamiento local", "info");
+    }
+  } catch (err) {
+    showToast("Guardado en almacenamiento local", "info");
+  }
+}
+
+// ============================================================================
+// 7. DESCUENTO AUTOMÁTICO DE INVENTARIO AL ASIGNAR REPUESTO
+// ============================================================================
+function addOrderPartItem() {
+  if (!currentDetailTicketId) return;
+  const ticket = TechAdmin.getTicketById(currentDetailTicketId);
+  if (!ticket) return;
+
+  const partName = prompt("Nombre del repuesto o componente utilizado:");
+  if (!partName || !partName.trim()) return;
+
+  const partCostStr = prompt("Costo del repuesto en USD (ej: 45):", "0");
+  const partCost = parseFloat(partCostStr) || 0;
+
+  if (!Array.isArray(ticket.partsUsed)) ticket.partsUsed = [];
+  const partEntry = `${partName.trim()} - $${partCost} USD`;
+  ticket.partsUsed.push(partEntry);
+  ticket.partCost = (parseFloat(ticket.partCost) || 0) + partCost;
+
+  const deducted = TechAdmin.deductPartsFromInventory([partName]);
+  if (deducted && deducted.length > 0) {
+    showToast(`Repuesto agregado y descontado de inventario (Stock restante: ${deducted[0].remaining} un.)`, "success");
+  } else {
+    showToast(`Repuesto agregado a la orden técnica`, "success");
+  }
+
+  TechAdmin.updateTicket(ticket.id, {
+    partsUsed: ticket.partsUsed,
+    partCost: ticket.partCost
+  });
+
+  renderDetailParts(ticket);
+  openRepairDetail(ticket.id);
+}
+
+// Exponer funciones globalmente para llamadas desde admin.html
+window.initSignatureCanvas = initSignatureCanvas;
+window.clearSignatureCanvas = clearSignatureCanvas;
+window.calculateOrderFinanceTotals = calculateOrderFinanceTotals;
+window.toggleCounterMode = toggleCounterMode;
+window.openQRScannerModal = openQRScannerModal;
+window.closeQRScannerModal = closeQRScannerModal;
+window.submitManualQrSearch = submitManualQrSearch;
+window.openRMAModal = openRMAModal;
+window.closeRMAModal = closeRMAModal;
+window.submitRMAOrder = submitRMAOrder;
+window.loadWorkshopBusinessSettings = loadWorkshopBusinessSettings;
+window.saveWorkshopBusinessSettings = saveWorkshopBusinessSettings;
+window.addOrderPartItem = addOrderPartItem;
+window.toggleNavDropdown = toggleNavDropdown;
+window.selectNavDropdown = selectNavDropdown;
+window.closeNavDropdown = closeNavDropdown;
+window.updateNavDropdownUI = updateNavDropdownUI;
+window.navigateTo = navigateTo;
+
+// Inicialización de modo mostrador y configuraciones al cargar el script
+try {
+  TechAdmin.init();
+  initCounterMode();
+  loadWorkshopBusinessSettings();
+} catch (e) {
+  console.warn("Inicialización diferida de TechAdmin:", e);
 }
 
 

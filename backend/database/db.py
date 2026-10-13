@@ -5,6 +5,7 @@ from typing import List, Optional, Dict, Any, Tuple
 from backend.config import DB_PATH, encrypt_password, decrypt_password
 from backend.database.models import DistributorConfig, DistributorResponse
 from backend.database.supabase_db import is_supabase_enabled, save_gremio_user_supabase
+from backend.services.security_service import hash_password, verify_password
 
 def get_connection():
     conn = sqlite3.connect(DB_PATH, timeout=20.0)
@@ -132,6 +133,23 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tickets_dni ON repair_tickets(client_dni)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tickets_imei ON repair_tickets(serial_or_imei)")
 
+    # Migraciones para órdenes de servicio (Señas, moneda, firma, RMA)
+    for col_def in [
+        ("deposit_amount", "REAL DEFAULT 0.0"),
+        ("payment_method", "TEXT DEFAULT 'Efectivo'"),
+        ("balance_pending", "REAL DEFAULT 0.0"),
+        ("currency", "TEXT DEFAULT 'USD'"),
+        ("currency_rate", "REAL DEFAULT 1350.0"),
+        ("client_signature", "TEXT DEFAULT ''"),
+        ("is_rma", "INTEGER DEFAULT 0"),
+        ("original_ticket_id", "TEXT DEFAULT ''"),
+        ("rma_reason", "TEXT DEFAULT ''")
+    ]:
+        try:
+            cursor.execute(f"ALTER TABLE repair_tickets ADD COLUMN {col_def[0]} {col_def[1]}")
+        except sqlite3.OperationalError:
+            pass
+
     # Tabla de Usuarios de Gremios
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS gremio_users (
@@ -206,8 +224,18 @@ def init_db():
         )
         """)
         now_str = datetime.now().isoformat()
-        cursor.execute("INSERT OR IGNORE INTO system_settings (setting_key, setting_value, updated_at) VALUES ('admin_email', 'wil_18_22@hotmail.com', ?)", (now_str,))
-        cursor.execute("INSERT OR IGNORE INTO system_settings (setting_key, setting_value, updated_at) VALUES ('admin_password', 'admin123', ?)", (now_str,))
+        default_settings = [
+            ('admin_email', 'wil_18_22@hotmail.com'),
+            ('admin_password', 'admin123'),
+            ('business_name', 'WILOTECH'),
+            ('business_subtitle', 'Laboratorio de Microelectrónica & Reparaciones'),
+            ('business_address', 'Colón 1475, Mar del Plata, Bs. As., Argentina'),
+            ('business_phone', '+54 223 591-4163'),
+            ('business_terms', 'CONDICIONES GENERALES: El cliente declara conocer y aceptar que equipos con sulfato, daño por líquidos o golpes pueden presentar fallas ocultas preexistentes. Transcurridos 60 días desde la notificación de finalización, los equipos no retirados devengarán costos de guarda o pasarán a desarme de acuerdo a la legislación vigente. Garantía de 30 días válida únicamente sobre componentes reparados.'),
+            ('dolar_rate', '1350')
+        ]
+        for skey, sval in default_settings:
+            cursor.execute("INSERT OR IGNORE INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, ?)", (skey, sval, now_str))
     except Exception:
         cursor.execute("DROP TABLE IF EXISTS system_settings")
         cursor.execute("""
@@ -218,8 +246,18 @@ def init_db():
         )
         """)
         now_str = datetime.now().isoformat()
-        cursor.execute("INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES ('admin_email', 'wil_18_22@hotmail.com', ?)", (now_str,))
-        cursor.execute("INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES ('admin_password', 'admin123', ?)", (now_str,))
+        default_settings = [
+            ('admin_email', 'wil_18_22@hotmail.com'),
+            ('admin_password', 'admin123'),
+            ('business_name', 'WILOTECH'),
+            ('business_subtitle', 'Laboratorio de Microelectrónica & Reparaciones'),
+            ('business_address', 'Colón 1475, Mar del Plata, Bs. As., Argentina'),
+            ('business_phone', '+54 223 591-4163'),
+            ('business_terms', 'CONDICIONES GENERALES: El cliente declara conocer y aceptar que equipos con sulfato, daño por líquidos o golpes pueden presentar fallas ocultas preexistentes. Transcurridos 60 días desde la notificación de finalización, los equipos no retirados devengarán costos de guarda o pasarán a desarme de acuerdo a la legislación vigente. Garantía de 30 días válida únicamente sobre componentes reparados.'),
+            ('dolar_rate', '1350')
+        ]
+        for skey, sval in default_settings:
+            cursor.execute("INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, ?)", (skey, sval, now_str))
 
     # Precargar ítems iniciales de mano de obra de gremio si la tabla está vacía o faltan modelos
     cursor.execute("SELECT COUNT(*) FROM gremio_price_list")
@@ -711,7 +749,16 @@ def ticket_row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
         "technicianNotes": d.get("technician_notes") or "",
         "partsUsed": parts,
         "finalCost": d.get("final_cost") or 0.0,
-        "warranty": d.get("warranty") or "90 días de garantía por escrito"
+        "warranty": d.get("warranty") or "30 días de garantía por escrito",
+        "depositAmount": float(d.get("deposit_amount") or 0.0),
+        "paymentMethod": d.get("payment_method") or "Efectivo",
+        "balancePending": float(d.get("balance_pending") or (float(d.get("final_cost") or 0.0) - float(d.get("deposit_amount") or 0.0))),
+        "currency": d.get("currency") or "USD",
+        "currencyRate": float(d.get("currency_rate") or 1350.0),
+        "clientSignature": d.get("client_signature") or "",
+        "isRma": bool(d.get("is_rma")),
+        "originalTicketId": d.get("original_ticket_id") or "",
+        "rmaReason": d.get("rma_reason") or ""
     }
 
 def upsert_repair_ticket(t: Dict[str, Any]) -> bool:
@@ -722,6 +769,17 @@ def upsert_repair_ticket(t: Dict[str, Any]) -> bool:
         parts_str = json.dumps(t.get("partsUsed") or [])
         now_str = datetime.now().isoformat()
 
+        final_cost = float(t.get("finalCost") or 0.0)
+        deposit_amount = float(t.get("depositAmount") or 0.0)
+        balance_pending = float(t.get("balancePending") if t.get("balancePending") is not None else max(0.0, final_cost - deposit_amount))
+        payment_method = str(t.get("paymentMethod") or "Efectivo")
+        currency = str(t.get("currency") or "USD")
+        currency_rate = float(t.get("currencyRate") or 1350.0)
+        client_signature = str(t.get("clientSignature") or "")
+        is_rma = 1 if t.get("isRma") else 0
+        original_ticket_id = str(t.get("originalTicketId") or "")
+        rma_reason = str(t.get("rmaReason") or "")
+
         cursor.execute("""
         INSERT INTO repair_tickets (
             id, client_name, client_type, client_dni, client_phone, client_address,
@@ -729,8 +787,10 @@ def upsert_repair_ticket(t: Dict[str, Any]) -> bool:
             serial_or_imei, device_lock_type, device_lock_code, device_checklist,
             device_condition_notes, issue_description, status, status_step,
             date_received, technician, technician_notes, parts_used, final_cost,
-            warranty, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            warranty, updated_at,
+            deposit_amount, payment_method, balance_pending, currency, currency_rate,
+            client_signature, is_rma, original_ticket_id, rma_reason
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             client_name=excluded.client_name,
             client_type=excluded.client_type,
@@ -756,7 +816,16 @@ def upsert_repair_ticket(t: Dict[str, Any]) -> bool:
             parts_used=excluded.parts_used,
             final_cost=excluded.final_cost,
             warranty=excluded.warranty,
-            updated_at=excluded.updated_at
+            updated_at=excluded.updated_at,
+            deposit_amount=excluded.deposit_amount,
+            payment_method=excluded.payment_method,
+            balance_pending=excluded.balance_pending,
+            currency=excluded.currency,
+            currency_rate=excluded.currency_rate,
+            client_signature=excluded.client_signature,
+            is_rma=excluded.is_rma,
+            original_ticket_id=excluded.original_ticket_id,
+            rma_reason=excluded.rma_reason
         """, (
             t.get("id"),
             t.get("clientName"),
@@ -781,14 +850,63 @@ def upsert_repair_ticket(t: Dict[str, Any]) -> bool:
             t.get("technician"),
             t.get("technicianNotes"),
             parts_str,
-            float(t.get("finalCost") or 0.0),
+            final_cost,
             t.get("warranty"),
-            now_str
+            now_str,
+            deposit_amount,
+            payment_method,
+            balance_pending,
+            currency,
+            currency_rate,
+            client_signature,
+            is_rma,
+            original_ticket_id,
+            rma_reason
         ))
         conn.commit()
         return True
     except Exception as e:
         print(f"[db.py] Error upserting ticket: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_all_system_settings() -> Dict[str, str]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT setting_key, setting_value FROM system_settings")
+        rows = cursor.fetchall()
+        defaults = {
+            "business_name": "WILOTECH",
+            "business_subtitle": "Laboratorio de Microelectrónica & Reparaciones",
+            "business_address": "Colón 1475, Mar del Plata, Bs. As., Argentina",
+            "business_phone": "+54 223 591-4163",
+            "business_terms": "CONDICIONES GENERALES: El cliente declara conocer y aceptar que equipos con sulfato, daño por líquidos o golpes pueden presentar fallas ocultas preexistentes. Transcurridos 60 días desde la notificación de finalización, los equipos no retirados devengarán costos de guarda o pasarán a desarme de acuerdo a la legislación vigente. Garantía de 30 días válida únicamente sobre componentes reparados.",
+            "dolar_rate": "1350"
+        }
+        result = dict(defaults)
+        for r in rows:
+            result[r["setting_key"]] = r["setting_value"]
+        return result
+    finally:
+        conn.close()
+
+def save_system_settings(settings: Dict[str, Any]) -> bool:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        now_str = datetime.now().isoformat()
+        for k, v in settings.items():
+            cursor.execute("""
+            INSERT INTO system_settings (setting_key, setting_value, updated_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(setting_key) DO UPDATE SET setting_value=excluded.setting_value, updated_at=excluded.updated_at
+            """, (str(k), str(v), now_str))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"[db.py] Error saving settings: {e}")
         return False
     finally:
         conn.close()
@@ -844,24 +962,12 @@ import hashlib
 def hash_gremio_password(plain_text: str) -> str:
     if not plain_text:
         return ""
-    return hashlib.sha256(f"wilotech_gremio_salt_2026_{plain_text}".encode()).hexdigest()
+    return hash_password(plain_text)
 
 def verify_gremio_password(plain_password: str, stored_hash: str) -> bool:
     if not plain_password or not stored_hash:
         return False
-    # 1. Verificación SHA256 determinista
-    if hash_gremio_password(plain_password) == stored_hash:
-        return True
-    # 2. Verificación Fernet fallback para usuarios creados anteriormente
-    try:
-        if decrypt_password(stored_hash) == plain_password:
-            return True
-    except Exception:
-        pass
-    # 3. Verificación plano fallback
-    if plain_password == stored_hash:
-        return True
-    return False
+    return verify_password(plain_password, stored_hash)
 
 def create_gremio_user(name: str, email: str, phone: str, password_plain: str, role: str = "gremio") -> Optional[Dict[str, Any]]:
     conn = get_connection()
@@ -1441,12 +1547,15 @@ def set_system_setting(key: str, value: str) -> bool:
 def verify_admin_login(username_or_email: str, password_plain: str) -> bool:
     clean_user = username_or_email.strip().lower()
     admin_email = get_system_setting("admin_email", "wil_18_22@hotmail.com").lower()
-    current_pw = get_system_setting("admin_password", "admin123")
+    stored_pw = get_system_setting("admin_password", "admin123")
 
     # Aceptar usuario admin, wilotech o el correo wil_18_22@hotmail.com
     valid_users = {"admin", "wilotech", admin_email, "wil_18_22@hotmail.com"}
     if clean_user in valid_users:
-        if password_plain == current_pw or password_plain == "admin123" or password_plain == "wilotech2026":
+        if verify_password(password_plain, stored_pw) or (stored_pw == "admin123" and password_plain in ["admin123", "wilotech2026"]):
+            # Auto-actualizar a hash seguro bcrypt si estaba en texto plano
+            if not str(stored_pw).startswith("$2"):
+                set_system_setting("admin_password", hash_password(password_plain))
             return True
     return False
 
@@ -1455,7 +1564,8 @@ def reset_admin_password_by_email(email: str, new_password_plain: str) -> bool:
     admin_email = get_system_setting("admin_email", "wil_18_22@hotmail.com").lower()
     
     if clean_email in [admin_email, "wil_18_22@hotmail.com"]:
-        return set_system_setting("admin_password", new_password_plain.strip())
+        hashed_pw = hash_password(new_password_plain.strip())
+        return set_system_setting("admin_password", hashed_pw)
     return False
 
 

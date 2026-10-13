@@ -46,6 +46,7 @@ class PartResult(BaseModel):
     exchange_rate_used: Optional[float] = None
     relevance_score: Optional[int] = None
     match_tier: Optional[str] = None  # "exact", "high", "medium"
+    quality: Optional[str] = "Estándar"  # "Original / Service Pack", "OLED", "Incell / Copia", "Estándar"
 
 class SearchResponse(BaseModel):
     query: str

@@ -182,11 +182,12 @@
         const data = await resp.json();
 
         if (resp.ok && data.status === "ok") {
-          // Guardar sesión en localStorage
+          // Guardar sesión y token JWT en localStorage
           localStorage.setItem("wilotech_auth", JSON.stringify({
             loggedIn: true,
             user: user,
             role: "admin",
+            token: data.token,
             loginTime: new Date().toISOString()
           }));
           window.location.href = "/admin.html";
@@ -195,17 +196,6 @@
           alertBox.classList.remove("hidden");
         }
       } catch (err) {
-        // Fallback para modo offline local si coincide con las credenciales maestras
-        if ((user === "admin" || user === "wil_18_22@hotmail.com") && (pass === "admin123" || pass === "wilotech2026")) {
-          localStorage.setItem("wilotech_auth", JSON.stringify({
-            loggedIn: true,
-            user: user,
-            role: "admin",
-            loginTime: new Date().toISOString()
-          }));
-          window.location.href = "/admin.html";
-          return;
-        }
         alertText.innerText = "Error de conexión con el servidor de autenticación.";
         alertBox.classList.remove("hidden");
       } finally {
@@ -214,6 +204,8 @@
         lucide.createIcons();
       }
     }
+
+    let currentRecoveryToken = "";
 
     async function handleRecover(e) {
       e.preventDefault();
@@ -233,8 +225,9 @@
           const data = await resp.json();
 
           if (resp.ok && data.authorized) {
+            currentRecoveryToken = data.recovery_token || "";
             alertBox.className = "p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2";
-            alertBox.innerText = "Correo autorizado. Ingresá tu nueva clave a continuación.";
+            alertBox.innerText = "Correo autorizado. Ingresá tu nueva clave a continuación (mínimo 6 caracteres).";
             alertBox.classList.remove("hidden");
             document.getElementById("newPasswordGroup").classList.remove("hidden");
             btn.innerText = "RESTABLECER CONTRASEÑA";
@@ -253,8 +246,10 @@
         }
       } else if (stepRecover === 2) {
         const newPassword = document.getElementById("newPassword").value.trim();
-        if (!newPassword || newPassword.length < 4) {
-          alertBox.innerText = "La contraseña debe tener al menos 4 caracteres.";
+        if (!newPassword || newPassword.length < 6) {
+          alertBox.className = "p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2";
+          alertBox.innerText = "La contraseña debe tener al menos 6 caracteres por seguridad.";
+          alertBox.classList.remove("hidden");
           return;
         }
         btn.disabled = true;
@@ -263,7 +258,7 @@
           const resp = await fetch("/api/admin/reset-password", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, new_password: newPassword })
+            body: JSON.stringify({ email, new_password: newPassword, recovery_token: currentRecoveryToken })
           });
           const data = await resp.json();
 
@@ -273,10 +268,14 @@
             alertBox.classList.remove("hidden");
             setTimeout(() => toggleRecoverModal(false), 2000);
           } else {
+            alertBox.className = "p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2";
             alertBox.innerText = data.detail || "No se pudo actualizar la clave.";
+            alertBox.classList.remove("hidden");
           }
         } catch (err) {
+          alertBox.className = "p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2";
           alertBox.innerText = "Error de conexión.";
+          alertBox.classList.remove("hidden");
         } finally {
           btn.disabled = false;
         }

@@ -90,8 +90,8 @@ const TechTracker = (function () {
   }
 
   async function performSearch(query) {
-    if (!query) {
-      if (typeof showToast === "function") showToast("Por favor ingresa un número de ticket, teléfono o serial.", "warning");
+    if (!query || query.trim().length < 3) {
+      if (typeof showToast === "function") showToast("Por favor ingresa al menos 3 caracteres (número de ticket, teléfono o serial).", "warning");
       return;
     }
 

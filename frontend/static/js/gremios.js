@@ -54,36 +54,20 @@ function isWilotechAdmin() {
 
 function getAdminAuthHeaders() {
   const headers = { "Content-Type": "application/json" };
-  if (isWilotechAdmin()) {
-    headers["X-Admin-Role"] = "admin";
-    headers["X-Admin-Auth"] = "true";
+  // 1. Intentar token de admin del taller desde wilotech_auth
+  try {
+    const adminAuth = JSON.parse(localStorage.getItem("wilotech_auth") || "{}");
+    if (adminAuth && adminAuth.token) {
+      headers["Authorization"] = `Bearer ${adminAuth.token}`;
+      return headers;
+    }
+  } catch (e) {}
+
+  // 2. Intentar token de sesión gremio activa
+  if (currentGremioUser && currentGremioUser.token) {
+    headers["Authorization"] = `Bearer ${currentGremioUser.token}`;
   }
   return headers;
-}
-
-function getLocalGremioAccounts() {
-  try {
-    const raw = localStorage.getItem("local_gremio_accounts");
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveLocalGremioAccount(user, password) {
-  try {
-    const accounts = getLocalGremioAccounts();
-    const existingIndex = accounts.findIndex(a => a.user.email.toLowerCase() === user.email.toLowerCase());
-    const accountData = { user, password, updated_at: new Date().toISOString() };
-    if (existingIndex >= 0) {
-      accounts[existingIndex] = accountData;
-    } else {
-      accounts.push(accountData);
-    }
-    localStorage.setItem("local_gremio_accounts", JSON.stringify(accounts));
-  } catch (e) {
-    console.warn("Could not save local account backup", e);
-  }
 }
 
 function checkGremioSession() {
@@ -212,6 +196,9 @@ async function handleGremioLogin(event) {
       }
       if (data.user) {
         userLoggedIn = data.user;
+        if (data.token) {
+          userLoggedIn.token = data.token;
+        }
       }
     } catch (networkErr) {
       if (networkErr.message && (networkErr.message.includes("PENDIENTE DE ALTA") || networkErr.message.includes("desactivada"))) {
@@ -226,7 +213,6 @@ async function handleGremioLogin(event) {
     }
 
     currentGremioUser = userLoggedIn;
-    saveLocalGremioAccount(userLoggedIn, password);
     localStorage.setItem("gremio_user", JSON.stringify(userLoggedIn));
     showToast(`Bienvenido/a ${userLoggedIn.name}`, "success");
     renderPortalView();

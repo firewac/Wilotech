@@ -1,12 +1,26 @@
+// Helper de cabeceras seguras con token JWT para administración
+function getAdminAuthHeaders(customHeaders = {}) {
+    const headers = { ...customHeaders };
+    try {
+        const auth = JSON.parse(localStorage.getItem("wilotech_auth") || "{}");
+        if (auth && auth.token) {
+            headers["Authorization"] = `Bearer ${auth.token}`;
+        }
+    } catch (e) {}
+    return headers;
+}
+
 // Estado global de la aplicación
 const state = {
     distributors: [],
+    distributorHealth: {},
     searchResults: null,
     currentQuery: "",
     isLoading: false,
     selectedDistributorIds: new Set(),
     dolarBlueRate: null,
     refineFilter: "",
+    qualityFilter: "all",
     stockOnlyFilter: false,
     sortBy: "price_asc",
 };
@@ -30,6 +44,22 @@ async function initApp() {
     await loadDistributors();
     await loadHistory();
     setupEventListeners();
+
+    // Auto-búsqueda inmediata si viene con parámetro ?q=... (ej: desde control de stock en panel de taller)
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryParam = urlParams.get("q");
+        if (queryParam && queryParam.trim()) {
+            const cleanQ = queryParam.trim();
+            const input = document.getElementById("search-input");
+            const clearBtn = document.getElementById("clear-btn");
+            if (input) input.value = cleanQ;
+            if (clearBtn) clearBtn.classList.remove("hidden");
+            executeSearch(cleanQ);
+        }
+    } catch (e) {
+        console.warn("Error al procesar query de URL:", e);
+    }
 }
 
 // Configuración de listeners
@@ -119,6 +149,44 @@ function setupEventListeners() {
         });
     }
 
+    // Chips de filtrado interactivo por Calidad de repuesto
+    document.querySelectorAll(".quality-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+            document.querySelectorAll(".quality-chip").forEach(c => {
+                c.classList.remove("active", "bg-cyan-500/20", "border-cyan-500/50", "text-cyan-300");
+                c.classList.add("bg-[#0b101c]", "border-slate-800");
+            });
+            chip.classList.add("active", "bg-cyan-500/20", "border-cyan-500/50", "text-cyan-300");
+            chip.classList.remove("bg-[#0b101c]", "border-slate-800");
+            state.qualityFilter = chip.getAttribute("data-quality") || "all";
+            applyClientFiltersAndRender();
+        });
+    });
+
+    // Botón para refrescar/vaciar caché en memoria
+    const clearCacheBtn = document.getElementById("btn-clear-cache");
+    if (clearCacheBtn) {
+        clearCacheBtn.addEventListener("click", async () => {
+            try {
+                clearCacheBtn.disabled = true;
+                clearCacheBtn.classList.add("opacity-50");
+                const res = await fetch("/api/search/clear-cache", { method: "POST" });
+                if (res.ok) {
+                    showToast("Caché de búsquedas vaciada exitosamente", "success");
+                    if (state.currentQuery) {
+                        executeSearch(state.currentQuery);
+                    }
+                }
+            } catch (err) {
+                showToast("Error al vaciar caché", "error");
+            } finally {
+                clearCacheBtn.disabled = false;
+                clearCacheBtn.classList.remove("opacity-50");
+            }
+        });
+    }
+
+    setupWhatsAppQuoteModal();
     setupExcelDropzone();
 }
 
@@ -162,6 +230,23 @@ function removeLocalDistributor(distId) {
     }
 }
 
+// Cargar estado de salud y latencia en vivo de distribuidoras
+async function loadDistributorHealth() {
+    try {
+        const res = await fetch("/api/distributors/health");
+        if (!res.ok) return;
+        const list = await res.json();
+        state.distributorHealth = {};
+        if (Array.isArray(list)) {
+            list.forEach(h => {
+                state.distributorHealth[h.id] = h;
+            });
+        }
+    } catch (err) {
+        console.warn("No se pudo obtener salud de distribuidoras:", err);
+    }
+}
+
 // Cargar lista de distribuidores desde el backend
 async function loadDistributors() {
     try {
@@ -179,7 +264,7 @@ async function loadDistributors() {
                 try {
                     await fetch("/api/distributors", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
                         body: JSON.stringify(dObj)
                     });
                     needsReRes = true;
@@ -194,6 +279,7 @@ async function loadDistributors() {
             if (reRes.ok) state.distributors = await reRes.json();
         }
 
+        await loadDistributorHealth();
         renderDistributorPills();
         renderDistributorModalList();
     } catch (err) {
@@ -207,7 +293,16 @@ function renderDistributorPills() {
     const countBadge = document.getElementById("active-distributors-count");
     
     const activeCount = state.distributors.filter(d => d.is_active).length;
-    countBadge.textContent = `${activeCount} de ${state.distributors.length} activas`;
+    const healthValues = Object.values(state.distributorHealth || {});
+    const healthyCount = healthValues.filter(h => h.status === 'healthy').length;
+
+    if (countBadge) {
+        if (healthyCount > 0) {
+            countBadge.innerHTML = `<span class="text-[#00ff87] font-semibold">${activeCount} activas</span> &bull; <span class="text-cyan-300 font-mono text-[10px]">${healthyCount} online</span>`;
+        } else {
+            countBadge.textContent = `${activeCount} de ${state.distributors.length} activas`;
+        }
+    }
 
     container.innerHTML = "";
     state.distributors.forEach(d => {
@@ -215,6 +310,7 @@ function renderDistributorPills() {
         if (isChecked) state.selectedDistributorIds.add(d.id);
 
         const isExcel = d.scraper_type === "excel_catalog" || d.id.startsWith("excel_");
+        const health = state.distributorHealth ? state.distributorHealth[d.id] : null;
 
         const pill = document.createElement("label");
         const activeClass = isExcel 
@@ -228,9 +324,31 @@ function renderDistributorPills() {
             isChecked ? activeClass : inactiveClass
         }`;
         
-        const badgeDot = isExcel
-            ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-[#00ff87] text-[10px] font-bold border border-emerald-500/30 font-mono">Excel</span>`
-            : `<span class="w-2 h-2 rounded-full ${d.last_login_status === 'OK' ? 'bg-[#00ff87] neon-glow-green' : 'bg-amber-400'}" title="Estado: ${d.last_login_status}"></span>`;
+        let badgeDot = "";
+        if (isExcel) {
+            badgeDot = `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-[#00ff87] text-[10px] font-bold border border-emerald-500/30 font-mono">Excel</span>`;
+        } else {
+            let dotClass = "bg-amber-400";
+            let dotTitle = `Estado: ${d.last_login_status || 'Sin probar'}`;
+            if (health) {
+                if (health.status === 'healthy') {
+                    dotClass = "bg-[#00ff87] neon-glow-green";
+                    dotTitle = `En línea (${health.latency_ms}ms) - ${health.message}`;
+                } else if (health.status === 'error') {
+                    dotClass = "bg-rose-500";
+                    dotTitle = `Error: ${health.message}`;
+                } else if (health.status === 'warning') {
+                    dotClass = "bg-amber-400";
+                    dotTitle = `Aviso: ${health.message}`;
+                } else {
+                    dotClass = "bg-cyan-400";
+                    dotTitle = health.message || "Listo";
+                }
+            } else if (d.last_login_status === 'OK') {
+                dotClass = "bg-[#00ff87] neon-glow-green";
+            }
+            badgeDot = `<span class="w-2 h-2 rounded-full ${dotClass}" title="${dotTitle}"></span>`;
+        }
 
         pill.innerHTML = `
             <input type="checkbox" value="${d.id}" ${isChecked ? "checked" : ""} class="rounded border-slate-700 text-cyan-400 focus:ring-0 focus:ring-offset-0 bg-[#070b14]">
@@ -297,23 +415,45 @@ function showLoadingSkeleton() {
     errorBanner.classList.add("hidden");
     summaryBanner.classList.remove("hidden");
 
-    document.getElementById("stat-best-price").innerHTML = `<div class="h-8 w-24 rounded shimmer"></div>`;
-    document.getElementById("stat-avg-price").innerHTML = `<div class="h-8 w-24 rounded shimmer"></div>`;
-    document.getElementById("stat-range-price").innerHTML = `<div class="h-8 w-28 rounded shimmer"></div>`;
-    document.getElementById("stat-total-results").innerHTML = `<div class="h-8 w-12 rounded shimmer"></div>`;
+    document.getElementById("stat-best-price").innerHTML = `<div class="h-8 w-24 skeleton-shimmer"></div>`;
+    document.getElementById("stat-avg-price").innerHTML = `<div class="h-8 w-24 skeleton-shimmer"></div>`;
+    document.getElementById("stat-range-price").innerHTML = `<div class="h-8 w-28 skeleton-shimmer"></div>`;
+    document.getElementById("stat-total-results").innerHTML = `<div class="h-8 w-12 skeleton-shimmer"></div>`;
+
+    const skeletonCards = [1, 2, 3, 4].map(() => `
+        <div class="p-5 rounded-2xl border border-slate-800/80 bg-[#0c1220]/75 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex-1 space-y-3 w-full">
+                <div class="flex items-center gap-2">
+                    <div class="h-6 w-28 skeleton-shimmer"></div>
+                    <div class="h-5 w-24 skeleton-shimmer"></div>
+                    <div class="h-5 w-20 skeleton-shimmer"></div>
+                </div>
+                <div class="h-6 w-3/4 skeleton-shimmer"></div>
+                <div class="flex items-center gap-4">
+                    <div class="h-4 w-32 skeleton-shimmer"></div>
+                    <div class="h-4 w-28 skeleton-shimmer"></div>
+                </div>
+            </div>
+            <div class="flex md:flex-col items-end justify-between w-full md:w-48 gap-3 border-t md:border-t-0 border-slate-800/80 pt-3 md:pt-0">
+                <div class="h-8 w-28 skeleton-shimmer"></div>
+                <div class="flex items-center gap-2 w-full justify-end">
+                    <div class="h-9 w-24 skeleton-shimmer"></div>
+                    <div class="h-9 w-28 skeleton-shimmer"></div>
+                </div>
+            </div>
+        </div>
+    `).join("");
 
     resultsContainer.innerHTML = `
-        <div class="col-span-full space-y-4 py-8">
-            <div class="flex items-center justify-center gap-3 text-cyan-400">
-                <svg class="animate-spin h-6 w-6 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <div class="col-span-full space-y-3">
+            <div class="p-3 rounded-xl border border-cyan-500/30 bg-cyan-950/20 flex items-center justify-center gap-3 text-cyan-300">
+                <svg class="animate-spin h-5 w-5 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span class="text-sm font-semibold font-tech tracking-wide text-cyan-300">Consultando en paralelo las distribuidoras conectadas...</span>
+                <span class="text-xs font-bold font-tech uppercase tracking-wider">Consultando en paralelo distribuidoras conectadas...</span>
             </div>
-            <div class="h-20 w-full rounded-xl shimmer border border-cyan-500/10"></div>
-            <div class="h-20 w-full rounded-xl shimmer border border-cyan-500/10"></div>
-            <div class="h-20 w-full rounded-xl shimmer border border-cyan-500/10"></div>
+            ${skeletonCards}
         </div>
     `;
 }
@@ -373,16 +513,26 @@ function applyClientFiltersAndRender() {
         items = items.filter(i => i.has_stock);
     }
 
-    // 2. Filtro de refinamiento por texto
+    // 2. Filtro de calidad de repuesto
+    if (state.qualityFilter && state.qualityFilter !== "all") {
+        const targetQ = state.qualityFilter.toLowerCase();
+        items = items.filter(i => {
+            const q = (i.quality || "").toLowerCase();
+            const desc = (i.description || "").toLowerCase();
+            return q.includes(targetQ) || desc.includes(targetQ);
+        });
+    }
+
+    // 3. Filtro de refinamiento por texto
     if (state.refineFilter) {
         const tokens = state.refineFilter.toLowerCase().split(/\s+/).filter(t => t.length > 0);
         items = items.filter(i => {
-            const fullText = `${i.description} ${i.brand} ${i.distributor_name} ${i.sku}`.toLowerCase();
+            const fullText = `${i.description} ${i.brand} ${i.distributor_name} ${i.sku} ${i.quality || ''}`.toLowerCase();
             return tokens.every(token => fullText.includes(token));
         });
     }
 
-    // 3. Ordenamiento
+    // 4. Ordenamiento
     if (state.sortBy === "price_asc") {
         items.sort((a, b) => a.price - b.price);
     } else if (state.sortBy === "price_desc") {
@@ -402,7 +552,7 @@ function applyClientFiltersAndRender() {
     if (items.length === 0) {
         resultsContainer.innerHTML = `
             <div class="p-8 text-center border border-dashed border-slate-800 rounded-xl">
-                <p class="text-sm font-semibold text-slate-300">Ningún repuesto coincide con el filtro "${state.refineFilter}".</p>
+                <p class="text-sm font-semibold text-slate-300">Ningún repuesto coincide con los filtros aplicados.</p>
                 <p class="text-xs text-slate-500 mt-1">Intenta borrar o relajar el filtro para ver los demás repuestos.</p>
             </div>
         `;
@@ -445,6 +595,17 @@ function applyClientFiltersAndRender() {
                 <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> ${item.stock}
                </span>`;
 
+        let qualityBadgeHtml = "";
+        if (item.quality && item.quality !== "Estándar") {
+            let qClass = "quality-standard";
+            if (item.quality.includes("Original")) qClass = "quality-original";
+            else if (item.quality.includes("OLED")) qClass = "quality-oled";
+            else if (item.quality.includes("Incell")) qClass = "quality-incell";
+            else if (item.quality.includes("Batería")) qClass = "quality-battery";
+            else if (item.quality.includes("Pin")) qClass = "quality-pin";
+            qualityBadgeHtml = `<span class="quality-badge ${qClass}">💎 ${item.quality}</span>`;
+        }
+
         card.innerHTML = `
             <div class="flex-1 space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
@@ -453,6 +614,7 @@ function applyClientFiltersAndRender() {
                     </span>
                     ${diffBadgeHtml}
                     ${stockBadge}
+                    ${qualityBadgeHtml}
                     <span class="text-xs text-slate-400 flex items-center gap-1">
                         <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         ${item.delivery_time || "Consultar plazo"}
@@ -483,18 +645,33 @@ function applyClientFiltersAndRender() {
                     ` : `<div class="text-[11px] text-slate-400">IVA e impuestos incluidos</div>`}
                 </div>
 
-                <a href="${item.product_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold ${
-                    isBest 
-                    ? "wilo-btn-primary shadow-lg shadow-cyan-950/40" 
-                    : "bg-[#0e1626] hover:bg-[#142036] text-cyan-200 border border-cyan-500/30 hover:border-cyan-400"
-                } transition-all cursor-pointer">
-                    <span>Ver en distribuidora</span>
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                </a>
+                <div class="flex items-center gap-2">
+                    <button type="button" class="btn-open-wa-quote inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-emerald-500/40 bg-emerald-950/30 hover:bg-emerald-900/50 text-[#00ff87] transition-all cursor-pointer shadow-sm hover:scale-105" data-desc="${encodeURIComponent(item.description)}" data-price="${item.price}">
+                        <span>📲 Presupuesto</span>
+                    </button>
+
+                    <a href="${item.product_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold ${
+                        isBest 
+                        ? "wilo-btn-primary shadow-lg shadow-cyan-950/40" 
+                        : "bg-[#0e1626] hover:bg-[#142036] text-cyan-200 border border-cyan-500/30 hover:border-cyan-400"
+                    } transition-all cursor-pointer">
+                        <span>Ver en web</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                </div>
             </div>
         `;
 
         resultsContainer.appendChild(card);
+    });
+
+    // Listeners para los botones de Presupuesto WhatsApp
+    resultsContainer.querySelectorAll(".btn-open-wa-quote").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const desc = decodeURIComponent(btn.getAttribute("data-desc") || "");
+            const price = parseFloat(btn.getAttribute("data-price") || 0);
+            openWhatsAppQuoteModal(desc, price);
+        });
     });
 }
 
@@ -571,8 +748,15 @@ function renderDistributorModalList() {
         const item = document.createElement("div");
         item.className = "p-4 rounded-xl border border-slate-800 bg-slate-900/80 space-y-3";
         
+        const health = state.distributorHealth ? state.distributorHealth[d.id] : null;
         let statusBadge = "";
-        if (d.last_login_status === "OK") {
+        if (health && health.status === "healthy") {
+            statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">En línea (${health.latency_ms}ms)</span>`;
+        } else if (health && health.status === "error") {
+            statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">Error (${health.message})</span>`;
+        } else if (health && health.status === "warning") {
+            statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">${health.message}</span>`;
+        } else if (d.last_login_status === "OK") {
             statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Conectado (OK)</span>`;
         } else if (d.last_login_status === "ERROR") {
             statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">Error de Acceso</span>`;
@@ -631,12 +815,15 @@ async function handleTestLogin(distId, containerElement) {
         if (localDists[distId] && localDists[distId].username) {
             await fetch("/api/distributors", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify(localDists[distId])
             });
         }
 
-        const res = await fetch(`/api/distributors/${distId}/test-login`, { method: "POST" });
+        const res = await fetch(`/api/distributors/${distId}/test-login`, {
+            method: "POST",
+            headers: getAdminAuthHeaders()
+        });
         const result = await res.json();
         
         await loadDistributors();
@@ -683,11 +870,14 @@ async function handleSaveDistributor(e) {
     try {
         const res = await fetch("/api/distributors", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify(payload)
         });
 
-        if (!res.ok) throw new Error("No se pudo guardar la distribuidora");
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || "No se pudo guardar la distribuidora. Se requiere sesión de administrador.");
+        }
 
         // Guardar copia persistente localmente
         saveLocalDistributor(payload);
@@ -732,8 +922,14 @@ function resetDistributorForm() {
 async function handleDeleteDistributor(distId) {
     if (!confirm("¿Seguro que deseas eliminar esta distribuidora de tu lista?")) return;
     try {
-        const res = await fetch(`/api/distributors/${distId}`, { method: "DELETE" });
-        if (!res.ok) throw new Error("No se pudo eliminar");
+        const res = await fetch(`/api/distributors/${distId}`, {
+            method: "DELETE",
+            headers: getAdminAuthHeaders()
+        });
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || "No se pudo eliminar. Se requiere sesión de administrador.");
+        }
 
         removeLocalDistributor(distId);
         await loadDistributors();
@@ -886,7 +1082,7 @@ async function loadExcelCatalogs() {
                 try {
                     await fetch("/api/catalogs/excel/restore", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
                         body: JSON.stringify({
                             catalog_id: catObj.catalog_id,
                             name: catObj.name,
@@ -977,12 +1173,13 @@ async function handleUploadExcel(e) {
     try {
         const res = await fetch("/api/catalogs/excel/upload", {
             method: "POST",
+            headers: getAdminAuthHeaders(),
             body: formData
         });
 
         const data = await res.json();
         if (!res.ok) {
-            throw new Error(data.detail || "Error al procesar el archivo");
+            throw new Error(data.detail || "Error al procesar el archivo. Requiere sesión de administrador.");
         }
 
         // Guardar copia persistente en localStorage del cliente
@@ -1018,8 +1215,14 @@ async function handleDeleteExcelCatalog(catalogId) {
     if (!confirm("¿Deseas eliminar este catálogo Excel y todos sus repuestos?")) return;
 
     try {
-        const res = await fetch(`/api/catalogs/excel/${catalogId}`, { method: "DELETE" });
-        if (!res.ok) throw new Error("No se pudo eliminar el catálogo");
+        const res = await fetch(`/api/catalogs/excel/${catalogId}`, {
+            method: "DELETE",
+            headers: getAdminAuthHeaders()
+        });
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || "No se pudo eliminar el catálogo. Se requiere sesión de administrador.");
+        }
 
         removeLocalExcelCatalog(catalogId);
         await loadExcelCatalogs();
@@ -1081,10 +1284,13 @@ async function handleSetCustomDolar(e) {
     try {
         const res = await fetch("/api/currency/dolar-blue", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ rate: val })
         });
-        if (!res.ok) throw new Error("Error al fijar cotización");
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || "Error al fijar cotización. Se requiere inicio de sesión de taller.");
+        }
         await loadDolarBlue();
         input.value = "";
         alert(`Cotización manual fijada en $${val.toLocaleString('es-AR')}. Los repuestos en dólares ahora se calcularán con este valor.`);
@@ -1099,17 +1305,161 @@ async function handleResetDolar() {
     try {
         const res = await fetch("/api/currency/dolar-blue", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ rate: null })
         });
-        if (!res.ok) throw new Error("Error al restablecer");
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || "Error al restablecer. Se requiere inicio de sesión de taller.");
+        }
         await loadDolarBlue();
-        alert("Cotización restablecida a la cotización oficial/blue automática en vivo.");
+        showToast("Cotización restablecida a la cotización oficial/blue automática en vivo.", "success");
         closeDolarModal();
         if (state.currentQuery) executeSearch(state.currentQuery);
     } catch (err) {
         alert("Error: " + err.message);
     }
+}
+
+// ==========================================
+// TOAST NOTIFICATIONS
+// ==========================================
+function showToast(message, type = "info") {
+    let container = document.getElementById("toast-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement("div");
+    const bgClass = type === "success" 
+        ? "border-[#00ff87]/50 bg-[#0a1814] text-[#00ff87]" 
+        : type === "error" 
+        ? "border-rose-500/50 bg-[#1e0e13] text-rose-300" 
+        : "border-cyan-500/50 bg-[#0c1626] text-cyan-300";
+
+    toast.className = `p-3.5 rounded-xl border text-xs font-semibold shadow-2xl backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 flex items-center gap-2 ${bgClass}`;
+    toast.innerHTML = `
+        <span>${type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}</span>
+        <span>${message}</span>
+    `;
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => {
+        toast.classList.remove("translate-y-2", "opacity-0");
+    });
+
+    setTimeout(() => {
+        toast.classList.add("translate-y-2", "opacity-0");
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
+}
+
+// ==========================================
+// MODAL DE PRESUPUESTADOR RÁPIDO WHATSAPP
+// ==========================================
+let currentQuoteData = {
+    desc: "",
+    cost: 0,
+    margin: 25,
+    labor: 18000,
+    device: ""
+};
+
+function setupWhatsAppQuoteModal() {
+    const modal = document.getElementById("whatsapp-quote-modal");
+    if (!modal) return;
+
+    const closeBtn = document.getElementById("close-wa-modal-btn");
+    if (closeBtn) closeBtn.addEventListener("click", () => modal.classList.add("hidden"));
+
+    const costInput = document.getElementById("wa-modal-cost");
+    const marginInput = document.getElementById("wa-modal-margin");
+    const laborInput = document.getElementById("wa-modal-labor");
+    const deviceInput = document.getElementById("wa-modal-device");
+
+    const updateCalculations = () => {
+        const cost = parseFloat(costInput.value) || 0;
+        const margin = parseFloat(marginInput.value) || 0;
+        const labor = parseFloat(laborInput.value) || 0;
+        const device = deviceInput.value.trim() || "Dispositivo";
+
+        const subtotal = (cost * (1.0 + (margin / 100.0))) + labor;
+        const total = Math.round(subtotal);
+
+        const totalDisp = document.getElementById("wa-modal-total-display");
+        if (totalDisp) totalDisp.textContent = formatCurrency(total);
+
+        const previewText = 
+            `🛠️ *WILOTECH - Presupuesto Técnico Oficial*\n` +
+            `📱 *Equipo:* ${device}\n` +
+            `🔧 *Repuesto / Trabajo:* ${currentQuoteData.desc}\n` +
+            `💵 *Total Estimado:* ${formatCurrency(total)}\n` +
+            `⏱️ *Garantía:* 30 días sobre repuesto y mano de obra.\n` +
+            `🔬 *Laboratorio:* Nivel 3 y 4 con instrumental de precisión.`;
+
+        const previewEl = document.getElementById("wa-modal-preview");
+        if (previewEl) previewEl.value = previewText;
+    };
+
+    [costInput, marginInput, laborInput, deviceInput].forEach(inp => {
+        if (inp) inp.addEventListener("input", updateCalculations);
+    });
+
+    const copyBtn = document.getElementById("wa-modal-copy-btn");
+    if (copyBtn) {
+        copyBtn.addEventListener("click", () => {
+            const previewEl = document.getElementById("wa-modal-preview");
+            if (previewEl && previewEl.value) {
+                navigator.clipboard.writeText(previewEl.value).then(() => {
+                    showToast("Presupuesto copiado al portapapeles", "success");
+                }).catch(() => {
+                    showToast("No se pudo copiar el texto", "error");
+                });
+            }
+        });
+    }
+
+    const sendBtn = document.getElementById("wa-modal-send-btn");
+    if (sendBtn) {
+        sendBtn.addEventListener("click", () => {
+            const previewEl = document.getElementById("wa-modal-preview");
+            if (previewEl && previewEl.value) {
+                const encoded = encodeURIComponent(previewEl.value);
+                window.open(`https://wa.me/?text=${encoded}`, "_blank");
+            }
+        });
+    }
+}
+
+function openWhatsAppQuoteModal(desc, price) {
+    const modal = document.getElementById("whatsapp-quote-modal");
+    if (!modal) return;
+
+    currentQuoteData.desc = desc;
+    currentQuoteData.cost = price;
+
+    const descInput = document.getElementById("wa-modal-item-name");
+    if (descInput) descInput.value = desc;
+
+    const costInput = document.getElementById("wa-modal-cost");
+    if (costInput) costInput.value = Math.round(price);
+
+    const deviceInput = document.getElementById("wa-modal-device");
+    if (deviceInput) {
+        if (state.currentQuery) {
+            deviceInput.value = state.currentQuery;
+        } else {
+            deviceInput.value = "";
+        }
+    }
+
+    modal.classList.remove("hidden");
+
+    // Disparar recálculo inicial
+    const costEvent = new Event("input");
+    if (costInput) costInput.dispatchEvent(costEvent);
 }
 
 

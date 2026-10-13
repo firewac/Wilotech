@@ -6,6 +6,10 @@
   <title>WILOTECH | Laboratorio Técnico de Celulares, PC y Consolas</title>
   <meta name="description" content="WILOTECH - Laboratorio de microelectrónica y reparación de celulares, PC gamer, notebooks y consolas de videojuegos. Reballing, pantallas OLED y puertos HDMI.">
   <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#00f5a0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <!-- Google Fonts Oficiales WILOTECH: Orbitron, Rajdhani, Plus Jakarta Sans, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -987,6 +991,15 @@
   <script src="js/calculator.js"></script>
   <script src="js/tracker.js"></script>
   <script src="js/app.js"></script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+      });
+    }
+  </script>
 
 </body>
 </html>

@@ -1,0 +1,24 @@
+{
+  "name": "WILOTECH | Laboratorio Técnico & Comparador",
+  "short_name": "WILOTECH",
+  "description": "Laboratorio técnico de celulares, PC gamer y consolas. Comparador multidistribuidora en tiempo real.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05070d",
+  "theme_color": "#00f5a0",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

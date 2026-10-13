@@ -1,4 +1,10 @@
+import sys
+from pathlib import Path
 import unittest
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT_DIR))
+
 from backend.database.models import PartResult
 from backend.services.search_filter import (
     parse_query_intent,
