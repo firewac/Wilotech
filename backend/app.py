@@ -137,13 +137,15 @@ for sub in ["js", "css", "assets"]:
     if sub_dir.exists():
         app.mount(f"/{sub}", StaticFiles(directory=str(sub_dir)), name=sub)
 
+PAGE_NO_CACHE_HEADERS = {"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"}
+
 @app.get("/")
 @app.get("/index.html")
 @app.get("/index")
 async def root():
     index_file = STATIC_DIR / "index.html"
     if index_file.exists():
-        return FileResponse(str(index_file))
+        return FileResponse(str(index_file), headers=PAGE_NO_CACHE_HEADERS)
     return {"message": "Servidor backend activo."}
 
 @app.get("/admin.html")
@@ -151,7 +153,7 @@ async def root():
 async def admin_page():
     admin_file = STATIC_DIR / "admin.html"
     if admin_file.exists():
-        return FileResponse(str(admin_file))
+        return FileResponse(str(admin_file), headers=PAGE_NO_CACHE_HEADERS)
     raise HTTPException(status_code=404, detail="Página admin.html no encontrada")
 
 @app.get("/login.html")
@@ -159,7 +161,7 @@ async def admin_page():
 async def login_page():
     login_file = STATIC_DIR / "login.html"
     if login_file.exists():
-        return FileResponse(str(login_file))
+        return FileResponse(str(login_file), headers=PAGE_NO_CACHE_HEADERS)
     raise HTTPException(status_code=404, detail="Página login.html no encontrada")
 
 @app.get("/presupuesto.html")
@@ -167,7 +169,7 @@ async def login_page():
 async def presupuesto_page():
     presupuesto_file = STATIC_DIR / "presupuesto.html"
     if presupuesto_file.exists():
-        return FileResponse(str(presupuesto_file))
+        return FileResponse(str(presupuesto_file), headers=PAGE_NO_CACHE_HEADERS)
     raise HTTPException(status_code=404, detail="Página presupuesto.html no encontrada")
 
 @app.get("/comparador.html")
