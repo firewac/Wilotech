@@ -3080,20 +3080,34 @@ function calculateOrderFinanceTotals() {
 // 3. MODO MOSTRADOR (PRIVACIDAD DE COSTOS Y MÁRGENES ANTE EL CLIENTE)
 // ============================================================================
 function initCounterMode() {
-  if (localStorage.getItem("wilotech_counter_mode") === "1") {
+  const isCounter = localStorage.getItem("wilotech_counter_mode") === "1";
+  if (isCounter) {
     document.body.classList.add("counter-mode");
-    const label = document.getElementById("counterModeText");
-    if (label) label.textContent = "Modo Mostrador (ACTIVO)";
   }
+  updateCounterModeButtonUI(isCounter);
 }
 
 function toggleCounterMode() {
   document.body.classList.toggle("counter-mode");
   const isCounter = document.body.classList.contains("counter-mode");
   localStorage.setItem("wilotech_counter_mode", isCounter ? "1" : "0");
+  updateCounterModeButtonUI(isCounter);
+  showToast(isCounter ? "Modo Mostrador activado: Costos de repuestos y márgenes ocultos" : "Modo Mostrador desactivado", "info");
+}
+
+function updateCounterModeButtonUI(isCounter) {
   const label = document.getElementById("counterModeText");
   if (label) label.textContent = isCounter ? "Modo Mostrador (ACTIVO)" : "Modo Mostrador";
-  showToast(isCounter ? "Modo Mostrador activado: Costos de repuestos y márgenes ocultos" : "Modo Mostrador desactivado", "info");
+
+  const tooltip = document.getElementById("counterModeTooltipText");
+  if (tooltip) tooltip.textContent = isCounter ? "Modo Mostrador (ACTIVO)" : "Modo Mostrador";
+
+  const btn = document.getElementById("btnToggleCounterMode");
+  if (btn) {
+    btn.title = isCounter 
+      ? "Modo Mostrador: ACTIVO (Costos internos y márgenes ocultos)" 
+      : "Modo Mostrador: Desactivado (Hacer clic para ocultar costos)";
+  }
 }
 
 // ============================================================================
