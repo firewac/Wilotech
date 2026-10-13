@@ -177,7 +177,7 @@ async def presupuesto_page():
 async def comparador_page():
     comp_file = STATIC_DIR / "comparador.html"
     if comp_file.exists():
-        return FileResponse(str(comp_file))
+        return FileResponse(str(comp_file), headers=PAGE_NO_CACHE_HEADERS)
     raise HTTPException(status_code=404, detail="Página comparador.html no encontrada")
 
 @app.get("/gremios.html")

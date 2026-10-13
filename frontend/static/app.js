@@ -34,18 +34,39 @@ const formatCurrency = (amount) => {
     }).format(amount);
 };
 
-// Inicialización al cargar la página
-document.addEventListener("DOMContentLoaded", () => {
+// Inicialización al cargar la página (soporta carga directa, iframes y ejecución asíncrona)
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+        initApp();
+    });
+} else {
     initApp();
-});
+}
 
 async function initApp() {
-    await loadDolarBlue();
-    await loadDistributors();
-    await loadHistory();
+    // 1. Vincular listeners de interfaz de forma inmediata para prevenir submit nativo del formulario
     setupEventListeners();
 
-    // Auto-búsqueda inmediata si viene con parámetro ?q=... (ej: desde control de stock en panel de taller)
+    // 2. Cargar datos en segundo plano de manera individual y tolerante a fallos
+    try {
+        await loadDolarBlue();
+    } catch (eDolar) {
+        console.warn("Aviso al cargar cotización Dólar Blue:", eDolar);
+    }
+
+    try {
+        await loadDistributors();
+    } catch (eDist) {
+        console.warn("Aviso al cargar distribuidoras:", eDist);
+    }
+
+    try {
+        await loadHistory();
+    } catch (eHist) {
+        console.warn("Aviso al cargar historial de búsqueda:", eHist);
+    }
+
+    // 3. Auto-búsqueda inmediata si viene con parámetro ?q=... (ej: desde control de stock en panel de taller)
     try {
         const urlParams = new URLSearchParams(window.location.search);
         const queryParam = urlParams.get("q");
@@ -62,51 +83,79 @@ async function initApp() {
     }
 }
 
-// Configuración de listeners
+// Configuración defensiva de listeners para todos los elementos del DOM
 function setupEventListeners() {
     const searchForm = document.getElementById("search-form");
     const searchInput = document.getElementById("search-input");
     const clearBtn = document.getElementById("clear-btn");
 
-    searchForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const query = searchInput.value.trim();
-        if (query) executeSearch(query);
-    });
+    if (searchForm) {
+        searchForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const query = searchInput ? searchInput.value.trim() : "";
+            if (query) executeSearch(query);
+            return false;
+        });
+    }
 
-    clearBtn.addEventListener("click", () => {
-        searchInput.value = "";
-        searchInput.focus();
-        clearBtn.classList.add("hidden");
-    });
-
-    searchInput.addEventListener("input", () => {
-        if (searchInput.value.trim().length > 0) {
-            clearBtn.classList.remove("hidden");
-        } else {
+    if (clearBtn && searchInput) {
+        clearBtn.addEventListener("click", () => {
+            searchInput.value = "";
+            searchInput.focus();
             clearBtn.classList.add("hidden");
-        }
-    });
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener("input", () => {
+            if (clearBtn) {
+                if (searchInput.value.trim().length > 0) {
+                    clearBtn.classList.remove("hidden");
+                } else {
+                    clearBtn.classList.add("hidden");
+                }
+            }
+        });
+
+        // Salvaguarda adicional: capturar 'Enter' directamente en el input
+        searchInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                const query = searchInput.value.trim();
+                if (query) executeSearch(query);
+            }
+        });
+    }
 
     // Chips de sugerencias rápidas
     document.querySelectorAll(".suggestion-chip").forEach(chip => {
         chip.addEventListener("click", () => {
             const query = chip.getAttribute("data-query");
-            searchInput.value = query;
-            clearBtn.classList.remove("hidden");
-            executeSearch(query);
+            if (query) {
+                if (searchInput) searchInput.value = query;
+                if (clearBtn) clearBtn.classList.remove("hidden");
+                executeSearch(query);
+            }
         });
     });
 
     // Botones de exportación
-    document.getElementById("export-excel-btn").addEventListener("click", () => exportData("excel"));
-    document.getElementById("export-csv-btn").addEventListener("click", () => exportData("csv"));
+    const exportExcelBtn = document.getElementById("export-excel-btn");
+    if (exportExcelBtn) exportExcelBtn.addEventListener("click", () => exportData("excel"));
+    const exportCsvBtn = document.getElementById("export-csv-btn");
+    if (exportCsvBtn) exportCsvBtn.addEventListener("click", () => exportData("csv"));
 
     // Modal de distribuidores
-    document.getElementById("open-distributors-btn").addEventListener("click", openDistributorsModal);
-    document.getElementById("close-distributors-modal").addEventListener("click", closeDistributorsModal);
-    document.getElementById("distributor-form").addEventListener("submit", handleSaveDistributor);
-    document.getElementById("new-distributor-btn").addEventListener("click", resetDistributorForm);
+    const openDistBtn = document.getElementById("open-distributors-btn");
+    if (openDistBtn) openDistBtn.addEventListener("click", openDistributorsModal);
+    const closeDistBtn = document.getElementById("close-distributors-modal");
+    if (closeDistBtn) closeDistBtn.addEventListener("click", closeDistributorsModal);
+    const distForm = document.getElementById("distributor-form");
+    if (distForm) distForm.addEventListener("submit", handleSaveDistributor);
+    const newDistBtn = document.getElementById("new-distributor-btn");
+    if (newDistBtn) newDistBtn.addEventListener("click", resetDistributorForm);
+    const cancelDistBtn = document.getElementById("cancel-edit-btn");
+    if (cancelDistBtn) cancelDistBtn.addEventListener("click", cancelDistributorEdit);
 
     // Modal de Listas Excel
     const openExcelBtn = document.getElementById("open-excel-modal-btn");
@@ -279,9 +328,21 @@ async function loadDistributors() {
             if (reRes.ok) state.distributors = await reRes.json();
         }
 
-        await loadDistributorHealth();
-        renderDistributorPills();
-        renderDistributorModalList();
+        try {
+            await loadDistributorHealth();
+        } catch (eH) {}
+
+        try {
+            renderDistributorPills();
+        } catch (ePills) {
+            console.warn("Aviso al renderizar pills:", ePills);
+        }
+
+        try {
+            renderDistributorModalList();
+        } catch (eModal) {
+            console.warn("Aviso al renderizar lista modal:", eModal);
+        }
     } catch (err) {
         console.error("Error al obtener distribuidoras:", err);
     }
@@ -290,6 +351,7 @@ async function loadDistributors() {
 // Renderizar filtros de distribuidores en la pantalla principal
 function renderDistributorPills() {
     const container = document.getElementById("distributor-filters");
+    if (!container) return;
     const countBadge = document.getElementById("active-distributors-count");
     
     const activeCount = state.distributors.filter(d => d.is_active).length;
@@ -373,6 +435,8 @@ function renderDistributorPills() {
 
 // Ejecutar búsqueda y comparativa de repuestos
 async function executeSearch(query) {
+    if (!query || !query.trim()) return;
+    query = query.trim();
     if (state.isLoading) return;
     
     state.isLoading = true;
@@ -380,8 +444,14 @@ async function executeSearch(query) {
     showLoadingSkeleton();
 
     try {
-        // Sincronizar credenciales y distribuidores guardados localmente antes de consultar
-        await loadDistributors();
+        // Cargar distribuidoras únicamente si aún no han sido inicializadas
+        if (!state.distributors || state.distributors.length === 0) {
+            try {
+                await loadDistributors();
+            } catch (eDistLoad) {
+                console.warn("Aviso al asegurar distribuidoras antes de búsqueda:", eDistLoad);
+            }
+        }
 
         const targetIds = Array.from(state.selectedDistributorIds).join(",");
         const url = `/api/search?q=${encodeURIComponent(query)}${targetIds ? `&distributors=${targetIds}` : ""}`;
@@ -390,19 +460,27 @@ async function executeSearch(query) {
         const res = await fetch(url);
         const duration = Math.round(performance.now() - startTime);
         
-        if (!res.ok) throw new Error("Error en la búsqueda del servidor");
+        if (!res.ok) {
+            let errorDetail = `Error en el servidor (${res.status})`;
+            try {
+                const errJson = await res.json();
+                if (errJson && errJson.detail) errorDetail = errJson.detail;
+            } catch (_) {}
+            throw new Error(errorDetail);
+        }
         
         const data = await res.json();
         state.searchResults = data;
         renderSearchResults(data, duration);
-        await loadHistory();
+        loadHistory().catch(() => {});
     } catch (err) {
         console.error("Error en búsqueda:", err);
-        showErrorBanner(`No se pudo completar la búsqueda: ${err.message}`);
+        showErrorBanner(`No se pudo completar la búsqueda: ${err.message || 'Error de conexión'}`);
     } finally {
         state.isLoading = false;
     }
 }
+window.executeSearch = executeSearch;
 
 // Mostrar esqueletos de carga
 function showLoadingSkeleton() {
@@ -723,8 +801,31 @@ function exportData(format) {
 // Mostrar banner de error
 function showErrorBanner(message) {
     const errorBanner = document.getElementById("error-banner");
-    errorBanner.textContent = message;
-    errorBanner.classList.remove("hidden");
+    const errorText = document.getElementById("error-banner-text");
+    const resultsContainer = document.getElementById("results-container");
+    const summaryBanner = document.getElementById("summary-banner");
+
+    if (summaryBanner) summaryBanner.classList.add("hidden");
+    if (errorText) {
+        errorText.textContent = message;
+    } else if (errorBanner) {
+        errorBanner.textContent = message;
+    }
+    if (errorBanner) {
+        errorBanner.classList.remove("hidden");
+    }
+
+    if (resultsContainer) {
+        resultsContainer.innerHTML = `
+            <div class="col-span-full p-8 text-center rounded-2xl bg-rose-950/20 border border-rose-500/30 text-rose-300 space-y-3">
+                <p class="font-bold text-sm">⚠️ No se pudieron cargar los repuestos</p>
+                <p class="text-xs text-rose-400 font-mono">${message}</p>
+                <button type="button" onclick="if (state.currentQuery) executeSearch(state.currentQuery)" class="px-4 py-2 rounded-xl bg-rose-900/60 hover:bg-rose-800 text-white text-xs font-bold transition-all cursor-pointer">
+                    Reintentar búsqueda
+                </button>
+            </div>
+        `;
+    }
 }
 
 // --- MODAL DE DISTRIBUIDORAS ---

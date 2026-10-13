@@ -1062,6 +1062,7 @@ const NAV_MODULES_META = {
   'tariff': { label: 'Tarifario de Reparaciones', icon: 'coins', color: 'text-cyan-400' },
   'gremios': { label: 'Portal Gremios / Colegas', icon: 'handshake', color: 'text-blue-400' },
   'finances': { label: 'Finanzas & Rentabilidad', icon: 'bar-chart-3', color: 'text-emerald-400' },
+  'comparador': { label: 'Comparador de Repuestos', icon: 'search', color: 'text-[#00ff87]' },
   'tools': { label: 'Herramientas de Banco', icon: 'box', color: 'text-indigo-400' },
   'settings': { label: 'Configuración & Respaldos', icon: 'settings', color: 'text-slate-400' }
 };
@@ -1839,14 +1840,38 @@ function dropTicket(e, targetStatus) {
 }
 
 function openToolModal(url) {
-  document.getElementById('toolModalFrame').src = url;
-  document.getElementById('toolModalContainer').classList.remove('hidden');
+  const frame = document.getElementById('toolModalFrame');
+  const extLink = document.getElementById('toolModalExternalLink');
+  const titleEl = document.getElementById('toolModalTitle');
+  
+  if (frame) frame.src = url;
+  if (extLink) extLink.href = url;
+  if (titleEl) {
+    if (url.includes('comparador')) {
+      titleEl.innerText = "WILOTECH — Comparador de Repuestos Multidistribuidora";
+    } else if (url.includes('probador')) {
+      titleEl.innerText = "WILOTECH — Probador y Calibrador de Joystick";
+    } else {
+      titleEl.innerText = "WILOTECH — Herramienta Técnica de Banco";
+    }
+  }
+
+  const container = document.getElementById('toolModalContainer');
+  if (container) container.classList.remove('hidden');
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 function closeToolModal() {
-  document.getElementById('toolModalContainer').classList.add('hidden');
-  document.getElementById('toolModalFrame').src = '';
+  const container = document.getElementById('toolModalContainer');
+  if (container) container.classList.add('hidden');
+  const frame = document.getElementById('toolModalFrame');
+  if (frame) frame.src = '';
 }
+
+window.openToolModal = openToolModal;
+window.closeToolModal = closeToolModal;
 
 function handleGlobalSearch(e) {
   if (e.key === 'Enter') {

@@ -170,6 +170,13 @@
 
             <div class="py-1">
               <span class="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-500 block">Finanzas & Herramientas</span>
+              <button type="button" onclick="openToolModal('/comparador.html'); closeNavDropdown();" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer">
+                <span class="flex items-center gap-2.5">
+                  <i data-lucide="search" class="w-4 h-4 text-[#00ff87]"></i>
+                  <span>Comparador de Repuestos</span>
+                </span>
+                <span class="px-1.5 py-0.5 text-[9px] font-mono rounded bg-emerald-950/80 text-[#00ff87] border border-emerald-800/80 font-bold">MULTIDIST</span>
+              </button>
               <button type="button" onclick="selectNavDropdown('finances')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer">
                 <span class="flex items-center gap-2.5">
                   <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-400"></i>
@@ -1489,7 +1496,13 @@
               <p class="text-xs text-slate-400">Búsqueda multimall de precios y stock en distribuidores</p>
             </div>
           </div>
-          <button onclick="openToolModal('/comparador.html')" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 font-bold text-xs border border-slate-800">[ Abrir ]</button>
+          <div class="flex items-center gap-2">
+            <button onclick="openToolModal('/comparador.html')" class="flex-1 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 font-bold text-xs border border-slate-800 cursor-pointer transition-colors">[ Abrir en Taller ]</button>
+            <a href="/comparador.html" target="_blank" class="px-4 py-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-[#00ff87] font-bold text-xs border border-emerald-500/30 flex items-center justify-center gap-1.5 cursor-pointer transition-all" title="Abrir en pestaña nueva">
+              <i data-lucide="external-link" class="w-4 h-4"></i>
+              <span>Pestaña</span>
+            </a>
+          </div>
         </div>
 
       </div>
@@ -1615,10 +1628,20 @@
   <div id="toolModalContainer" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
     <div class="glass-panel-glow rounded-3xl p-4 max-w-6xl w-full h-[90vh] flex flex-col relative">
       <div class="flex justify-between items-center pb-2 border-b border-slate-800">
-        <span class="font-brand font-bold text-white text-sm">WILOTECH — Herramienta de Banco</span>
-        <button onclick="closeToolModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <span class="font-brand font-bold text-white text-sm flex items-center gap-2">
+          <i data-lucide="wrench" class="w-4 h-4 text-cyan-400"></i>
+          <span id="toolModalTitle">WILOTECH — Herramienta de Banco</span>
+        </span>
+        <div class="flex items-center gap-2">
+          <a id="toolModalExternalLink" href="/comparador.html" target="_blank" class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-colors cursor-pointer" title="Abrir en pestaña nueva">
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+          </a>
+          <button onclick="closeToolModal()" class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-colors cursor-pointer">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
       </div>
-      <iframe id="toolModalFrame" class="w-full flex-1 rounded-2xl border border-slate-800 mt-2"></iframe>
+      <iframe id="toolModalFrame" class="w-full flex-1 rounded-2xl border border-slate-800 mt-2 bg-[#05070d]"></iframe>
     </div>
   </div>
 

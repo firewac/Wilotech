@@ -109,5 +109,23 @@ class TestImprovements(unittest.TestCase):
         self.assertEqual(saved["rmaReason"], "Vuelve a apagarse")
         self.assertEqual(saved["finalCost"], 0.0)
 
+    def test_comparador_page_and_search(self):
+        # 1. Verificar carga de comparador.html con cabeceras anti-caché
+        res = self.client.get("/comparador.html")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("Cache-Control", res.headers)
+        self.assertIn("no-store", res.headers["Cache-Control"])
+        self.assertIn("Comparador de Repuestos", res.text)
+        self.assertIn("search-form", res.text)
+
+        # 2. Verificar API de búsqueda
+        search_res = self.client.get("/api/search?q=pantalla")
+        self.assertEqual(search_res.status_code, 200)
+        data = search_res.json()
+        self.assertIn("query", data)
+        self.assertIn("results", data)
+        self.assertEqual(data["query"], "pantalla")
+        self.assertIsInstance(data["results"], list)
+
 if __name__ == "__main__":
     unittest.main()
