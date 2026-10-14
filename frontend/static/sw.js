@@ -1,5 +1,5 @@
 // WILOTECH Service Worker — Cache & Offline Shell
-const CACHE_NAME = 'wilotech-v2.0';
+const CACHE_NAME = 'wilotech-v2.1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -7,7 +7,7 @@ const ASSETS_TO_CACHE = [
   '/admin.html',
   '/gremios.html',
   '/css/styles.css',
-  '/app.js',
+  '/app.js?v=2.1',
   '/assets/logo.png',
   '/manifest.json'
 ];

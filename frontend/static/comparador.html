@@ -113,7 +113,7 @@
                 </a>
 
                 <!-- Cotización Dólar Blue en Vivo -->
-                <button id="dolar-blue-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 text-xs font-semibold hover:border-emerald-400 hover:bg-emerald-900/50 hover:shadow-lg hover:shadow-emerald-950/50 transition-all cursor-pointer" title="Cotización del Dólar Blue del día. Clic para ver o cambiar.">
+                <button id="dolar-blue-btn" onclick="openDolarModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 text-xs font-semibold hover:border-emerald-400 hover:bg-emerald-900/50 hover:shadow-lg hover:shadow-emerald-950/50 transition-all cursor-pointer" title="Cotización del Dólar Blue del día. Clic para ver o cambiar.">
                     <span class="text-sm">💵</span>
                     <span class="text-slate-300 font-medium">Blue:</span>
                     <span id="dolar-blue-val" class="font-mono font-bold text-white text-xs">$...</span>
@@ -126,13 +126,13 @@
                 </div>
 
                 <!-- Botón Modal Listas Excel -->
-                <button id="open-excel-modal-btn" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0c1a1a] hover:bg-[#102424] border border-emerald-500/40 text-emerald-300 text-xs font-semibold transition-all hover:border-emerald-400 shadow-sm cursor-pointer">
+                <button id="open-excel-modal-btn" onclick="openExcelModal()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0c1a1a] hover:bg-[#102424] border border-emerald-500/40 text-emerald-300 text-xs font-semibold transition-all hover:border-emerald-400 shadow-sm cursor-pointer">
                     <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     <span>Listas Excel</span>
                 </button>
 
                 <!-- Botón Modal Cuentas Web Scraper -->
-                <button id="open-distributors-btn" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0d1526] hover:bg-[#131f38] border border-cyan-500/30 text-cyan-200 text-xs font-semibold transition-all hover:border-cyan-400 shadow-sm cursor-pointer">
+                <button id="open-distributors-btn" onclick="openDistributorsModal()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0d1526] hover:bg-[#131f38] border border-cyan-500/30 text-cyan-200 text-xs font-semibold transition-all hover:border-cyan-400 shadow-sm cursor-pointer">
                     <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     <span>Cuentas Web</span>
                 </button>
@@ -376,7 +376,7 @@
                         <p class="text-xs text-slate-400">Administra cuentas, contraseñas cifradas y conexión web en vivo</p>
                     </div>
                 </div>
-                <button type="button" id="close-distributors-modal" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
+                <button type="button" id="close-distributors-modal" onclick="closeDistributorsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -482,7 +482,7 @@
                         <p class="text-xs text-slate-400">Importa planillas de proveedores e inclúyelas en la comparativa en tiempo real</p>
                     </div>
                 </div>
-                <button type="button" id="close-excel-modal" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
+                <button type="button" id="close-excel-modal" onclick="closeExcelModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -517,8 +517,8 @@
                         <!-- Dropzone para Archivo -->
                         <div>
                             <label class="block text-slate-300 font-medium mb-1">Archivo Excel o CSV *</label>
-                            <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-emerald-400 rounded-xl p-5 text-center cursor-pointer bg-[#070b14]/70 transition-colors">
-                                <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" class="hidden">
+                            <div id="dropzone" onclick="document.getElementById('excel-file-input').click()" class="border-2 border-dashed border-slate-700 hover:border-emerald-400 rounded-xl p-5 text-center cursor-pointer bg-[#070b14]/70 transition-colors">
+                                <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" onchange="if(this.files && this.files[0]) handleSelectedFile(this.files[0])" class="hidden">
                                 <div class="space-y-1">
                                     <div class="text-2xl">📄</div>
                                     <p id="dropzone-text" class="text-slate-300 font-medium text-xs">Haz clic o arrastra tu archivo aquí</p>
@@ -568,7 +568,7 @@
                         <p class="text-xs text-slate-400">Conversor en tiempo real para repuestos cotizados en USD</p>
                     </div>
                 </div>
-                <button type="button" id="close-dolar-modal" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
+                <button type="button" id="close-dolar-modal" onclick="closeDolarModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -678,7 +678,7 @@
     </div>
 
     <!-- Scripts de la Aplicación -->
-    <script src="/app.js?v=2.0"></script>
+    <script src="/app.js?v=2.1"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

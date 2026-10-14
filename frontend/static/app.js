@@ -165,7 +165,7 @@ function setupEventListeners() {
     const newDistBtn = document.getElementById("new-distributor-btn");
     if (newDistBtn) newDistBtn.addEventListener("click", resetDistributorForm);
     const cancelDistBtn = document.getElementById("cancel-edit-btn");
-    if (cancelDistBtn) cancelDistBtn.addEventListener("click", cancelDistributorEdit);
+    if (cancelDistBtn) cancelDistBtn.addEventListener("click", resetDistributorForm);
 
     // Modal de Listas Excel
     const openExcelBtn = document.getElementById("open-excel-modal-btn");
@@ -841,12 +841,20 @@ function showErrorBanner(message) {
 // --- MODAL DE DISTRIBUIDORAS ---
 
 function openDistributorsModal() {
-    document.getElementById("distributors-modal").classList.remove("hidden");
+    const modal = document.getElementById("distributors-modal");
+    if (modal) {
+        modal.classList.remove("hidden");
+        modal.style.display = "flex";
+    }
     renderDistributorModalList();
 }
 
 function closeDistributorsModal() {
-    document.getElementById("distributors-modal").classList.add("hidden");
+    const modal = document.getElementById("distributors-modal");
+    if (modal) {
+        modal.classList.add("hidden");
+        modal.style.display = "none";
+    }
     resetDistributorForm();
     loadDistributors(); // Refrescar filtros en pantalla principal
 }
@@ -1049,6 +1057,10 @@ async function handleDeleteDistributor(distId) {
     }
 }
 
+function cancelDistributorEdit() {
+    resetDistributorForm();
+}
+
 // ==========================================
 // CONTROLADOR DE LISTAS EXCEL / CSV
 // ==========================================
@@ -1056,7 +1068,11 @@ async function handleDeleteDistributor(distId) {
 let selectedExcelFile = null;
 
 function openExcelModal() {
-    document.getElementById("excel-modal").classList.remove("hidden");
+    const modal = document.getElementById("excel-modal");
+    if (modal) {
+        modal.classList.remove("hidden");
+        modal.style.display = "flex";
+    }
     const pinInput = document.getElementById("excel-workshop-pin");
     if (pinInput && !pinInput.value) {
         pinInput.value = localStorage.getItem("wilotech_workshop_pin") || "wilotech2026";
@@ -1065,8 +1081,19 @@ function openExcelModal() {
 }
 
 function closeExcelModal() {
-    document.getElementById("excel-modal").classList.add("hidden");
+    const modal = document.getElementById("excel-modal");
+    if (modal) {
+        modal.classList.add("hidden");
+        modal.style.display = "none";
+    }
 }
+
+// Exponer en window para llamadas directas desde atributos onclick del HTML
+window.openExcelModal = openExcelModal;
+window.closeExcelModal = closeExcelModal;
+window.cancelDistributorEdit = cancelDistributorEdit;
+window.openDistributorsModal = openDistributorsModal;
+window.closeDistributorsModal = closeDistributorsModal;
 
 function setupExcelDropzone() {
     const dropzone = document.getElementById("dropzone");
@@ -1400,13 +1427,24 @@ async function loadDolarBlue() {
 }
 
 function openDolarModal() {
-    document.getElementById("dolar-modal").classList.remove("hidden");
+    const modal = document.getElementById("dolar-modal");
+    if (modal) {
+        modal.classList.remove("hidden");
+        modal.style.display = "flex";
+    }
     loadDolarBlue();
 }
 
 function closeDolarModal() {
-    document.getElementById("dolar-modal").classList.add("hidden");
+    const modal = document.getElementById("dolar-modal");
+    if (modal) {
+        modal.classList.add("hidden");
+        modal.style.display = "none";
+    }
 }
+
+window.openDolarModal = openDolarModal;
+window.closeDolarModal = closeDolarModal;
 
 async function handleSetCustomDolar(e) {
     e.preventDefault();
