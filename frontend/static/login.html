@@ -183,10 +183,13 @@
 
         if (resp.ok && data.status === "ok") {
           // Guardar sesión y token JWT en localStorage
+          const userObj = data.user || {};
           localStorage.setItem("wilotech_auth", JSON.stringify({
             loggedIn: true,
-            user: user,
-            role: "admin",
+            user: userObj.name || user,
+            email: userObj.email || user,
+            role: data.role || userObj.role || "admin",
+            specialty: userObj.specialty || "",
             token: data.token,
             loginTime: new Date().toISOString()
           }));

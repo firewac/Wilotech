@@ -272,8 +272,14 @@
         </div>
 
         <!-- Perfil Usuario & Logout -->
-        <div class="flex items-center gap-2 border-l border-slate-800 pl-3">
-          <div class="w-7 h-7 rounded-full bg-cyan-950 border border-cyan-400/50 flex items-center justify-center font-brand font-bold text-[10px] text-cyan-300">WC</div>
+        <div class="flex items-center gap-2.5 border-l border-slate-800 pl-3">
+          <div class="flex items-center gap-2">
+            <div id="userHeaderAvatar" class="w-7 h-7 rounded-full bg-cyan-950 border border-cyan-400/50 flex items-center justify-center font-brand font-bold text-[10px] text-cyan-300">WT</div>
+            <div class="hidden md:block text-left leading-tight">
+              <span id="userHeaderName" class="text-xs font-brand font-bold text-white block max-w-[130px] truncate">Wilson Ramos</span>
+              <span id="userHeaderRole" class="text-[9px] font-mono text-cyan-400 uppercase tracking-wider block">Administrador</span>
+            </div>
+          </div>
           <button onclick="handleLogout()" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors cursor-pointer" title="Cerrar Sesión">
             <i data-lucide="log-out" class="w-4 h-4"></i>
           </button>
@@ -925,8 +931,16 @@
                 </select>
               </div>
               <div>
-                <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Técnico Responsable</label>
-                <input type="text" id="repair-tech" name="technician" value="Laboratorio WILOTECH" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#00f5a0]">
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider">Técnico Responsable</label>
+                  <button type="button" onclick="loadTechniciansOptions()" class="text-[10px] text-cyan-400 hover:text-cyan-300 cursor-pointer flex items-center gap-1 font-mono">🔄 Actualizar</button>
+                </div>
+                <select id="repair-tech" name="technician" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#00f5a0] outline-none cursor-pointer">
+                  <option value="Laboratorio WILOTECH">Laboratorio WILOTECH (General)</option>
+                  <option value="Wilson Ramos">Wilson Ramos (Microelectrónica & Dirección)</option>
+                  <option value="Federico Ruiz">Federico Ruiz (Microelectrónica & Diagnóstico)</option>
+                  <option value="Martín Ramos">Martín Ramos (Hardware & Módulos)</option>
+                </select>
               </div>
               <div>
                 <label class="block font-brand text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Garantía del Servicio</label>
@@ -1611,13 +1625,100 @@
         </div>
       </div>
 
-      <!-- Roles y Permisos -->
-      <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800 space-y-4">
-        <h3 class="font-bold text-white text-base">Roles y Permisos del Taller</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
-          <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><span class="text-cyan-400 font-bold block mb-1">👨‍💼 Administrador</span><p class="text-slate-400">Acceso total a reparaciones, finanzas, márgenes de ganancia y configuración.</p></div>
-          <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><span class="text-emerald-400 font-bold block mb-1">🔬 Técnico Laboratorio</span><p class="text-slate-400">Reparaciones, diagnósticos, fotos, checklist. Sin vista de finanzas.</p></div>
-          <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><span class="text-purple-400 font-bold block mb-1">🖥️ Recepción</span><p class="text-slate-400">Clientes, crear reparaciones, presupuestos, entregas. Sin datos internos.</p></div>
+      <!-- GESTIÓN DE PERSONAL DEL TALLER: ADMINISTRADORES Y TÉCNICOS -->
+      <div class="bg-slate-950 rounded-3xl p-6 sm:p-8 border border-slate-800 space-y-6 shadow-2xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/60 text-cyan-400 border border-cyan-500/30 text-xs font-mono mb-2">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+              <span>Control de Acceso & Personal</span>
+            </div>
+            <h3 class="font-brand font-black text-white text-xl flex items-center gap-2.5">
+              <span>ADMINISTRADORES & TÉCNICOS DEL TALLER</span>
+            </h3>
+            <p class="text-xs text-slate-400 font-mono mt-1">
+              Gestioná las cuentas de ingreso individual, roles (Administrador / Técnico / Recepción), especialidades y permisos.
+            </p>
+          </div>
+          <div class="flex items-center gap-2.5 shrink-0">
+            <button type="button" onclick="loadStaffUsers()" class="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span>Refrescar</span>
+            </button>
+            <button type="button" onclick="openStaffModal()" class="px-4 py-2.5 rounded-xl btn-cyber text-xs font-brand font-bold flex items-center gap-2 shadow-lg shadow-[#00f5a0]/10 hover:shadow-[#00f5a0]/30 transition-all cursor-pointer">
+              <i data-lucide="user-plus" class="w-4 h-4"></i>
+              <span>+ NUEVO INTEGRANTE</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Métricas Rápidas de Personal -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
+          <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+            <div>
+              <span class="text-slate-400 text-[11px] block">👑 Administradores</span>
+              <strong id="staffCountAdmins" class="text-cyan-400 text-lg font-bold">1</strong>
+            </div>
+            <span class="text-[10px] text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded-md border border-cyan-800">Acceso Total</span>
+          </div>
+          <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+            <div>
+              <span class="text-slate-400 text-[11px] block">🔬 Técnicos de Banco</span>
+              <strong id="staffCountTechs" class="text-emerald-400 text-lg font-bold">2</strong>
+            </div>
+            <span class="text-[10px] text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-800">Laboratorio & QC</span>
+          </div>
+          <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+            <div>
+              <span class="text-slate-400 text-[11px] block">🟢 Total Integrantes Activos</span>
+              <strong id="staffCountTotal" class="text-white text-lg font-bold">3</strong>
+            </div>
+            <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md">Autorizados</span>
+          </div>
+        </div>
+
+        <!-- Tabla de Personal -->
+        <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#05070d]">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900/90 text-slate-400 font-mono text-[11px] uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="py-3.5 px-4">Nombre / Especialidad</th>
+                <th class="py-3.5 px-4">Usuario / Email</th>
+                <th class="py-3.5 px-4">Rol / Nivel</th>
+                <th class="py-3.5 px-4">Teléfono</th>
+                <th class="py-3.5 px-4">Estado</th>
+                <th class="py-3.5 px-4 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="staffUsersTableBody" class="divide-y divide-slate-800/60 font-mono">
+              <tr>
+                <td colspan="6" class="py-8 text-center text-slate-500 font-mono">
+                  <span class="inline-block animate-spin text-cyan-400 text-base mr-2">⏳</span> Cargando personal del taller...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Explicación de Roles y Permisos -->
+        <div class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800 text-xs font-mono space-y-2">
+          <span class="text-slate-300 font-bold block flex items-center gap-1.5">
+            <i data-lucide="info" class="w-4 h-4 text-cyan-400"></i> Niveles de Acceso y Funciones en WILOTECH OS:
+          </span>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-slate-400 text-[11px]">
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80">
+              <strong class="text-cyan-400 block mb-1">👑 Administrador:</strong>
+              Gestión total del taller, configuración, finanzas, API keys de distribuidores, importación de catálogos y gestión de personal.
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80">
+              <strong class="text-emerald-400 block mb-1">🔬 Técnico Laboratorio:</strong>
+              Diagnósticos, órdenes de trabajo, control de calidad (QC), notas de microscopio, consulta de stock y comparador de repuestos.
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80">
+              <strong class="text-purple-400 block mb-1">🖥️ Recepción / Mostrador:</strong>
+              Ingreso de nuevos equipos, comprobantes térmicos, cobro de señas, entrega de reparaciones y presupuestos a clientes.
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1776,6 +1877,97 @@
           <i data-lucide="check" class="w-4 h-4"></i> Crear Reingreso RMA ($0)
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AGREGAR / EDITAR INTEGRANTE (ADMIN O TÉCNICO) -->
+  <div id="modalWorkshopUser" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass-panel-glow rounded-3xl p-6 sm:p-8 max-w-lg w-full relative space-y-5 border border-cyan-500/40 shadow-2xl">
+      <div class="flex justify-between items-start border-b border-slate-800 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-cyan-950 border border-cyan-400/40 flex items-center justify-center text-cyan-400">
+            <i data-lucide="user-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 id="modalStaffTitle" class="font-brand text-lg font-black text-white">Nuevo Integrante de Taller</h3>
+            <p class="text-[11px] text-slate-400 font-mono">Alta de Administrador o Técnico de Laboratorio</p>
+          </div>
+        </div>
+        <button onclick="closeStaffModal()" class="text-slate-400 hover:text-white p-1 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="formWorkshopUser" onsubmit="handleSaveStaffUser(event)" class="space-y-4 text-xs font-mono">
+        <input type="hidden" id="staffUserId" value="">
+
+        <div>
+          <label class="block text-slate-300 font-bold uppercase mb-1">Nombre y Apellido *</label>
+          <input type="text" id="staffUserName" required placeholder="ej. Carlos Gómez" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:border-cyan-400 outline-none">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-bold uppercase mb-1">Correo Electrónico *</label>
+            <input type="email" id="staffUserEmail" required placeholder="carlos@wilotech.com" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:border-cyan-400 outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold uppercase mb-1">Usuario / Login</label>
+            <input type="text" id="staffUserUsername" placeholder="carlos" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:border-cyan-400 outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-bold uppercase mb-1">Rol en el Taller *</label>
+            <select id="staffUserRole" required class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:border-cyan-400 outline-none cursor-pointer">
+              <option value="tecnico">🔬 Técnico de Laboratorio</option>
+              <option value="admin">👑 Administrador Taller</option>
+              <option value="recepcion">🖥️ Recepción & Mostrador</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold uppercase mb-1">Teléfono / WhatsApp</label>
+            <input type="text" id="staffUserPhone" placeholder="+54 223 591-4163" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:border-cyan-400 outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-bold uppercase mb-1">Especialidad de Laboratorio</label>
+          <input type="text" id="staffUserSpecialty" placeholder="ej. Microelectrónica iPhone, Módulos & Soldadura, Software" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:border-cyan-400 outline-none">
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-slate-300 font-bold uppercase" id="staffPasswordLabel">Contraseña de Acceso *</label>
+            <span id="staffPasswordHelp" class="text-[10px] text-slate-500 hidden">(Dejar en blanco para mantener actual)</span>
+          </div>
+          <input type="password" id="staffUserPassword" placeholder="••••••••" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:border-cyan-400 outline-none">
+        </div>
+
+        <div id="staffStatusContainer" class="hidden">
+          <label class="block text-slate-300 font-bold uppercase mb-1">Estado de la Cuenta</label>
+          <select id="staffUserStatus" class="w-full bg-[#05070d] border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:border-cyan-400 outline-none cursor-pointer">
+            <option value="active">🟢 Activo / Habilitado</option>
+            <option value="inactive">🔴 Inactivo / Deshabilitado</option>
+          </select>
+        </div>
+
+        <div id="staffModalAlert" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 font-mono">
+          <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+          <span id="staffModalAlertText"></span>
+        </div>
+
+        <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-800">
+          <button type="button" onclick="closeStaffModal()" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 font-mono text-xs cursor-pointer">
+            Cancelar
+          </button>
+          <button type="submit" id="btnSaveStaffUser" class="px-5 py-2.5 rounded-xl btn-cyber font-brand font-bold text-xs flex items-center gap-2 cursor-pointer shadow-lg shadow-[#00f5a0]/15">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            <span id="btnSaveStaffText">Guardar Integrante</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

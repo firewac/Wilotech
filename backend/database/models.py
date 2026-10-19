@@ -101,3 +101,36 @@ class GremioPriceItem(BaseModel):
     stock: Optional[str] = "Disponible"
     updated_at: Optional[str] = ""
 
+
+# --- MODELOS PERSONAL DEL TALLER (ADMINISTRADORES Y TÉCNICOS) ---
+
+class WorkshopUserCreateRequest(BaseModel):
+    name: str
+    email: str
+    username: Optional[str] = None
+    phone: Optional[str] = ""
+    password: str
+    role: str = "tecnico"  # "admin", "tecnico", "recepcion"
+    specialty: Optional[str] = ""
+
+class WorkshopUserUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    username: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[str] = None
+    specialty: Optional[str] = None
+    status: Optional[str] = None  # "active", "inactive"
+
+class WorkshopUserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    username: Optional[str] = ""
+    phone: Optional[str] = ""
+    role: str
+    specialty: Optional[str] = ""
+    status: str
+    created_at: Optional[str] = ""
+

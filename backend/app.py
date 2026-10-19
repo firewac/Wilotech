@@ -37,7 +37,14 @@ from backend.database.db import (
     reset_admin_password_by_email,
     get_system_setting,
     get_all_system_settings,
-    save_system_settings
+    save_system_settings,
+    list_workshop_users,
+    get_workshop_user_by_id,
+    get_workshop_user_by_email_or_username,
+    create_workshop_user,
+    update_workshop_user,
+    delete_workshop_user,
+    verify_workshop_user_login
 )
 from backend.database.models import (
     DistributorConfig,
@@ -46,7 +53,10 @@ from backend.database.models import (
     GremioRegisterRequest,
     GremioLoginRequest,
     GremioUserResponse,
-    GremioPriceItem
+    GremioPriceItem,
+    WorkshopUserCreateRequest,
+    WorkshopUserUpdateRequest,
+    WorkshopUserResponse
 )
 from backend.services.currency_service import CurrencyService
 from backend.services.imei_service import IMEIService
@@ -100,6 +110,24 @@ def get_current_admin_optional(credentials: Optional[HTTPAuthorizationCredential
         return None
     payload = decode_access_token(credentials.credentials)
     if payload and payload.get("role") == "admin":
+        return payload
+    return None
+
+def get_current_staff(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_bearer)):
+    """Valida token JWT para personal del taller (admin, técnico o recepción)."""
+    if not credentials or not credentials.credentials:
+        raise HTTPException(status_code=401, detail="Se requiere autenticación del taller.")
+    payload = decode_access_token(credentials.credentials)
+    if not payload or payload.get("role") not in ["admin", "tecnico", "recepcion"]:
+        raise HTTPException(status_code=403, detail="Acceso denegado: se requieren permisos del taller.")
+    return payload
+
+def get_current_staff_optional(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_bearer)) -> Optional[dict]:
+    """Retorna los datos del token si es del personal del taller (admin, técnico, recepción); None en caso contrario."""
+    if not credentials or not credentials.credentials:
+        return None
+    payload = decode_access_token(credentials.credentials)
+    if payload and payload.get("role") in ["admin", "tecnico", "recepcion"]:
         return payload
     return None
 
@@ -440,12 +468,38 @@ async def admin_login_endpoint(request: Request, payload: Dict[str, Any]):
     if not username or not password:
         raise HTTPException(status_code=400, detail="Usuario/email y contraseña son requeridos")
         
+    # 1. Intentar autenticar contra el personal del taller (workshop_users)
+    staff_user = verify_workshop_user_login(username, password)
+    if staff_user:
+        token = create_access_token({
+            "sub": staff_user["email"],
+            "username": staff_user.get("username") or staff_user["email"],
+            "user_id": staff_user["id"],
+            "name": staff_user["name"],
+            "role": staff_user["role"],
+            "specialty": staff_user.get("specialty", "")
+        })
+        return {
+            "status": "ok", 
+            "message": f"Inicio de sesión exitoso. Bienvenido {staff_user['name']}",
+            "token": token,
+            "role": staff_user["role"],
+            "user": staff_user
+        }
+
+    # 2. Fallback con credenciales maestras legacy (system_settings)
     if verify_admin_login(username, password):
-        token = create_access_token({"sub": username, "role": "admin"})
+        token = create_access_token({"sub": username, "role": "admin", "name": "Administrador Principal"})
         return {
             "status": "ok", 
             "message": "Inicio de sesión de taller correcto",
-            "token": token
+            "token": token,
+            "role": "admin",
+            "user": {
+                "name": "Administrador Principal",
+                "email": username,
+                "role": "admin"
+            }
         }
     raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
 
@@ -493,6 +547,97 @@ async def admin_reset_password_endpoint(request: Request, payload: Dict[str, Any
     if success:
         return {"status": "ok", "message": "Contraseña del Panel de Taller actualizada exitosamente."}
     raise HTTPException(status_code=403, detail="No autorizado para restablecer la contraseña del taller.")
+
+
+# --- GESTIÓN DE PERSONAL DEL TALLER (ADMINISTRADORES, TÉCNICOS Y RECEPCIÓN) ---
+
+@app.get("/api/staff/users")
+async def get_staff_users_endpoint(admin: dict = Depends(get_current_admin)):
+    """Lista todos los integrantes del taller (solo administradores)."""
+    return list_workshop_users()
+
+@app.post("/api/staff/users")
+async def create_staff_user_endpoint(
+    user_req: WorkshopUserCreateRequest,
+    admin: dict = Depends(get_current_admin)
+):
+    """Registra un nuevo administrador, técnico o recepcionista en el taller."""
+    clean_email = user_req.email.strip().lower()
+    existing = get_workshop_user_by_email_or_username(clean_email)
+    if existing:
+        raise HTTPException(status_code=400, detail="El correo electrónico ya está registrado.")
+    
+    if user_req.username:
+        existing_user = get_workshop_user_by_email_or_username(user_req.username.strip().lower())
+        if existing_user:
+            raise HTTPException(status_code=400, detail="El nombre de usuario ya está en uso.")
+
+    if len(user_req.password.strip()) < 4:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 4 caracteres.")
+
+    new_user = create_workshop_user(
+        name=user_req.name,
+        email=clean_email,
+        password_plain=user_req.password,
+        role=user_req.role,
+        specialty=user_req.specialty or "",
+        phone=user_req.phone or "",
+        username=user_req.username
+    )
+    return {
+        "status": "ok",
+        "message": f"Integrante '{new_user['name']}' creado exitosamente con rol '{new_user['role']}'.",
+        "user": new_user
+    }
+
+@app.put("/api/staff/users/{user_id}")
+async def update_staff_user_endpoint(
+    user_id: int,
+    user_req: WorkshopUserUpdateRequest,
+    admin: dict = Depends(get_current_admin)
+):
+    """Actualiza datos, rol, especialidad o contraseña de un miembro del personal."""
+    updates = user_req.dict(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No se enviaron datos para actualizar.")
+
+    success, msg = update_workshop_user(user_id, updates)
+    if not success:
+        raise HTTPException(status_code=400, detail=msg)
+
+    updated_user = get_workshop_user_by_id(user_id)
+    return {
+        "status": "ok",
+        "message": msg,
+        "user": updated_user
+    }
+
+@app.delete("/api/staff/users/{user_id}")
+async def delete_staff_user_endpoint(
+    user_id: int,
+    admin: dict = Depends(get_current_admin)
+):
+    """Elimina a un miembro del personal (impide eliminar al último administrador)."""
+    success, msg = delete_workshop_user(user_id)
+    if not success:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"status": "ok", "message": msg}
+
+@app.get("/api/staff/technicians")
+async def list_active_technicians_endpoint():
+    """Retorna la lista de técnicos y administradores disponibles para asignar en órdenes."""
+    all_users = list_workshop_users(status="active")
+    techs = [
+        {
+            "id": u["id"],
+            "name": u["name"],
+            "role": u["role"],
+            "specialty": u.get("specialty", "")
+        }
+        for u in all_users
+        if u.get("role") in ["admin", "tecnico"]
+    ]
+    return techs
 
 
 # --- DISTRIBUIDORAS ---
@@ -681,14 +826,14 @@ async def imei_lookup_endpoint(imei: str = Query(..., min_length=1, description=
 @app.get("/api/tickets")
 async def list_tickets_endpoint(
     q: Optional[str] = Query(None, description="Término de búsqueda: ID, cliente, IMEI, DNI o teléfono"),
-    admin: Optional[dict] = Depends(get_current_admin_optional)
+    staff: Optional[dict] = Depends(get_current_staff_optional)
 ):
-    # Si no es administrador y no busca por término específico, denegar para impedir volcado masivo de clientes
-    if not admin:
+    # Si no es personal del taller y no busca por término específico, denegar para impedir volcado masivo de clientes
+    if not staff:
         if not q or len(q.strip()) < 3:
             raise HTTPException(
                 status_code=401, 
-                detail="Se requiere autenticación de administrador para listar todas las órdenes del taller."
+                detail="Se requiere autenticación de personal del taller para listar todas las órdenes."
             )
     return TicketStore.get_all(query=q)
 
@@ -702,19 +847,19 @@ async def get_ticket_endpoint(ticket_id: str):
 @app.post("/api/tickets")
 async def save_ticket_endpoint(
     ticket: Dict[str, Any],
-    admin: Optional[dict] = Depends(get_current_admin_optional)
+    staff: Optional[dict] = Depends(get_current_staff_optional)
 ):
     if not ticket or not ticket.get("id"):
         raise HTTPException(status_code=400, detail="ID de ticket requerido")
     
-    # Si no es admin, solo se permite aprobar o rechazar un presupuesto existente (para clientes en presupuesto.html)
-    if not admin:
+    # Si no es personal del taller, solo se permite aprobar o rechazar un presupuesto existente (para clientes en presupuesto.html)
+    if not staff:
         ticket_id = str(ticket.get("id"))
         existing = TicketStore.get_by_id(ticket_id)
         if not existing:
             raise HTTPException(
                 status_code=401, 
-                detail="Se requiere inicio de sesión administrativo para crear nuevas órdenes."
+                detail="Se requiere inicio de sesión en el taller para crear nuevas órdenes."
             )
         new_status = ticket.get("status")
         if new_status not in ["approved", "rejected"]:

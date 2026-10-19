@@ -1143,8 +1143,14 @@ function navigateTo(screenId) {
 
   // Execute Screen-Specific Renderer
   if (screenId === 'dashboard') renderDashboardScreen();
-  else if (screenId === 'new-order') initNewOrderScreen();
-  else if (screenId === 'repairs') renderRepairsScreen();
+  else if (screenId === 'new-order') {
+    initNewOrderScreen();
+    loadTechniciansOptions();
+  }
+  else if (screenId === 'repairs') {
+    renderRepairsScreen();
+    loadTechniciansOptions();
+  }
   else if (screenId === 'customers') renderCustomersScreen();
   else if (screenId === 'inventory') renderInventoryScreen();
   else if (screenId === 'tariff') renderTariffScreen();
@@ -1153,6 +1159,7 @@ function navigateTo(screenId) {
   else if (screenId === 'settings') {
     loadBackupsList();
     loadWorkshopBusinessSettings();
+    loadStaffUsers();
   }
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -3446,6 +3453,360 @@ function addOrderPartItem() {
   openRepairDetail(ticket.id);
 }
 
+// ----------------------------------------------------------------------------
+// GESTIÓN DE PERSONAL DEL TALLER (ADMINISTRADORES, TÉCNICOS Y RECEPCIÓN)
+// ----------------------------------------------------------------------------
+
+let currentStaffUsersList = [];
+let cachedTechnicians = [];
+
+function renderAdminUserProfile() {
+  try {
+    const auth = JSON.parse(localStorage.getItem("wilotech_auth") || "{}");
+    const nameEl = document.getElementById("userHeaderName");
+    const roleEl = document.getElementById("userHeaderRole");
+    const avatarEl = document.getElementById("userHeaderAvatar");
+
+    if (auth && auth.loggedIn) {
+      const displayName = auth.user || "Administrador";
+      const role = (auth.role || "admin").toLowerCase();
+
+      if (nameEl) nameEl.textContent = displayName;
+      if (roleEl) {
+        if (role === "admin") {
+          roleEl.textContent = "👑 Administrador";
+          roleEl.className = "text-[9px] font-mono text-cyan-400 uppercase tracking-wider block font-bold";
+        } else if (role === "tecnico") {
+          roleEl.textContent = "🔬 Técnico";
+          roleEl.className = "text-[9px] font-mono text-emerald-400 uppercase tracking-wider block font-bold";
+        } else {
+          roleEl.textContent = "🖥️ Recepción";
+          roleEl.className = "text-[9px] font-mono text-purple-400 uppercase tracking-wider block font-bold";
+        }
+      }
+      if (avatarEl) {
+        const initials = displayName.split(" ").map(w => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "WT";
+        avatarEl.textContent = initials;
+      }
+    }
+  } catch (e) {}
+}
+
+async function loadTechniciansOptions() {
+  const selectEl = document.getElementById("repair-tech");
+  if (!selectEl) return;
+
+  const currentVal = selectEl.value;
+
+  try {
+    const res = await fetch("/api/staff/technicians");
+    if (!res.ok) throw new Error("Error al obtener técnicos");
+    const techs = await res.json();
+    cachedTechnicians = techs;
+
+    let optionsHtml = `<option value="Laboratorio WILOTECH">Laboratorio WILOTECH (General)</option>`;
+    techs.forEach(t => {
+      const spec = t.specialty ? ` (${t.specialty})` : (t.role === 'admin' ? ' (Admin)' : ' (Técnico)');
+      optionsHtml += `<option value="${t.name}">${t.name}${spec}</option>`;
+    });
+
+    selectEl.innerHTML = optionsHtml;
+    if (currentVal && Array.from(selectEl.options).some(o => o.value === currentVal)) {
+      selectEl.value = currentVal;
+    } else if (currentVal && currentVal !== "Laboratorio WILOTECH") {
+      const customOpt = document.createElement("option");
+      customOpt.value = currentVal;
+      customOpt.textContent = currentVal;
+      selectEl.appendChild(customOpt);
+      selectEl.value = currentVal;
+    }
+  } catch (err) {
+    console.warn("No se pudo cargar la lista dinámica de técnicos:", err);
+  }
+}
+
+async function loadStaffUsers() {
+  const tbody = document.getElementById("staffUsersTableBody");
+  const countAdmins = document.getElementById("staffCountAdmins");
+  const countTechs = document.getElementById("staffCountTechs");
+  const countTotal = document.getElementById("staffCountTotal");
+
+  if (!tbody) return;
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="6" class="py-8 text-center text-slate-500 font-mono">
+        <span class="inline-block animate-spin text-cyan-400 text-lg mr-2">⏳</span> Consultando personal del taller...
+      </td>
+    </tr>
+  `;
+
+  try {
+    const res = await fetch("/api/staff/users", {
+      headers: getAdminAuthHeaders()
+    });
+
+    if (!res.ok) {
+      if (res.status === 403) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="py-6 text-center text-amber-400 font-mono">
+              🔒 Sección restringida: Solo administradores pueden gestionar el personal del taller.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      throw new Error("No se pudo cargar la lista de personal.");
+    }
+
+    const users = await res.json();
+    currentStaffUsersList = users;
+
+    const admins = users.filter(u => u.role === "admin");
+    const techs = users.filter(u => u.role === "tecnico");
+    const activeTotal = users.filter(u => u.status === "active").length;
+
+    if (countAdmins) countAdmins.textContent = admins.length;
+    if (countTechs) countTechs.textContent = techs.length;
+    if (countTotal) countTotal.textContent = activeTotal;
+
+    if (!users || users.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="py-6 text-center text-slate-400 font-mono">
+            No hay integrantes registrados en el taller. Haz clic en '+ NUEVO INTEGRANTE'.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = users.map(u => {
+      let roleBadge = '';
+      if (u.role === 'admin') {
+        roleBadge = `<span class="px-2.5 py-1 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold uppercase text-[10px] flex items-center gap-1 w-max">👑 Administrador</span>`;
+      } else if (u.role === 'tecnico') {
+        roleBadge = `<span class="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold uppercase text-[10px] flex items-center gap-1 w-max">🔬 Técnico</span>`;
+      } else {
+        roleBadge = `<span class="px-2.5 py-1 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30 font-bold uppercase text-[10px] flex items-center gap-1 w-max">🖥️ Recepción</span>`;
+      }
+
+      let statusBadge = u.status === 'active'
+        ? `<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase">🟢 Activo</span>`
+        : `<span class="px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 text-[10px] font-bold uppercase">🔴 Inactivo</span>`;
+
+      const specialtyLabel = u.specialty ? `<span class="text-[10px] text-cyan-300 block font-normal">${u.specialty}</span>` : `<span class="text-[10px] text-slate-500 block font-normal">Sin especialidad especificada</span>`;
+
+      return `
+        <tr class="hover:bg-slate-900/50 transition-colors">
+          <td class="py-3 px-4">
+            <strong class="text-white font-bold block text-sm font-brand">${u.name}</strong>
+            ${specialtyLabel}
+          </td>
+          <td class="py-3 px-4">
+            <span class="text-cyan-400 block font-bold">${u.username || u.email.split('@')[0]}</span>
+            <span class="text-slate-400 text-[10px] block">${u.email}</span>
+          </td>
+          <td class="py-3 px-4">${roleBadge}</td>
+          <td class="py-3 px-4 text-slate-300">${u.phone || '—'}</td>
+          <td class="py-3 px-4">${statusBadge}</td>
+          <td class="py-3 px-4 text-right">
+            <div class="flex items-center justify-end gap-1.5">
+              <button onclick="openStaffModal(true, ${u.id})" class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-700 hover:border-cyan-500 transition-all cursor-pointer" title="Editar datos o cambiar contraseña">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="toggleStaffUserStatus(${u.id}, '${u.status}')" class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700 hover:border-amber-500 transition-all cursor-pointer" title="${u.status === 'active' ? 'Desactivar acceso' : 'Activar acceso'}">
+                <i data-lucide="${u.status === 'active' ? 'pause-circle' : 'play-circle'}" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="deleteStaffUser(${u.id}, '${u.name}')" class="p-1.5 rounded-lg bg-slate-900 hover:bg-rose-950/60 text-slate-500 hover:text-rose-400 border border-slate-700 hover:border-rose-500/40 transition-all cursor-pointer" title="Eliminar integrante">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  } catch (err) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="py-6 text-center text-rose-400 font-mono">
+          Error al cargar personal: ${err.message}
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function openStaffModal(isEdit = false, userId = null) {
+  const modal = document.getElementById("modalWorkshopUser");
+  const form = document.getElementById("formWorkshopUser");
+  const title = document.getElementById("modalStaffTitle");
+  const alertBox = document.getElementById("staffModalAlert");
+  const passLabel = document.getElementById("staffPasswordLabel");
+  const passHelp = document.getElementById("staffPasswordHelp");
+  const passInput = document.getElementById("staffUserPassword");
+  const statusContainer = document.getElementById("staffStatusContainer");
+  const hiddenId = document.getElementById("staffUserId");
+
+  if (!modal || !form) return;
+
+  if (alertBox) alertBox.classList.add("hidden");
+  form.reset();
+
+  if (isEdit && userId) {
+    const user = currentStaffUsersList.find(u => u.id === userId);
+    if (!user) {
+      alert("No se encontró la información del usuario");
+      return;
+    }
+    hiddenId.value = user.id;
+    document.getElementById("staffUserName").value = user.name || "";
+    document.getElementById("staffUserEmail").value = user.email || "";
+    document.getElementById("staffUserUsername").value = user.username || "";
+    document.getElementById("staffUserRole").value = user.role || "tecnico";
+    document.getElementById("staffUserPhone").value = user.phone || "";
+    document.getElementById("staffUserSpecialty").value = user.specialty || "";
+    document.getElementById("staffUserStatus").value = user.status || "active";
+
+    if (title) title.textContent = `Editar: ${user.name}`;
+    if (passLabel) passLabel.textContent = "Cambiar Contraseña";
+    if (passHelp) passHelp.classList.remove("hidden");
+    if (passInput) passInput.required = false;
+    if (statusContainer) statusContainer.classList.remove("hidden");
+    document.getElementById("btnSaveStaffText").textContent = "Guardar Cambios";
+  } else {
+    hiddenId.value = "";
+    if (title) title.textContent = "Nuevo Integrante de Taller";
+    if (passLabel) passLabel.textContent = "Contraseña de Acceso *";
+    if (passHelp) passHelp.classList.add("hidden");
+    if (passInput) passInput.required = true;
+    if (statusContainer) statusContainer.classList.add("hidden");
+    document.getElementById("staffUserRole").value = "tecnico";
+    document.getElementById("btnSaveStaffText").textContent = "Registrar Integrante";
+  }
+
+  modal.classList.remove("hidden");
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeStaffModal() {
+  const modal = document.getElementById("modalWorkshopUser");
+  if (modal) modal.classList.add("hidden");
+}
+
+async function handleSaveStaffUser(e) {
+  e.preventDefault();
+  const userId = document.getElementById("staffUserId").value;
+  const name = document.getElementById("staffUserName").value.trim();
+  const email = document.getElementById("staffUserEmail").value.trim();
+  const username = document.getElementById("staffUserUsername").value.trim();
+  const role = document.getElementById("staffUserRole").value;
+  const phone = document.getElementById("staffUserPhone").value.trim();
+  const specialty = document.getElementById("staffUserSpecialty").value.trim();
+  const password = document.getElementById("staffUserPassword").value.trim();
+  const status = document.getElementById("staffUserStatus").value;
+
+  const alertBox = document.getElementById("staffModalAlert");
+  const alertText = document.getElementById("staffModalAlertText");
+  const submitBtn = document.getElementById("btnSaveStaffUser");
+
+  if (alertBox) alertBox.classList.add("hidden");
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const isEdit = Boolean(userId);
+    let url = "/api/staff/users";
+    let method = "POST";
+    let payload = {
+      name,
+      email,
+      username: username || undefined,
+      role,
+      phone,
+      specialty
+    };
+
+    if (isEdit) {
+      url = `/api/staff/users/${userId}`;
+      method = "PUT";
+      payload.status = status;
+      if (password) payload.password = password;
+    } else {
+      if (!password || password.length < 4) {
+        throw new Error("La contraseña debe tener al menos 4 caracteres.");
+      }
+      payload.password = password;
+    }
+
+    const res = await fetch(url, {
+      method,
+      headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || "Error al procesar la solicitud.");
+    }
+
+    showToast(data.message || (isEdit ? "Integrante actualizado" : "Integrante registrado"), "success");
+    closeStaffModal();
+    loadStaffUsers();
+    loadTechniciansOptions();
+  } catch (err) {
+    if (alertBox && alertText) {
+      alertText.textContent = err.message;
+      alertBox.classList.remove("hidden");
+    } else {
+      alert(`Error: ${err.message}`);
+    }
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+async function toggleStaffUserStatus(userId, currentStatus) {
+  const newStatus = currentStatus === "active" ? "inactive" : "active";
+  const actionText = newStatus === "active" ? "activar" : "desactivar";
+  if (!confirm(`¿Estás seguro de que deseas ${actionText} a este integrante?`)) return;
+
+  try {
+    const res = await fetch(`/api/staff/users/${userId}`, {
+      method: "PUT",
+      headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ status: newStatus })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Error al actualizar estado");
+    showToast(data.message || `Estado actualizado a ${newStatus}`, "success");
+    loadStaffUsers();
+    loadTechniciansOptions();
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
+async function deleteStaffUser(userId, userName) {
+  if (!confirm(`¿Eliminar definitivamente a '${userName}' del equipo de trabajo del taller?`)) return;
+
+  try {
+    const res = await fetch(`/api/staff/users/${userId}`, {
+      method: "DELETE",
+      headers: getAdminAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Error al eliminar integrante");
+    showToast(data.message || "Integrante eliminado", "success");
+    loadStaffUsers();
+    loadTechniciansOptions();
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
 // Exponer funciones globalmente para llamadas desde admin.html
 window.initSignatureCanvas = initSignatureCanvas;
 window.clearSignatureCanvas = clearSignatureCanvas;
@@ -3465,12 +3826,22 @@ window.selectNavDropdown = selectNavDropdown;
 window.closeNavDropdown = closeNavDropdown;
 window.updateNavDropdownUI = updateNavDropdownUI;
 window.navigateTo = navigateTo;
+window.loadStaffUsers = loadStaffUsers;
+window.openStaffModal = openStaffModal;
+window.closeStaffModal = closeStaffModal;
+window.handleSaveStaffUser = handleSaveStaffUser;
+window.toggleStaffUserStatus = toggleStaffUserStatus;
+window.deleteStaffUser = deleteStaffUser;
+window.loadTechniciansOptions = loadTechniciansOptions;
+window.renderAdminUserProfile = renderAdminUserProfile;
 
 // Inicialización de modo mostrador y configuraciones al cargar el script
 try {
   TechAdmin.init();
   initCounterMode();
   loadWorkshopBusinessSettings();
+  renderAdminUserProfile();
+  loadTechniciansOptions();
 } catch (e) {
   console.warn("Inicialización diferida de TechAdmin:", e);
 }
